@@ -1,0 +1,60 @@
+# Stack locale di sviluppo: PostgreSQL + API + web.
+# Avvio dalla radice del repository:
+#   cp infra/docker/.env.example infra/docker/.env   # poi impostare le password
+#   docker compose -f infra/docker/compose.yml up --build
+name: gestionale
+
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-gestionale}
+      # Utente proprietario dello schema, usato solo dalle migrazioni Flyway.
+      POSTGRES_USER: ${POSTGRES_USER:-gestionale}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?impostare POSTGRES_PASSWORD in infra/docker/.env}
+      # Ruolo applicativo (non superuser), creato da postgres-init al primo avvio.
+      DB_USER: ${DB_USER:-gestionale_app}
+      DB_PASSWORD: ${DB_PASSWORD:?impostare DB_PASSWORD in infra/docker/.env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ../../apps/api
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      DB_URL: ${DB_URL:-jdbc:postgresql://db:5432/gestionale}
+      DB_USER: ${DB_USER:-gestionale_app}
+      DB_PASSWORD: ${DB_PASSWORD:?impostare DB_PASSWORD in infra/docker/.env}
+      DB_MIGRATION_USER: ${POSTGRES_USER:-gestionale}
+      DB_MIGRATION_PASSWORD: ${POSTGRES_PASSWORD:?impostare POSTGRES_PASSWORD in infra/docker/.env}
+      JWT_ISSUER_URI: ${JWT_ISSUER_URI:-http://localhost:8180/realms/gestionale}
+      LICENSE_PUBLIC_KEY: ${LICENSE_PUBLIC_KEY:-}
+      AI_PROVIDER: ${AI_PROVIDER:-none}
+      AI_API_KEY: ${AI_API_KEY:-}
+    ports:
+      - "8080:8080"
+
+  web:
+    build:
+      context: ../..
+      dockerfile: infra/docker/web.Dockerfile
+    depends_on:
+      - api
+    ports:
+      - "8081:80"
+
+volumes:
+  db-data:

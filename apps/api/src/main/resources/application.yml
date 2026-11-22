@@ -1,0 +1,95 @@
+# Configurazione comune. Il profilo attivo si sceglie con SPRING_PROFILES_ACTIVE (default: dev).
+spring:
+  application:
+    name: gestionale-api
+  profiles:
+    default: dev
+  datasource:
+    # Connessione dell'applicazione: ruolo NON superuser e NON proprietario delle tabelle,
+    # così la Row Level Security si applica sempre.
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  flyway:
+    # Le migrazioni girano con un utente distinto, proprietario dello schema.
+    url: ${DB_URL}
+    user: ${DB_MIGRATION_USER}
+    password: ${DB_MIGRATION_PASSWORD}
+    placeholders:
+      # Ruolo applicativo a cui la migrazione concede i privilegi DML.
+      appRole: ${spring.datasource.username}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Provider di identità (OIDC). Viene contattato solo alla prima richiesta autenticata.
+          issuer-uri: ${JWT_ISSUER_URI}
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+gestionale:
+  tenancy:
+    # Nome del claim JWT che contiene l'id del tenant.
+    tenant-claim: tenant_id
+  licensing:
+    # Chiave pubblica Ed25519 (X.509 SubjectPublicKeyInfo, Base64) per verificare le licenze offline.
+    public-key: ${LICENSE_PUBLIC_KEY:}
+  demo:
+    # Il seeder del tenant demo è disattivato salvo configurazione esplicita.
+    enabled: false
+  ai:
+    # Provider AI: "none" usa NoopAiProvider (risponde 503).
+    provider: ${AI_PROVIDER:none}
+    # La chiave arriva solo da variabile d'ambiente; mai nel codice o nel repository.
+    api-key: ${AI_API_KEY:}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/gestionale}
+    username: ${DB_USER:gestionale_app}
+    password: ${DB_PASSWORD:gestionale_app}
+  flyway:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/gestionale}
+    user: ${DB_MIGRATION_USER:gestionale}
+    password: ${DB_MIGRATION_PASSWORD:gestionale}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8180/realms/gestionale}
+
+gestionale:
+  demo:
+    enabled: ${DEMO_ENABLED:true}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  # In prod nessun default: DB_URL, DB_USER, DB_PASSWORD, DB_MIGRATION_USER,
+  # DB_MIGRATION_PASSWORD e JWT_ISSUER_URI sono obbligatori.
+
+gestionale:
+  demo:
+    enabled: ${DEMO_ENABLED:false}
+
+management:
+  endpoint:
+    health:
+      show-details: never

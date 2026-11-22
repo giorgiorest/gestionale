@@ -1,0 +1,21 @@
+# Dipendenze e build
+node_modules/
+dist/
+.angular/
+target/
+apps/desktop/src-tauri/target/
+
+# Segreti e configurazione locale
+.env
+.env.*
+!.env.example
+
+# Log
+*.log
+
+# IDE e sistema
+.idea/
+*.iml
+**/.vscode/*
+!**/.vscode/extensions.json
+.DS_Store

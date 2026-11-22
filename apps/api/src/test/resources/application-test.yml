@@ -1,0 +1,12 @@
+# Profilo dei test: le connessioni al database arrivano da AbstractIntegrationTest.
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Mai contattato: nei test i JWT sono simulati con spring-security-test.
+          issuer-uri: http://localhost:0/test-issuer
+
+gestionale:
+  demo:
+    enabled: false

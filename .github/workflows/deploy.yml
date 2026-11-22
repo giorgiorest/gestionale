@@ -1,0 +1,24 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Ambiente di destinazione
+        type: choice
+        options: [staging, production]
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Placeholder
+        run: |
+          echo "TODO: definire il target di deploy (macchine cloud, metodo e segreti)."
+          echo "Vedi docs/decisioni/ per la scelta del provider."
+          exit 1

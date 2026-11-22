@@ -1,0 +1,33 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Assistente</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-list>
+    @for (message of messages(); track $index) {
+      <ion-item [class]="'message-' + message.role">
+        <ion-label class="ion-text-wrap">
+          <strong>{{ message.role === 'user' ? 'Tu' : 'Assistente' }}:</strong> {{ message.content }}
+        </ion-label>
+      </ion-item>
+    } @empty {
+      <p class="ion-text-center">Scrivi una domanda per iniziare.</p>
+    }
+  </ion-list>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <form (ngSubmit)="send()">
+      <ion-item lines="none">
+        <ion-input name="draft" [(ngModel)]="draft" placeholder="Scrivi un messaggio" aria-label="Messaggio"></ion-input>
+        <ion-button slot="end" type="submit" [disabled]="!draft.trim()">Invia</ion-button>
+      </ion-item>
+    </form>
+  </ion-toolbar>
+</ion-footer>

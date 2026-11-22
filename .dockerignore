@@ -1,0 +1,7 @@
+# Contesto di build della web (infra/docker/web.Dockerfile) = radice del repository.
+**/node_modules
+**/dist
+**/.angular
+**/target
+.git
+**/.env
