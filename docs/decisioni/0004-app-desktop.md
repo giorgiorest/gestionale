@@ -6,7 +6,7 @@
 ## Contesto
 
 Serve un'app desktop Windows del gestionale, da distribuire ai clienti del prodotto.
-La web app esiste già (Angular + Ionic) e deve restare l'unico codice dell'interfaccia.
+La web app esiste già (Angular; oggi con Angular Material, ADR 0006) e deve restare l'unico codice dell'interfaccia.
 
 ## Decisione
 

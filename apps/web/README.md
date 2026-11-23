@@ -1,59 +1,56 @@
-# Web
+# Web app (Angular 22 + Angular Material)
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.3.0.
+Interfaccia unica per browser (PWA) e app desktop (Tauri). Avvio, build e test: vedi il
+[README principale](../../README.md). Scelte grafiche: [ADR 0006](../../docs/decisioni/0006-interfaccia-angular-material.md).
 
-## Development server
+## Struttura
 
-To start a local development server, run:
+| Cartella | Contenuto |
+|----------|-----------|
+| `src/app/core/layout` | layout principale: barra superiore e menu laterale |
+| `src/app/core/branding` | marchio dell'installazione (nome, logo, colore) da `config.json` |
+| `src/app/core/…` | configurazione, autenticazione, profilo, entitlement, notifiche, sincronizzazione |
+| `src/app/features/…` | una cartella per funzione (clienti, notifiche, comunicazioni, …) |
+| `src/styles.scss` | tema Material 3, stili comuni delle pagine (`.page`, `.page-header`, `.banner`, `.status`) |
+| `src/styles/_theme-colors.scss` | palette generata dal colore del marchio |
+| `public/branding/logo.svg` | logo di prodotto (provvisorio) |
+| `public/config.json` | configurazione di sviluppo (API, Keycloak, marchio) |
 
-```bash
-ng serve
+## Cambiare logo e colori del prodotto
+
+1. **Logo**: sostituisci `public/branding/logo.svg` (meglio SVG quadrato; va bene anche PNG,
+   aggiornando `DEFAULT_BRANDING.logoUrl` in `src/app/core/branding/branding.service.ts`).
+2. **Colori**: rigenera la palette dal colore principale del marchio:
+
+   ```bash
+   npx ng generate @angular/material:theme-color --primary-color=#1F5F8B --directory=src/styles/ --is-scss --force --interactive=false
+   ```
+
+   Si possono indicare anche `--secondary-color`, `--tertiary-color`, `--neutral-color`.
+3. **Icone dell'app** (PWA e desktop) dal logo definitivo:
+   - PWA: `public/icons/` e `public/favicon.ico`;
+   - desktop: da `apps/desktop`, `npx tauri icon ../web/public/icons/icon-512x512.png -o src-tauri/icons`.
+
+## Marchio di un cliente (senza ricompilare)
+
+In `config.json` dell'installazione:
+
+```json
+"branding": {
+  "name": "Rossi Gestionale",
+  "logoUrl": "https://www.rossi.example/logo.svg",
+  "primaryColor": "#8B1F3A"
+}
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Con Docker le stesse impostazioni arrivano da `BRAND_NAME`, `BRAND_LOGO_URL`, `BRAND_PRIMARY_COLOR`.
 
-## Code scaffolding
+## Regole per i componenti
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- Componenti di Angular Material, importati per modulo (`@angular/material/button`, …).
+- Colori, forme e tipografia solo dalle variabili di sistema: `var(--mat-sys-primary)`,
+  `var(--mat-sys-surface-container-high)`, `var(--mat-sys-title-medium)`… mai colori fissi,
+  così il marchio del cliente si applica ovunque.
+- Pagine dentro `<div class="page">` con `<div class="page-header"><h1>…</h1></div>`.
+- Icone: `<mat-icon>nome</mat-icon>` con i nomi di [Material Symbols](https://fonts.google.com/icons)
+  (il font è incluso nell'app).

@@ -13,6 +13,18 @@ export interface AppConfig {
     /** Client OIDC pubblico dell'app desktop (default "gestionale-desktop"). */
     desktopClientId?: string;
   };
+  /** Personalizzazione dell'installazione (facoltativa): nome, logo e colore principale. */
+  branding?: Branding;
+}
+
+/** Marchio mostrato nell'app. Senza valori si usa quello di prodotto. */
+export interface Branding {
+  /** Nome mostrato nella barra e nel titolo della finestra. */
+  name?: string;
+  /** URL del logo (SVG o PNG), relativo al sito o assoluto. */
+  logoUrl?: string;
+  /** Colore principale nel formato #RRGGBB. */
+  primaryColor?: string;
 }
 
 /** Chiave (localStorage) dell'indirizzo del server scelto nell'app desktop. */
@@ -101,6 +113,10 @@ export class AppConfigService {
         authority: new URL(config.auth.authority, base).href.replace(/\/$/, ''),
         clientId: config.auth.desktopClientId ?? 'gestionale-desktop',
         desktopClientId: config.auth.desktopClientId,
+      },
+      branding: config.branding && {
+        ...config.branding,
+        logoUrl: config.branding.logoUrl ? new URL(config.branding.logoUrl, base).href : undefined,
       },
     };
   }

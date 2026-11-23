@@ -1,7 +1,7 @@
 # gestionale
 
 Gestionale multi-piattaforma e multi-tenant: un'unica base di codice per **web** (PWA),
-**mobile** (Ionic/Capacitor) e **desktop** (Tauri), con funzionamento **offline** e
+**mobile** (Capacitor) e **desktop** (Tauri), con funzionamento **offline** e
 sincronizzazione verso un backend **Spring Boot** su **PostgreSQL**. Login e profili utente
 con **Keycloak** (OIDC).
 
@@ -14,7 +14,7 @@ gestionale/
 ├── .github/workflows/   # CI (api, web) e deploy manuale (placeholder)
 ├── apps/
 │   ├── api/             # Spring Boot 3.5, Java 21, Maven
-│   ├── web/             # Angular 22 + Ionic 9, PWA, Dexie (offline), oidc-client-ts
+│   ├── web/             # Angular 22 + Angular Material, PWA, Dexie (offline), oidc-client-ts
 │   └── desktop/         # Tauri 2: app desktop Windows che incapsula la build web
 ├── infra/
 │   ├── docker/          # compose per lo sviluppo locale, Dockerfile web, nginx
@@ -188,6 +188,17 @@ npm run build             # installer .msi e .exe in src-tauri/target/release/bu
 L'installer è unico per tutti i clienti: al primo avvio chiede l'indirizzo del server.
 Dettagli, prerequisiti e cose da fare prima della vendita (firma, aggiornamenti):
 [apps/desktop/README.md](apps/desktop/README.md).
+
+## Aspetto grafico e marchio
+
+Interfaccia con **Angular Material** (gratuita, MIT), pensata per il PC: barra superiore con logo
+e menu laterale. Scelta e alternative: [ADR 0006](docs/decisioni/0006-interfaccia-angular-material.md).
+
+- **Logo e colori del prodotto**: `apps/web/public/branding/logo.svg` e palette generata dal
+  colore principale (comando in [apps/web/README.md](apps/web/README.md)). Quelli attuali sono provvisori.
+- **Marchio di un cliente** senza ricompilare: `branding` in `config.json` (nome, logo, colore
+  principale) o, con Docker, `BRAND_NAME`, `BRAND_LOGO_URL`, `BRAND_PRIMARY_COLOR`.
+- Font (Inter) e icone (Material Symbols) sono inclusi nell'app: niente Google Fonts.
 
 ## Utenti, ruoli e permessi
 

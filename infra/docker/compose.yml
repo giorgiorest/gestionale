@@ -94,6 +94,10 @@ services:
       WEB_API_URL: /api
       OIDC_AUTHORITY: ${KEYCLOAK_URL:-http://localhost:8180}/realms/gestionale
       OIDC_CLIENT_ID: gestionale-web
+      # Marchio dell'installazione (facoltativo): senza valori si usa quello di prodotto.
+      BRAND_NAME: ${BRAND_NAME:-}
+      BRAND_LOGO_URL: ${BRAND_LOGO_URL:-}
+      BRAND_PRIMARY_COLOR: ${BRAND_PRIMARY_COLOR:-}
     ports:
       - "8081:80"
 

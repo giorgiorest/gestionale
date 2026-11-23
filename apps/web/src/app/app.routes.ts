@@ -17,7 +17,9 @@ export const routes: Routes = [
   { path: 'auth/callback', redirectTo: '' },
   {
     path: '',
+    canActivate: [authGuard],
     canActivateChild: [authGuard],
+    loadComponent: () => import('./core/layout/shell.component').then((m) => m.ShellComponent),
     children: [
       {
         path: '',

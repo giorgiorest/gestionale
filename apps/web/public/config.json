@@ -4,5 +4,8 @@
     "authority": "http://localhost:8180/realms/gestionale",
     "clientId": "gestionale-web",
     "desktopClientId": "gestionale-desktop"
+  },
+  "branding": {
+    "name": "Gestionale"
   }
 }

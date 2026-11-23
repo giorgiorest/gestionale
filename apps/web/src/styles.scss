@@ -1,1 +1,181 @@
-/* You can add global styles to this file, and also import other style files */
+// Tema dell'applicazione: Angular Material 3.
+//
+// - Palette di prodotto generata dal colore del marchio (src/styles/_theme-colors.scss,
+//   rigenerabile con: npx ng generate @angular/material:theme-color --primary-color=#RRGGBB
+//   --directory=src/styles/ --is-scss --force).
+// - Font (Inter) e icone (Material Symbols) sono inclusi nell'app, non scaricati da Google:
+//   funzionano offline e non trasmettono a terzi gli indirizzi IP degli utenti.
+// - Un cliente può cambiare il colore principale a runtime da config.json (BrandingService),
+//   che sovrascrive le variabili --mat-sys-primary*.
+// - Nei componenti usare solo le variabili di sistema (var(--mat-sys-…)), mai colori fissi.
+@use '@angular/material' as mat;
+@use './styles/theme-colors' as brand;
+
+html {
+  color-scheme: light;
+  @include mat.theme(
+    (
+      color: (
+        primary: brand.$primary-palette,
+        tertiary: brand.$tertiary-palette,
+        theme-type: light,
+      ),
+      typography: (
+        plain-family: ('Inter Variable', 'Segoe UI', Roboto, sans-serif),
+        brand-family: ('Inter Variable', 'Segoe UI', Roboto, sans-serif),
+      ),
+      density: 0,
+    )
+  );
+}
+
+html {
+  // Colori semantici non previsti da Material 3 (avvisi): tinte ambra fisse, leggibili con ogni marchio.
+  --app-warning-container: #fff1c7;
+  --app-on-warning-container: #4d3800;
+
+  // Menu laterale squadrato e senza ombra: aspetto da applicazione desktop.
+  @include mat.sidenav-overrides(
+    (
+      container-shape: 0,
+      container-elevation-shadow: none,
+    )
+  );
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font: var(--mat-sys-body-medium);
+  letter-spacing: var(--mat-sys-body-medium-tracking);
+  background: var(--mat-sys-surface-container-low);
+  color: var(--mat-sys-on-surface);
+}
+
+a {
+  color: var(--mat-sys-primary);
+}
+
+// ---------------------------------------------------------------- layout comune delle pagine
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+
+  h1 {
+    font: var(--mat-sys-headline-small);
+    margin: 0;
+  }
+
+  .spacer {
+    flex: 1;
+  }
+}
+
+.subtitle {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-medium);
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) 1fr;
+  gap: 24px;
+  align-items: start;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--mat-sys-corner-medium);
+  margin-bottom: 16px;
+
+  &.warn {
+    background: var(--app-warning-container);
+    color: var(--app-on-warning-container);
+  }
+
+  &.success {
+    background: var(--mat-sys-primary-container);
+    color: var(--mat-sys-on-primary-container);
+  }
+
+  &.error {
+    background: var(--mat-sys-error-container);
+    color: var(--mat-sys-on-error-container);
+  }
+}
+
+.muted {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: var(--mat-sys-corner-full);
+  font: var(--mat-sys-label-medium);
+
+  &.ok {
+    background: var(--mat-sys-primary-container);
+    color: var(--mat-sys-on-primary-container);
+  }
+
+  &.todo {
+    background: var(--mat-sys-error-container);
+    color: var(--mat-sys-on-error-container);
+  }
+}
+
+// Pagine fuori dal layout principale (accesso, scelta del server).
+.centered {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+table.mat-mdc-table {
+  background: transparent;
+}
+
+tr.clickable {
+  cursor: pointer;
+
+  &:hover {
+    background: var(--mat-sys-surface-container-high);
+  }
+}
