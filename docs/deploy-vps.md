@@ -1,16 +1,29 @@
 # Installare civil beefy su un VPS (Aruba, OVH, Hetzner…)
 
-Risultato: civil beefy su `https://<tuo-dominio>`, con HTTPS automatico e rilasci da GitHub con il
-workflow **Deploy**. Vale per qualsiasi server Linux raggiungibile via SSH; per Oracle Cloud c'è
-la guida dedicata [deploy-oracle-cloud.md](deploy-oracle-cloud.md).
+Risultato: civil beefy su `https://<tuo-dominio>`, con HTTPS automatico. Ogni merge su `main`
+costruisce tutto e installa in produzione **dopo la tua approvazione**. Vale per qualsiasi server
+Linux raggiungibile via SSH; per creare la macchina su Oracle Cloud c'è
+[deploy-oracle-cloud.md](deploy-oracle-cloud.md).
 
 ```
-Internet ──HTTPS──▶ Caddy ──┬── /       ▶ web (Angular, nginx)
+Internet ──HTTPS──▶ Caddy ──┬── /       ▶ web (Angular, nginx) + installer dell'app desktop
  (80/443)                   ├── /api/*  ▶ api (Spring Boot) ──┐
                             └── /sso/*  ▶ keycloak (login) ───┴──▶ PostgreSQL
 ```
 
 I file di produzione sono in `infra/deploy/oracle/` (il nome è storico: valgono per ogni server).
+
+## Il percorso in breve
+
+| # | Passo | Dove | Chi |
+|---|-------|------|-----|
+| 1 | Chiavi SSH | PC | a mano, una volta |
+| 2 | Ordinare il VPS | pannello del fornitore | a mano |
+| 3 | Utente `ubuntu` con le chiavi | VPS, come root | a mano, un comando |
+| 4 | Dominio | DuckDNS o DNS | a mano |
+| 5 | Environment `production` | GitHub | a mano, una volta |
+| 6 | **Prepara server**: aggiornamenti, firewall, SSH, Docker, `.env`, backup | GitHub Actions | workflow |
+| 7 | **Rilascio**: build, immagini, installer desktop → **Deploy** con la tua approvazione | GitHub Actions | automatico a ogni merge |
 
 ## 0. Che macchina scegliere
 
@@ -23,13 +36,12 @@ I file di produzione sono in `infra/deploy/oracle/` (il nome è storico: valgono
 
 Esempi (prezzi IVA esclusa, novembre 2026): **Aruba VPS H.4-8** (4 vCPU, 8 GB, 80 GB, data center
 in Italia), **OVHcloud VPS-2** (4 vCore, 8 GB, 75 GB, Milano). Le immagini sono pubblicate per x86
-(amd64) e ARM (arm64): va bene qualsiasi processore.
-
-Scelte e alternative: [ADR 0002](decisioni/0002-deploy-target.md).
+(amd64) e ARM (arm64): va bene qualsiasi processore. Scelte e alternative:
+[ADR 0002](decisioni/0002-deploy-target.md).
 
 ## 1. Chiavi SSH sul tuo PC
 
-Servono due chiavi (PowerShell su Windows):
+Due chiavi (PowerShell su Windows):
 
 ```powershell
 ssh-keygen -t ed25519 -f "$env:USERPROFILE\.ssh\civilbeefy" -C "civilbeefy"
@@ -38,131 +50,50 @@ ssh-keygen -t ed25519 -f "$env:USERPROFILE\.ssh\civilbeefy-deploy" -C "github-de
 
 - `civilbeefy`: **la tua**, per collegarti. Proteggila con una passphrase e salvala in un password
   manager (se la dimentichi: [Problemi frequenti](#problemi-frequenti)).
-- `civilbeefy-deploy`: per il workflow Deploy. **Senza passphrase** (Invio due volte): GitHub non
-  può digitarla.
+- `civilbeefy-deploy`: per GitHub (Prepara server e Deploy). **Senza passphrase** (Invio due volte).
 
-Per non riscrivere la passphrase a ogni collegamento, usa l'agente SSH di Windows (PowerShell come
+Per non riscrivere la passphrase a ogni collegamento, agente SSH di Windows (PowerShell come
 amministratore, una volta: `Get-Service ssh-agent | Set-Service -StartupType Automatic; Start-Service ssh-agent`;
 poi, normale: `ssh-add "$env:USERPROFILE\.ssh\civilbeefy"`).
 
-Sul server vanno solo le chiavi **pubbliche** (`.pub`). Le chiavi private non si condividono mai.
+Sul server vanno solo le chiavi **pubbliche** (`.pub`); le private non si condividono mai.
 
 ## 2. Ordinare il VPS
 
 - **Sistema operativo**: Ubuntu Server 24.04 LTS, senza applicazioni o pannelli preinstallati.
-- **Chiave SSH**: se il modulo la chiede, incolla il contenuto di `civilbeefy.pub`
-  (`Get-Content "$env:USERPROFILE\.ssh\civilbeefy.pub"`). **Aruba** rifiuta la chiave se c'è il
-  commento finale con uno spazio: incolla solo `ssh-ed25519 AAAA…`.
+- **Chiave SSH**: se il modulo la chiede, incolla `civilbeefy.pub`
+  (`Get-Content "$env:USERPROFILE\.ssh\civilbeefy.pub"`). **Aruba** la rifiuta se c'è il commento
+  finale con uno spazio: incolla solo `ssh-ed25519 AAAA…`.
 - **Password di root** (Aruba): robusta, nel password manager; servirà solo in emergenza.
 - **Servizi aggiuntivi** (firewall a pagamento, storage, switch): non servono.
 - **Data center**: in Italia o nell'UE.
 
-Annota l'**indirizzo IPv4** del VPS (pannello del fornitore o email di attivazione).
+Annota l'**indirizzo IPv4** del VPS.
 
-## 3. Primo accesso e utente `ubuntu`
+## 3. Utente `ubuntu` con le chiavi
+
+Collegati come root (su OVH l'utente iniziale è già `ubuntu`: usa `ubuntu@` e `sudo` davanti ai comandi):
 
 ```powershell
 ssh -i "$env:USERPROFILE\.ssh\civilbeefy" root@<IP>
 ```
 
-(su OVH l'utente iniziale è già `ubuntu`: salta questo passo.)
-
-Su Aruba e sui VPS che danno solo `root`, crea l'utente `ubuntu` con la tua chiave: tutte le guide
-e il workflow Deploy usano questo utente, non root.
+Crea l'utente `ubuntu` (sudo senza password, serve a Prepara server) con la tua chiave e quella del
+deploy. Sostituisci `<CHIAVE DEPLOY>` con il contenuto di `civilbeefy-deploy.pub`:
 
 ```bash
-adduser --disabled-password --gecos "" ubuntu && usermod -aG sudo ubuntu && echo 'ubuntu ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/90-ubuntu && chmod 440 /etc/sudoers.d/90-ubuntu && mkdir -p /home/ubuntu/.ssh && cp /root/.ssh/authorized_keys /home/ubuntu/.ssh/ && chown -R ubuntu:ubuntu /home/ubuntu/.ssh && chmod 700 /home/ubuntu/.ssh && chmod 600 /home/ubuntu/.ssh/authorized_keys
+id ubuntu > /dev/null 2>&1 || adduser --disabled-password --gecos "" ubuntu; usermod -aG sudo ubuntu && echo 'ubuntu ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/90-ubuntu && chmod 440 /etc/sudoers.d/90-ubuntu && mkdir -p /home/ubuntu/.ssh && cat /root/.ssh/authorized_keys > /home/ubuntu/.ssh/authorized_keys && echo "<CHIAVE DEPLOY>" >> /home/ubuntu/.ssh/authorized_keys && chown -R ubuntu:ubuntu /home/ubuntu/.ssh && chmod 700 /home/ubuntu/.ssh && chmod 600 /home/ubuntu/.ssh/authorized_keys
 ```
 
-Verifica da **un'altra finestra**: `ssh -i "$env:USERPROFILE\.ssh\civilbeefy" ubuntu@<IP>`.
-Da qui in poi lavora sempre come `ubuntu`.
-
-## 4. Aggiornamenti
+Poi leggi l'**impronta del server**, che GitHub userà per riconoscerlo (sostituisci l'IP):
 
 ```bash
-sudo apt update && sudo apt -y upgrade && sudo apt -y install unattended-upgrades
+echo "<IP> $(cut -d' ' -f1,2 /etc/ssh/ssh_host_ed25519_key.pub)"
 ```
 
-- Su una macchina appena creata Ubuntu sta già aggiornando da solo: il comando ripete
-  *«Waiting for cache lock … unattended-upgr»* finché non ha finito (anche 10–20 minuti).
-  **Aspetta**, non interromperlo.
-- Schermate viola (*character set*, *services to restart*, file di configurazione): **Invio** sul
-  valore proposto.
-- Alla fine: `[ -f /var/run/reboot-required ] && sudo reboot`, poi ricollegati.
+Verifica da un'altra finestra: `ssh -i "$env:USERPROFILE\.ssh\civilbeefy" ubuntu@<IP>`.
 
-## 5. Firewall e accesso SSH
-
-Solo SSH, HTTP e HTTPS (HTTP/3 compreso):
-
-```bash
-sudo ufw allow OpenSSH && sudo ufw allow 80/tcp && sudo ufw allow 443/tcp && sudo ufw allow 443/udp && sudo ufw --force enable && sudo ufw status
-```
-
-Se il fornitore ha anche un firewall nel pannello (es. *security group*), apri lì le stesse porte.
-
-Chiave del workflow Deploy, **aggiunta** a quella personale (`>>`, non `>`):
-
-```bash
-echo "<contenuto di civilbeefy-deploy.pub>" >> ~/.ssh/authorized_keys
-```
-
-Accesso solo con chiave e niente root (prima verifica di entrare come `ubuntu` con la chiave):
-
-```bash
-printf 'PasswordAuthentication no\nPermitRootLogin no\n' | sudo tee /etc/ssh/sshd_config.d/99-civilbeefy.conf && sudo systemctl restart ssh
-```
-
-Tieni aperta la sessione e controlla da un'altra finestra di poter ancora entrare.
-
-## 6. Docker
-
-```bash
-curl -fsSL https://get.docker.com | sudo sh && sudo usermod -aG docker ubuntu
-```
-
-Esci (`exit`), ricollegati e verifica: `docker run --rm hello-world && docker compose version`.
-
-## 7. Cartella e file `.env`
-
-Crea `/opt/civilbeefy` e un `.env` con **password casuali generate sulla macchina** (non passano
-mai dal tuo PC). Prima di incollare, sostituisci il dominio e `LA-TUA-EMAIL` (serve a Let's Encrypt):
-
-```bash
-sudo mkdir -p /opt/civilbeefy && sudo chown ubuntu:ubuntu /opt/civilbeefy && cd /opt/civilbeefy && gen() { openssl rand -hex 24; } && cat > .env <<EOF
-APP_DOMAIN=civilbeefy.duckdns.org
-ACME_EMAIL=LA-TUA-EMAIL
-IMAGE_REGISTRY=ghcr.io/giorgiorest
-IMAGE_TAG=latest
-POSTGRES_USER=gestionale
-POSTGRES_PASSWORD=$(gen)
-DB_PASSWORD=$(gen)
-KEYCLOAK_DB_PASSWORD=$(gen)
-KEYCLOAK_ADMIN=admin
-KEYCLOAK_ADMIN_PASSWORD=$(gen)
-DEMO_ENABLED=true
-EMAIL_ENABLED=false
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_USERNAME=
-SMTP_PASSWORD=
-MAIL_FROM=civil beefy <noreply@example.com>
-BRAND_NAME=
-BRAND_LOGO_URL=
-BRAND_PRIMARY_COLOR=
-BRAND_ACCENT_COLOR=
-LEGAL_PRIVACY_URL=
-LEGAL_TERMS_URL=
-EOF
-chmod 600 .env
-```
-
-- Significato di ogni voce: [`infra/deploy/oracle/.env.example`](../infra/deploy/oracle/.env.example).
-- Per correggere un valore: `nano /opt/civilbeefy/.env`.
-- Salva nel password manager la password del primo accesso a Keycloak:
-  `grep KEYCLOAK_ADMIN_PASSWORD /opt/civilbeefy/.env`.
-- Il `.env` resta solo sulla macchina: mai nel repository, mai in chat.
-
-## 8. Dominio
+## 4. Dominio
 
 Let's Encrypt rilascia certificati solo a un nome a dominio:
 
@@ -171,79 +102,126 @@ Let's Encrypt rilascia certificati solo a un nome a dominio:
 - **Dominio tuo**: record **A** verso l'IP del VPS.
 
 Verifica con un DNS pubblico: `nslookup civilbeefy.duckdns.org 1.1.1.1` deve rispondere con l'IP.
-Se senza `1.1.1.1` risponde *Non-existent domain*, è il DNS della rete (es. aziendale) a non vederlo:
-il dominio funziona comunque; per aprire il sito usa un'altra rete (es. l'hotspot del telefono).
+Se senza `1.1.1.1` risponde *Non-existent domain*, è il DNS della rete del PC (es. aziendale): il
+dominio funziona comunque; per aprire il sito usa un'altra rete (es. l'hotspot del telefono).
 
-Il nome deve coincidere con `APP_DOMAIN` del `.env` e dell'environment GitHub.
+## 5. GitHub: environment e variabili
 
-## 9. Collegare GitHub
-
-**Impronta del server** (per riconoscerlo): sulla macchina, come `ubuntu`, sostituendo l'IP:
-
-```bash
-echo "<IP> $(cut -d' ' -f1,2 /etc/ssh/ssh_host_ed25519_key.pub)"
-```
-
-Da Windows `ssh-keyscan` può fallire con *unsupported KEX method*: leggere l'impronta dalla
-macchina lo evita ed è più sicuro (non dipende dalla rete).
-
-**Environment** su GitHub: repository → *Settings → Environments → New environment* → `production`:
+Repository → *Settings → Environments → New environment* → **`production`**:
 
 | Tipo | Nome | Valore |
 |------|------|--------|
 | Secret | `OCI_SSH_HOST` | IP del VPS |
 | Secret | `OCI_SSH_USER` | `ubuntu` |
 | Secret | `OCI_SSH_PRIVATE_KEY` | contenuto **intero** di `civilbeefy-deploy` (senza `.pub`): `Get-Content "$env:USERPROFILE\.ssh\civilbeefy-deploy" \| Set-Clipboard` |
-| Secret | `OCI_SSH_KNOWN_HOSTS` | la riga dell'impronta (IP, `ssh-ed25519`, chiave) |
+| Secret | `OCI_SSH_KNOWN_HOSTS` | la riga dell'impronta del passo 3 |
 | Variable | `APP_DOMAIN` | es. `civilbeefy.duckdns.org` |
+| Variable | `ACME_EMAIL` | la tua email, per Let's Encrypt (avvisi sui certificati) |
 | Variable | `OCI_APP_DIR` | facoltativa, default `/opt/civilbeefy` |
 
 I nomi `OCI_*` sono storici e valgono per qualsiasi server. Se `OCI_SSH_HOST` è un nome a dominio,
 anche la riga dell'impronta deve iniziare con lo stesso nome.
 
-Nella stessa pagina:
+Nella stessa pagina, **protezione** (obbligatoria per il rilascio automatico):
 
-- **Deployment branches and tags** → *Selected branches* → `main`;
-- **Required reviewers** → te stesso: ogni installazione aspetta la tua approvazione.
+- **Required reviewers** → te stesso: ogni installazione aspetta la tua approvazione;
+- **Deployment branches and tags** → *Selected branches* → `main`.
 
-Se non usi Oracle Cloud: *Settings → Secrets and variables → Actions → Variables*, togli
-`OCI_RETRY_ENABLED`, e in *Actions → Infrastruttura (tentativi)* → **⋯ → Disable workflow**.
+Poi *Settings → Secrets and variables → Actions → Variables* (del **repository**):
 
-## 10. Primo rilascio
+- `AUTO_DEPLOY` = `true` → a ogni rilascio parte il Deploy (in attesa di approvazione). Impostala
+  **solo dopo** aver attivato *Required reviewers*, altrimenti il deploy partirebbe senza conferma.
+- Se non usi Oracle Cloud: togli `OCI_RETRY_ENABLED` e disattiva *Actions → Infrastruttura Oracle
+  (tentativi)* → **⋯ → Disable workflow**.
 
-**Actions → Deploy → Run workflow** (campo *commit* vuoto = l'ultima versione di `main`).
+## 6. Prepara server
 
-Cosa fa il workflow:
+**Actions → Prepara server → Run workflow** (approva quando richiesto). Sulla macchina, come root
+via `sudo`, il workflow:
 
-1. verifica che le immagini di quel commit esistano su GHCR (le pubblica *Release immagini* a ogni
-   merge su `main`);
-2. **controlla la macchina**: Docker e Compose utilizzabili da `ubuntu`, `.env` presente,
-   `APP_DOMAIN` uguale a quello dell'environment, `ACME_EMAIL` valida, spazio libero;
-3. copia compose, Caddyfile, realm e tema di Keycloak in `/opt/civilbeefy`;
-4. verifica la configurazione (`docker compose config`), scarica le immagini con un accesso a GHCR
-   valido solo per quel job, avvia i servizi;
-5. attende che `https://<dominio>/api/health` risponda (fino a 5 minuti); se no, mostra i log dell'API.
+1. installa aggiornamenti e attiva quelli di sicurezza automatici (attende quelli già in corso);
+2. imposta il fuso orario Europe/Rome;
+3. firewall `ufw`: solo 22, 80, 443 (TCP e UDP);
+4. SSH **solo con chiave**, niente accesso di root;
+5. installa Docker e Compose, mette `ubuntu` nel gruppo `docker`;
+6. crea `/opt/civilbeefy` e il **`.env` con password casuali**, solo se non esiste già (le password
+   nascono sulla macchina e non passano mai da GitHub);
+7. backup del database ogni notte alle 3 in `/opt/civilbeefy/backup`, 14 giorni di storico.
+
+È idempotente: si può rilanciare (es. dopo aver cambiato fornitore o per rimettere in ordine la
+macchina). Se gli aggiornamenti richiedono un riavvio lo segnala; rilancialo con **Riavvia** spuntato.
+
+Per il primo accesso a Keycloak ti serve la password generata, che resta sulla macchina:
+
+```bash
+grep KEYCLOAK_ADMIN_PASSWORD /opt/civilbeefy/.env
+```
+
+Salvala nel password manager. Per cambiare altri valori (email SMTP, marchio, link legali):
+`nano /opt/civilbeefy/.env`, poi `cd /opt/civilbeefy && docker compose up -d`. Significato delle
+voci: [`infra/deploy/oracle/.env.example`](../infra/deploy/oracle/.env.example).
+
+## 7. Rilasci
+
+A ogni merge su `main`, **Release immagini**:
+
+1. costruisce l'app desktop per Windows;
+2. pubblica su GHCR le immagini di API e web (con gli installer) per amd64 e arm64;
+3. se `AUTO_DEPLOY = true`, richiama **Deploy** per lo stesso commit, che **aspetta la tua
+   approvazione** (email di GitHub e pulsante *Review deployments* nella pagina del run).
+
+Approvato, **Deploy**:
+
+1. verifica che le immagini di quel commit esistano;
+2. **controlla la macchina**: Docker utilizzabile, `.env` presente, `APP_DOMAIN` uguale a quello
+   dell'environment, `ACME_EMAIL` valida, spazio libero;
+3. copia compose, Caddyfile, realm e tema di Keycloak del commit;
+4. verifica la configurazione, scarica le immagini (accesso a GHCR valido solo per quel job), avvia;
+5. attende che `https://<dominio>/api/health` risponda (fino a 5 minuti).
+
+Se un nuovo rilascio arriva mentre un deploy aspetta l'approvazione, quello in attesa viene
+sostituito dal più recente. Si può sempre lanciare **Deploy** a mano: vuoto = ultima versione di
+`main`, oppure un commit precedente (40 caratteri) per **tornare indietro**.
 
 La prima volta Keycloak e il certificato richiedono 1–2 minuti. Poi apri `https://<dominio>`.
 L'app per Windows si scarica da `https://<dominio>/app-desktop` (link «App per Windows» nella pagina
 di accesso); al primo avvio chiede l'indirizzo del server, mostrato nella stessa pagina.
 
-## 11. Primo accesso e utenti
+## 8. Primo accesso e utenti
 
-Come nella guida Oracle, [passo 7](deploy-oracle-cloud.md#7-primo-accesso-e-utenti): console su
-`https://<dominio>/sso/admin` con `KEYCLOAK_ADMIN` / `KEYCLOAK_ADMIN_PASSWORD`, amministratore
-nominativo, poi gli utenti del realm `gestionale` con l'attributo `tenant_id`.
+Console su `https://<dominio>/sso/admin` con `admin` e la password del passo 6; crea un
+amministratore nominativo, poi gli utenti del realm `gestionale` con l'attributo `tenant_id`:
+[gestione-utenti-e-aziende.md](gestione-utenti-e-aziende.md).
 
-## 12. Dopo
+## 9. Dopo
 
 | Cosa | Come |
 |------|------|
-| Nuova versione | merge su `main` → *Release immagini* verde → **Deploy** |
-| Tornare indietro | **Deploy** con un commit precedente (40 caratteri) |
-| Backup del database | [passo 10 della guida Oracle](deploy-oracle-cloud.md#10-backup-del-database) (uguale); conviene copiarli anche fuori dal VPS |
-| Comandi utili (stato, log, riavvio) | [passo 11 della guida Oracle](deploy-oracle-cloud.md#11-comandi-utili-sulla-macchina) |
+| Stato, log, riavvio dei servizi | [passo 11 della guida Oracle](deploy-oracle-cloud.md#11-comandi-utili-sulla-macchina) (uguale) |
 | Email delle notifiche | [passo 9 della guida Oracle](deploy-oracle-cloud.md#9-email-delle-notifiche-facoltativo) |
-| Aggiornamenti di sicurezza del sistema | automatici (`unattended-upgrades`); riavvio quando serve: `[ -f /var/run/reboot-required ] && sudo reboot` |
+| Backup | ogni notte in `/opt/civilbeefy/backup`; conviene copiarli anche fuori dal VPS (es. `scp` sul tuo PC o uno storage) |
+| Aggiornamenti di sistema | automatici; per un riavvio pulito: **Prepara server** con **Riavvia** |
+| Nuovo server (o cambio fornitore) | passi 2–6 sul nuovo server, poi **Deploy**; i dati si portano con un backup |
+
+## Fare a mano invece di Prepara server
+
+Gli stessi passi, se preferisci (come `ubuntu`):
+
+```bash
+sudo apt update && sudo apt -y upgrade && sudo apt -y install unattended-upgrades
+sudo ufw allow OpenSSH && sudo ufw allow 80/tcp && sudo ufw allow 443/tcp && sudo ufw allow 443/udp && sudo ufw --force enable
+printf 'PasswordAuthentication no\nKbdInteractiveAuthentication no\nPermitRootLogin no\n' | sudo tee /etc/ssh/sshd_config.d/01-civilbeefy.conf && sudo systemctl reload ssh
+curl -fsSL https://get.docker.com | sudo sh && sudo usermod -aG docker ubuntu
+```
+
+Il file SSH si chiama `01-…` perché `sshd` usa il **primo** valore che trova e legge i file in ordine
+alfabetico: molti VPS hanno `50-cloud-init.conf` con `PasswordAuthentication yes`, che vincerebbe su
+un file `99-…`. Verifica con `sudo sshd -T | grep -Ei 'passwordauthentication|permitrootlogin'`
+(deve dire `no` per entrambi).
+
+Dopo `usermod` esci e ricollegati. Per il `.env` copia
+[`infra/deploy/oracle/.env.example`](../infra/deploy/oracle/.env.example) in `/opt/civilbeefy/.env`
+(`chmod 600`) e genera ogni password con `openssl rand -hex 24`.
 
 ## Problemi frequenti
 
@@ -251,13 +229,17 @@ nominativo, poi gli utenti del realm `gestionale` con l'attributo `tenant_id`.
 |---------|-------------------|
 | Il pannello rifiuta la chiave SSH | Togli il commento finale (testo dopo la chiave); in alternativa usa una chiave RSA (`ssh-keygen -t rsa -b 4096`) |
 | `Enter passphrase for key` | È la passphrase della **tua** chiave: è normale |
-| Passphrase dimenticata | Crea una nuova `civilbeefy` (passo 1, rispondi `y` a *Overwrite*); come root (password o console web del fornitore) sostituiscila: `echo "<nuova .pub>" > /root/.ssh/authorized_keys` e lo stesso in `/home/ubuntu/.ssh/authorized_keys` (poi riaggiungi con `>>` la chiave del deploy) |
+| Passphrase dimenticata | Crea una nuova `civilbeefy` (passo 1, rispondi `y` a *Overwrite*); come root (password o console web del fornitore) metti la nuova `.pub` in `/root/.ssh/authorized_keys` e in `/home/ubuntu/.ssh/authorized_keys` al posto della vecchia (lascia la chiave del deploy) |
 | `Saving key "\\civilbeefy" failed: Permission denied` | Nel comando manca `$env:USERPROFILE\.ssh\`: il file finirebbe in `C:\` |
-| `Waiting for cache lock … unattended-upgr` | Aggiornamenti automatici in corso: aspetta |
-| `ssh-keyscan`: *unsupported KEX method* | OpenSSH di Windows troppo vecchio: leggi l'impronta dalla macchina (passo 9) |
+| `Waiting for cache lock … unattended-upgr` | Aggiornamenti automatici in corso: aspetta (Prepara server attende da solo) |
+| Schermate viola durante gli aggiornamenti | **Invio** sul valore proposto (Prepara server non le mostra) |
+| `docker ps`: *permission denied … docker.sock* | L'utente è stato appena aggiunto al gruppo `docker`: esci e ricollegati |
+| `ssh-keyscan`: *unsupported KEX method* | OpenSSH di Windows troppo vecchio: leggi l'impronta dalla macchina (passo 3) |
 | `nslookup`: *Non-existent domain* | Prova `nslookup <dominio> 1.1.1.1`; se risponde, è il DNS della rete del PC |
-| Deploy: *Docker non è installato* / *non può usare Docker* | Passo 6; dopo `usermod` serve un nuovo accesso |
-| Deploy: *APP_DOMAIN … non è* / *ACME_EMAIL … non valido* | Correggi `/opt/civilbeefy/.env` (passo 7) o la variabile `APP_DOMAIN` dell'environment |
-| Deploy: *Host key verification failed* | `OCI_SSH_KNOWN_HOSTS` non corrisponde: rigenera la riga (passo 9) |
-| Deploy: *Permission denied (publickey)* | Manca la chiave pubblica del deploy sul server, o `OCI_SSH_PRIVATE_KEY` non è completo |
-| Il sito non ha il certificato | Porte 80/443 chiuse (passo 5 e firewall del fornitore) o DNS non ancora aggiornato; log: `docker compose logs caddy` |
+| Prepara server: *deve poter usare sudo senza password* | Rifai il comando del passo 3 come root |
+| Workflow: *Collegamento SSH … non riuscito* | Manca la chiave pubblica del deploy in `/home/ubuntu/.ssh/authorized_keys`, `OCI_SSH_PRIVATE_KEY` incompleto o `OCI_SSH_KNOWN_HOSTS` sbagliato |
+| Deploy: *Docker non è installato* / *Manca .env* | Lancia **Prepara server** |
+| Deploy: *APP_DOMAIN … non è* / *ACME_EMAIL … non valido* | Correggi `/opt/civilbeefy/.env` o la variabile dell'environment |
+| Il deploy non parte dopo un merge | Manca `AUTO_DEPLOY = true` tra le variabili del repository, oppure *Release immagini* è fallito |
+| Il deploy è partito senza chiedere approvazione | Mancano i *Required reviewers* nell'environment `production`: aggiungili subito |
+| Il sito non ha il certificato | Porte 80/443 chiuse (firewall del fornitore) o DNS non aggiornato; log: `docker compose logs caddy` |

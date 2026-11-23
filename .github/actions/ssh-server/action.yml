@@ -1,0 +1,55 @@
+name: Collegamento SSH al server
+description: >
+  Configura l'alias SSH "server" verso la macchina di produzione, con la chiave del deploy e
+  l'impronta della macchina verificata (StrictHostKeyChecking). Usata da Deploy e Prepara server.
+
+inputs:
+  host:
+    description: Indirizzo della macchina (secret OCI_SSH_HOST)
+    required: true
+  user:
+    description: Utente SSH (secret OCI_SSH_USER, di solito ubuntu)
+    required: true
+  private-key:
+    description: Chiave privata del deploy (secret OCI_SSH_PRIVATE_KEY)
+    required: true
+  known-hosts:
+    description: Riga dell'impronta della macchina (secret OCI_SSH_KNOWN_HOSTS)
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        SSH_HOST: ${{ inputs.host }}
+        SSH_USER: ${{ inputs.user }}
+        SSH_KEY: ${{ inputs.private-key }}
+        KNOWN_HOSTS: ${{ inputs.known-hosts }}
+      run: |
+        missing=""
+        [ -n "$SSH_HOST" ] || missing="$missing OCI_SSH_HOST"
+        [ -n "$SSH_USER" ] || missing="$missing OCI_SSH_USER"
+        [ -n "$SSH_KEY" ] || missing="$missing OCI_SSH_PRIVATE_KEY"
+        [ -n "$KNOWN_HOSTS" ] || missing="$missing OCI_SSH_KNOWN_HOSTS"
+        if [ -n "$missing" ]; then
+          echo "::error::Mancano nell'environment production i secrets:$missing (docs/deploy-vps.md)."
+          exit 1
+        fi
+        install -m 700 -d ~/.ssh
+        printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy
+        chmod 600 ~/.ssh/id_deploy
+        printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+        {
+          echo "Host server"
+          echo "  HostName $SSH_HOST"
+          echo "  User $SSH_USER"
+          echo "  IdentityFile ~/.ssh/id_deploy"
+          echo "  IdentitiesOnly yes"
+          echo "  StrictHostKeyChecking yes"
+          echo "  ServerAliveInterval 30"
+        } > ~/.ssh/config
+        if ! ssh -o BatchMode=yes -o ConnectTimeout=20 server true; then
+          echo "::error::Collegamento SSH a $SSH_USER@$SSH_HOST non riuscito: controlla la chiave pubblica del deploy sulla macchina e OCI_SSH_KNOWN_HOSTS (docs/deploy-vps.md)."
+          exit 1
+        fi

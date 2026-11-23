@@ -28,7 +28,7 @@ Rilasci: a ogni merge su `main` il workflow **Release immagini** pubblica le imm
 
 ## 1. Creare la macchina virtuale
 
-> **In alternativa, da GitHub**: il workflow *Infrastruttura* crea con Terraform rete, porte, macchina
+> **In alternativa, da GitHub**: il workflow *Infrastruttura Oracle* crea con Terraform rete, porte, macchina
 > e IP fisso, e riprova da solo ogni ora finché Oracle non ha macchine A1 libere. Configurazione in
 > [`infra/terraform/oracle/README.md`](../infra/terraform/oracle/README.md); poi riprendi da qui al
 > passo 3 (dominio) e, del passo 4, crea solo il file `.env`. Non mescolare le due strade sulla stessa rete.
@@ -80,6 +80,10 @@ Let's Encrypt rilascia i certificati solo a un nome a dominio, non a un IP.
 Verifica dal tuo PC: `nslookup <dominio>` deve restituire l'IP della macchina.
 
 ## 4. Preparare la macchina
+
+> Il workflow **Prepara server** ([deploy-vps.md](deploy-vps.md#6-prepara-server)) è pensato per i
+> VPS e usa il firewall `ufw`: sulle immagini Oracle, che hanno già regole `iptables` proprie, segui
+> invece i passi qui sotto (o usa Terraform, che li fa al primo avvio).
 
 Sempre collegato in SSH:
 

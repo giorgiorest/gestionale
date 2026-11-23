@@ -1,0 +1,99 @@
+name: Prepara server
+
+# Prepara (o rimette in ordine) la macchina di produzione via SSH: aggiornamenti, firewall,
+# SSH solo con chiave, Docker, cartella dell'app, .env con password casuali (solo se manca),
+# backup giornaliero del database. Idempotente: si può rilanciare quando si vuole.
+# Script: infra/deploy/oracle/prepare-server.sh · Guida: docs/deploy-vps.md
+#
+# Prima volta: serve solo l'utente con la chiave del deploy e sudo senza password (passo 3 della
+# guida). Usa lo stesso environment "production" del Deploy, con in più la variabile ACME_EMAIL.
+
+on:
+  workflow_dispatch:
+    inputs:
+      reboot:
+        description: Riavvia la macchina se gli aggiornamenti lo richiedono (circa 1 minuto di interruzione)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://${{ vars.APP_DOMAIN }}
+    # Mai insieme a un deploy.
+    concurrency:
+      group: production
+      cancel-in-progress: false
+    env:
+      APP_DIR: ${{ vars.OCI_APP_DIR || '/opt/civilbeefy' }}
+      DOMAIN: ${{ vars.APP_DOMAIN }}
+      ACME_EMAIL: ${{ vars.ACME_EMAIL }}
+      REGISTRY: ghcr.io/${{ github.repository_owner }}
+      SSH_USER: ${{ secrets.OCI_SSH_USER }}
+    steps:
+      - name: Configurazione
+        run: |
+          missing=""
+          [ -n "$DOMAIN" ] || missing="$missing APP_DOMAIN"
+          [ -n "$ACME_EMAIL" ] || missing="$missing ACME_EMAIL"
+          if [ -n "$missing" ]; then
+            echo "::error::Mancano le variabili dell'environment production:$missing (docs/deploy-vps.md)."; exit 1
+          fi
+          echo "$ACME_EMAIL" | grep -Eq '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$' ||
+            { echo "::error::ACME_EMAIL non è un indirizzo email valido."; exit 1; }
+
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/ssh-server
+        with:
+          host: ${{ secrets.OCI_SSH_HOST }}
+          user: ${{ secrets.OCI_SSH_USER }}
+          private-key: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+          known-hosts: ${{ secrets.OCI_SSH_KNOWN_HOSTS }}
+
+      - name: Prepara la macchina
+        run: |
+          ssh server "sudo -n true" ||
+            { echo "::error::L'utente $SSH_USER deve poter usare sudo senza password (docs/deploy-vps.md, passo 3)."; exit 1; }
+          ssh server sudo bash -s "$APP_DIR" "$DOMAIN" "$ACME_EMAIL" "$REGISTRY" "$SSH_USER" \
+            < infra/deploy/oracle/prepare-server.sh | tee prepare.log
+          if grep -qx 'reboot-required' prepare.log; then
+            echo "reboot=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Riavvio
+        if: env.reboot == 'true'
+        env:
+          REBOOT: ${{ inputs.reboot }}
+        run: |
+          if [ "$REBOOT" != "true" ]; then
+            echo "::warning::Gli aggiornamenti richiedono un riavvio: rilancia Prepara server con «Riavvia», oppure sulla macchina: sudo reboot"
+            exit 0
+          fi
+          ssh server "sudo systemctl reboot" || true
+          sleep 30
+          for _ in $(seq 1 30); do
+            if ssh -o ConnectTimeout=10 server true 2> /dev/null; then
+              echo "Macchina di nuovo raggiungibile."; exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::La macchina non risponde dopo il riavvio: controlla dal pannello del fornitore."
+          exit 1
+
+      - name: Riepilogo
+        run: |
+          {
+            echo "## Macchina pronta"
+            echo
+            echo "- Cartella: \`$APP_DIR\` · dominio: \`$DOMAIN\`"
+            echo "- Firewall: 22, 80, 443 · SSH solo con chiave · backup del database ogni notte alle 3"
+            echo "- Password di Keycloak (primo accesso), sulla macchina: \`grep KEYCLOAK_ADMIN_PASSWORD $APP_DIR/.env\`"
+            echo
+            echo "Prossimo passo: **Deploy** (Actions → Deploy → Run workflow), o il prossimo rilascio con AUTO_DEPLOY."
+          } >> "$GITHUB_STEP_SUMMARY"

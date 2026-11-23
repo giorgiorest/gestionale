@@ -1,7 +1,7 @@
-name: Infrastruttura
+name: Infrastruttura Oracle
 
 # Crea o aggiorna su Oracle Cloud la rete, le porte, la macchina e l'IP fisso di produzione
-# (Terraform, infra/terraform/oracle). Manuale, oppure richiamato da "Infrastruttura (tentativi)".
+# (Terraform, infra/terraform/oracle). Manuale, oppure richiamato da "Infrastruttura Oracle (tentativi)".
 # Guida: infra/terraform/oracle/README.md
 #
 # Configurazione nell'environment GitHub "oracle-cloud" (Settings → Environments):
@@ -120,12 +120,12 @@ jobs:
           # Piano + controllo: senza allow_destroy non si elimina né si ricrea nulla
           # (tranne le risorse rimaste a metà da un tentativo fallito).
           plan() {
-            terraform plan -input=false -no-color -out=tfplan "$@" || return 1
+            terraform plan -input=false -no-color -out=tfplan || return 1
             terraform show -json tfplan > plan.json
             deletes=$(jq -r '.resource_changes[]? | select(.change.actions | index("delete"))
               | select(.action_reason != "replace_because_tainted") | .address' plan.json)
             if [ -n "$deletes" ] && [ "$ALLOW_DESTROY" != "true" ]; then
-              echo "::error::Il piano eliminerebbe o ricreerebbe: $(echo $deletes). Rilancia con allow_destroy solo se è voluto."
+              echo "::error::Il piano eliminerebbe o ricreerebbe: $(echo "$deletes" | tr "\n" " "). Rilancia con allow_destroy solo se è voluto."
               return 1
             fi
           }
@@ -170,7 +170,7 @@ jobs:
           SHAPE: ${{ steps.run.outputs.shape }}
         run: |
           # Alla prima creazione SSH risponde dopo 1-2 minuti.
-          for i in $(seq 1 30); do
+          for _ in $(seq 1 30); do
             hostkey=$(ssh-keyscan -T 5 -t ed25519 "$IP" 2>/dev/null) && [ -n "$hostkey" ] && break
             sleep 10
           done
