@@ -1,0 +1,150 @@
+/*
+ * Tema di login "gestionale": stesso marchio dell'applicazione web.
+ *
+ * Personalizzazione per cliente: creare un tema figlio (parent=gestionale) che ridefinisce
+ * solo le variabili --gestionale-* (vedi infra/keycloak/README.md).
+ *
+ * Font Inter incluso nel tema (licenza SIL OFL, fonts/OFL-Inter.txt): nessuna richiesta a Google.
+ */
+
+@font-face {
+    font-family: 'Inter Variable';
+    font-style: normal;
+    font-display: swap;
+    font-weight: 100 900;
+    src: url('../fonts/inter-latin-ext-wght-normal.woff2') format('woff2-variations');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+    font-family: 'Inter Variable';
+    font-style: normal;
+    font-display: swap;
+    font-weight: 100 900;
+    src: url('../fonts/inter-latin-wght-normal.woff2') format('woff2-variations');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+    /* ---- Marchio (da ridefinire nei temi dei clienti) ---- */
+    --gestionale-primary: #0B5C8E;
+    --gestionale-primary-hover: color-mix(in srgb, var(--gestionale-primary) 82%, black);
+    --gestionale-logo-url: url('../img/logo.svg');
+    --gestionale-background: #f3f6fa;
+    --gestionale-surface: #ffffff;
+    --gestionale-text: #191c20;
+    --gestionale-text-muted: #42474e;
+    --gestionale-outline: #c2c7cf;
+    --gestionale-radius: 16px;
+
+    /* ---- PatternFly 5 ---- */
+    --pf-v5-global--FontFamily--text: 'Inter Variable', 'Segoe UI', Roboto, sans-serif;
+    --pf-v5-global--FontFamily--heading: 'Inter Variable', 'Segoe UI', Roboto, sans-serif;
+    --pf-v5-global--primary-color--100: var(--gestionale-primary);
+    --pf-v5-global--primary-color--200: var(--gestionale-primary-hover);
+    --pf-v5-global--link--Color: var(--gestionale-primary);
+    --pf-v5-global--link--Color--hover: var(--gestionale-primary-hover);
+    --pf-v5-global--active-color--100: var(--gestionale-primary);
+    --pf-v5-global--Color--100: var(--gestionale-text);
+    --pf-v5-global--Color--200: var(--gestionale-text-muted);
+
+    /* ---- Tema keycloak.v2 ---- */
+    --keycloak-card-top-color: transparent;
+    --keycloak-logo-url: var(--gestionale-logo-url);
+}
+
+/* Sfondo chiaro, come l'applicazione (al posto dell'immagine scura di Keycloak). */
+.login-pf body {
+    background: var(--gestionale-background);
+    font-family: var(--pf-v5-global--FontFamily--text);
+}
+
+/* Intestazione: logo e nome dell'applicazione (realm.displayNameHtml). */
+#kc-header-wrapper {
+    color: var(--gestionale-text) !important;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 26px;
+    font-weight: 500;
+    padding: 8px 0 4px;
+}
+
+div.kc-logo-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    width: auto;
+    height: auto;
+    background: none;
+}
+
+div.kc-logo-text::before {
+    content: '';
+    width: 48px;
+    height: 48px;
+    background: var(--gestionale-logo-url) no-repeat center / contain;
+}
+
+div.kc-logo-text span {
+    display: inline;
+}
+
+/* Scheda di accesso: bordo sottile e angoli arrotondati come le card dell'app. */
+.pf-v5-c-login__main {
+    background: var(--gestionale-surface);
+    border: 1px solid var(--gestionale-outline);
+    border-radius: var(--gestionale-radius);
+    box-shadow: none;
+    overflow: hidden;
+}
+
+.pf-v5-c-login__main-header {
+    border-top: none;
+}
+
+.pf-v5-c-title.pf-m-3xl {
+    font-size: 24px;
+    font-weight: 500;
+}
+
+/* Campi: bordo sottile, linea inferiore e focus nel colore del marchio (tutti uguali,
+   compreso il campo password con il pulsante "mostra"). */
+.pf-v5-c-form-control {
+    --pf-v5-c-form-control--before--BorderColor: var(--gestionale-outline);
+    --pf-v5-c-form-control--after--BorderBottomColor: var(--gestionale-outline);
+    --pf-v5-c-form-control--hover--after--BorderBottomColor: var(--gestionale-primary);
+    --pf-v5-c-form-control--focus--after--BorderBottomColor: var(--gestionale-primary);
+}
+
+.pf-v5-c-form-control > input,
+.pf-v5-c-form-control > select {
+    outline: none;
+}
+
+/* Focus ben visibile anche da tastiera, nel colore del marchio invece del nero del browser. */
+.pf-v5-c-form-control:focus-within,
+.pf-v5-c-input-group:focus-within .pf-v5-c-form-control {
+    outline: 2px solid var(--gestionale-primary);
+    outline-offset: 1px;
+}
+
+.pf-v5-c-button.pf-m-control {
+    --pf-v5-c-button--m-control--after--BorderColor: var(--gestionale-outline);
+}
+
+.pf-v5-c-button {
+    --pf-v5-c-button--BorderRadius: 999px;
+    font-weight: 500;
+}
+
+.pf-v5-c-button.pf-m-primary {
+    --pf-v5-c-button--m-primary--BackgroundColor: var(--gestionale-primary);
+    --pf-v5-c-button--m-primary--hover--BackgroundColor: var(--gestionale-primary-hover);
+    --pf-v5-c-button--m-primary--focus--BackgroundColor: var(--gestionale-primary-hover);
+    --pf-v5-c-button--m-primary--active--BackgroundColor: var(--gestionale-primary-hover);
+}
+
+.pf-v5-c-check__input {
+    accent-color: var(--gestionale-primary);
+}

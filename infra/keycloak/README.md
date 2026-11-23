@@ -5,6 +5,7 @@ Decisioni e motivazioni: [ADR 0003](../../docs/decisioni/0003-identita-keycloak.
 | File | Uso |
 |------|-----|
 | `realm/gestionale-realm.json` | Configurazione di prodotto del realm `gestionale`: ruoli, client `gestionale-web`, mapper dei claim, policy password, lingua. Uguale per ogni installazione. |
+| `themes/gestionale/login` | Tema della pagina di login: logo, colori e font dell'applicazione (eredita da `keycloak.v2`). |
 | `dev/gestionale-users-0.json` | **Solo sviluppo**: utenti demo del tenant demo. Non caricarlo mai in un'installazione reale. |
 
 ## Avvio in sviluppo
@@ -13,7 +14,7 @@ Con compose parte da solo (`docker compose -f infra/docker/compose.yml up`).
 Da solo, con Podman o Docker, dalla radice del repository:
 
 ```bash
-podman run -d --name gestionale-keycloak -p 8180:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin -e GESTIONALE_WEB_URL=http://localhost:4200 -v ./infra/keycloak/realm/gestionale-realm.json:/opt/keycloak/data/import/gestionale-realm.json:ro,Z -v ./infra/keycloak/dev/gestionale-users-0.json:/opt/keycloak/data/import/gestionale-users-0.json:ro,Z quay.io/keycloak/keycloak:26.8.2 start-dev --import-realm
+podman run -d --name gestionale-keycloak -p 8180:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin -e GESTIONALE_WEB_URL=http://localhost:4200 -v ./infra/keycloak/realm/gestionale-realm.json:/opt/keycloak/data/import/gestionale-realm.json:ro,Z -v ./infra/keycloak/dev/gestionale-users-0.json:/opt/keycloak/data/import/gestionale-users-0.json:ro,Z -v ./infra/keycloak/themes/gestionale:/opt/keycloak/themes/gestionale:ro,Z quay.io/keycloak/keycloak:26.8.2 start-dev --import-realm
 ```
 
 - Console di amministrazione: <http://localhost:8180/admin> (admin / admin in sviluppo).
@@ -90,7 +91,52 @@ Si configura nel realm come *Identity provider* (o *User federation* per LDAP/AD
 mapper che imposta l'attributo `tenant_id` e il ruolo di default per gli utenti di quel cliente.
 L'applicazione non cambia.
 
-### Personalizzazione grafica
+### Pagina di login (tema `gestionale`)
 
-Il tema di login si può personalizzare per cliente (logo, colori) con un tema Keycloak
-dedicato; da predisporre in `infra/keycloak/themes/` quando servirà.
+Il realm usa il tema di login `gestionale` (`loginTheme` nel file del realm), in
+`themes/gestionale/login`. Eredita da `keycloak.v2` e cambia solo l'aspetto, quindi gli
+aggiornamenti di Keycloak continuano ad applicarsi:
+
+- `theme.properties`: tema padre e fogli di stile;
+- `resources/css/gestionale.css`: colori, forme e intestazione, tutto tramite variabili `--gestionale-*`;
+- `resources/img/logo.svg`: logo (stesso simbolo dell'app);
+- `resources/fonts/`: font Inter incluso (licenza OFL), nessuna richiesta a Google.
+
+Il nome sotto il logo è `displayNameHtml` del realm. Il tema va montato (o copiato) in
+`/opt/keycloak/themes/gestionale`: lo fanno compose e i comandi `podman run` del README.
+In sviluppo (`start-dev`) le modifiche a CSS e immagini si vedono ricaricando la pagina;
+le modifiche a `theme.properties` o al realm richiedono di ricreare il container.
+
+#### Tema per un cliente
+
+Si crea un tema figlio con il marchio del cliente, senza toccare quello di prodotto
+(esempio `gestionale-rossi`):
+
+```
+themes/gestionale-rossi/login/
+├── theme.properties
+└── resources/
+    ├── css/cliente.css
+    └── img/logo-cliente.svg
+```
+
+`theme.properties`:
+
+```
+parent=gestionale
+import=common/keycloak
+styles=css/styles.css css/gestionale.css css/cliente.css
+```
+
+`resources/css/cliente.css`:
+
+```css
+:root {
+    --gestionale-primary: #8B1F3A;
+    --gestionale-logo-url: url("../img/logo-cliente.svg");
+}
+```
+
+Poi, nel realm dell'installazione: *Realm settings → Themes → Login theme* = `gestionale-rossi`
+e *Realm settings → General → HTML display name* con il nome del cliente
+(`<div class="kc-logo-text"><span>Rossi Gestionale</span></div>`).
