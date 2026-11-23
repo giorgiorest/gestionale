@@ -10,6 +10,7 @@ sostituito, perché lo usano configurazioni, token e installazioni esistenti.
 - Desktop: Tauri 2 in apps/desktop, che incapsula la build web (Windows). Un solo installer per tutti i clienti: il server si sceglie al primo avvio. Installer generati da ci-desktop.yml.
 - Identità: Keycloak 26 (OIDC), realm versionato in infra/keycloak/realm; utenti demo solo in infra/keycloak/dev. Frontend con oidc-client-ts (Authorization Code + PKCE).
 - Infrastruttura locale: infra/docker/compose.yml (compatibile con Docker e Podman).
+- Infrastruttura cloud: Terraform in infra/terraform/oracle (ADR 0007), applicato solo dai workflow Infrastruttura; stato su Oracle Object Storage, mai nel repository.
 - AI: modulo `ai/` in apps/api, provider-agnostico. Assistente chat nel frontend in `features/assistant`.
 - Multi-tenant: ogni tenant è un'azienda cliente oppure un tenant demo. Un'unica istanza serve più tenant, con Row Level Security su PostgreSQL.
 

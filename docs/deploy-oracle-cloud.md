@@ -26,6 +26,11 @@ Rilasci: a ogni merge su `main` il workflow **Release immagini** pubblica le imm
 
 ## 1. Creare la macchina virtuale
 
+> **In alternativa, da GitHub**: il workflow *Infrastruttura* crea con Terraform rete, porte, macchina
+> e IP fisso, e riprova da solo ogni ora finché Oracle non ha macchine A1 libere. Configurazione in
+> [`infra/terraform/oracle/README.md`](../infra/terraform/oracle/README.md); poi riprendi da qui al
+> passo 3 (dominio) e, del passo 4, crea solo il file `.env`. Non mescolare le due strade sulla stessa rete.
+
 Console Oracle Cloud → **Compute → Instances → Create instance**:
 
 1. **Image**: *Canonical Ubuntu 24.04* (la versione per aarch64 viene scelta da sola con la shape ARM).
