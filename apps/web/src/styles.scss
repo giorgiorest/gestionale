@@ -1,7 +1,7 @@
 // Tema dell'applicazione: Angular Material 3.
 //
 // - Palette di prodotto generata dal colore del marchio (src/styles/_theme-colors.scss,
-//   rigenerabile con: npx ng generate @angular/material:theme-color --primary-color=#RRGGBB
+//   rigenerabile con: npx ng generate @angular/material:theme-color --primary-color=#0B5C8E
 //   --directory=src/styles/ --is-scss --force).
 // - Font (Inter) e icone (Material Symbols) sono inclusi nell'app, non scaricati da Google:
 //   funzionano offline e non trasmettono a terzi gli indirizzi IP degli utenti.
@@ -10,6 +10,10 @@
 // - Nei componenti usare solo le variabili di sistema (var(--mat-sys-…)), mai colori fissi.
 @use '@angular/material' as mat;
 @use './styles/theme-colors' as brand;
+
+// Colore principale del marchio. La palette in _theme-colors.scss è generata da questo valore;
+// qui lo si impone come colore primario esatto (Material 3 userebbe la tonalità 40 della palette).
+$brand-primary: #0b5c8e;
 
 html {
   color-scheme: light;
@@ -25,6 +29,12 @@ html {
         brand-family: ('Inter Variable', 'Segoe UI', Roboto, sans-serif),
       ),
       density: 0,
+    )
+  );
+  @include mat.theme-overrides(
+    (
+      primary: $brand-primary,
+      surface-tint: $brand-primary,
     )
   );
 }

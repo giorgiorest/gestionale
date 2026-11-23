@@ -20,10 +20,11 @@ Interfaccia unica per browser (PWA) e app desktop (Tauri). Avvio, build e test: 
 
 1. **Logo**: sostituisci `public/branding/logo.svg` (meglio SVG quadrato; va bene anche PNG,
    aggiornando `DEFAULT_BRANDING.logoUrl` in `src/app/core/branding/branding.service.ts`).
-2. **Colori**: rigenera la palette dal colore principale del marchio:
+2. **Colori**: il colore principale attuale è `#0B5C8E`. Per cambiarlo, rigenera la palette e
+   aggiorna `$brand-primary` in `src/styles.scss`:
 
    ```bash
-   npx ng generate @angular/material:theme-color --primary-color=#1F5F8B --directory=src/styles/ --is-scss --force --interactive=false
+   npx ng generate @angular/material:theme-color --primary-color=#0B5C8E --directory=src/styles/ --is-scss --force --interactive=false
    ```
 
    Si possono indicare anche `--secondary-color`, `--tertiary-color`, `--neutral-color`.

@@ -1,6 +1,8 @@
 {
   "name": "Gestionale",
   "short_name": "Gestionale",
+  "theme_color": "#0B5C8E",
+  "background_color": "#FFFFFF",
   "display": "standalone",
   "scope": "./",
   "start_url": "./",
