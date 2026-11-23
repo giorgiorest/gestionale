@@ -42,6 +42,14 @@
     "windows": {
       "webviewInstallMode": {
         "type": "downloadBootstrapper"
+      },
+      "wix": {
+        "language": "it-IT"
+      },
+      "nsis": {
+        "languages": [
+          "Italian"
+        ]
       }
     }
   }
