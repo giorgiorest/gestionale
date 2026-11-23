@@ -17,11 +17,22 @@ public final class TestJwt {
     }
 
     public static JwtRequestPostProcessor user(UUID tenant, String... roles) {
+        return build(tenant, "user-" + String.join("-", roles), "mario.rossi", "Mario Rossi", "mario.rossi@example.com", roles);
+    }
+
+    /** Utente con identità esplicita (sub, nome, email). */
+    public static JwtRequestPostProcessor person(UUID tenant, String subject, String name, String email,
+                                                 String... roles) {
+        return build(tenant, subject, subject, name, email, roles);
+    }
+
+    private static JwtRequestPostProcessor build(UUID tenant, String subject, String username, String name,
+                                                 String email, String... roles) {
         return jwt()
-                .jwt(j -> j.subject("user-" + String.join("-", roles))
-                        .claim("preferred_username", "mario.rossi")
-                        .claim("name", "Mario Rossi")
-                        .claim("email", "mario.rossi@example.com")
+                .jwt(j -> j.subject(subject)
+                        .claim("preferred_username", username)
+                        .claim("name", name)
+                        .claim("email", email)
                         .claim("tenant_id", tenant.toString())
                         .claim("roles", List.of(roles)))
                 .authorities(CONVERTER);

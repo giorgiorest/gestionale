@@ -26,6 +26,7 @@ export const PERMISSION_LABELS: Record<string, string> = {
   'customers:read': 'Consultare i clienti',
   'customers:write': 'Creare e modificare i clienti',
   'assistant:use': "Usare l'assistente",
+  'notifications:send': 'Inviare comunicazioni ai dipendenti',
   'users:manage': 'Gestire gli utenti',
 };
 

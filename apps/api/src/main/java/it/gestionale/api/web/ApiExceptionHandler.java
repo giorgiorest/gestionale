@@ -4,6 +4,8 @@ import it.gestionale.api.ai.AiQuotaExceededException;
 import it.gestionale.api.ai.AiUnavailableException;
 import it.gestionale.api.licensing.FeatureNotEnabledException;
 import it.gestionale.api.licensing.InvalidLicenseException;
+import it.gestionale.api.notifications.NotificationNotFoundException;
+import it.gestionale.api.notifications.UnknownRecipientException;
 import it.gestionale.api.tenancy.MissingTenantException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -39,6 +41,16 @@ public class ApiExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     ProblemDetail conflict(DataIntegrityViolationException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Operazione in conflitto con i dati esistenti");
+    }
+
+    @ExceptionHandler(UnknownRecipientException.class)
+    ProblemDetail unknownRecipient(UnknownRecipientException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler(NotificationNotFoundException.class)
+    ProblemDetail notificationNotFound(NotificationNotFoundException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
     }
 
     @ExceptionHandler(InvalidLicenseException.class)

@@ -34,6 +34,7 @@ gestionale/
 | `tenancy/`   | `TenantContext`, `TenantFilter` (tenant dal JWT), `TenantAwareDataSource` (imposta `app.tenant_id` sulla connessione) |
 | `licensing/` | `Entitlements`, `EntitlementService`, `LicenseVerifier` (licenze offline Ed25519), `GET /api/entitlements` |
 | `customers/` | anagrafica clienti: `GET /api/customers`, `PUT /api/customers/{id}` (idempotente) |
+| `notifications/` | notifiche e comunicazioni ai dipendenti, presa visione, rubrica, invio email (`EmailDispatcher`) |
 | `ai/`        | `AiProvider`, `AiTool`, `NoopAiProvider` (503), quota mensile, `POST /api/ai/chat` |
 | `demo/`      | `DemoTenantSeeder` con `reset()` |
 | `health/`    | `GET /api/health` |
@@ -47,8 +48,9 @@ gestionale/
 | `core/profile`             | profilo, ruoli e permessi (`GET /api/me`), `*appHasPermission`, `permissionGuard` |
 | `core/entitlements`        | funzionalità del piano, `*appHasFeature`, `featureGuard` |
 | `core/sync`                | outbox: `enqueue`, `flush` (invio al server), `pullChanges` (da fare) |
+| `core/notifications`       | notifiche dell'utente, campanella con contatore |
 | `db/`                      | `LocalDb` (Dexie): `outbox`, `customers`, `syncState` |
-| `features/`                | `auth` (accesso), `server` (app desktop), `home`, `profile`, `customers`, `assistant` |
+| `features/`                | `auth` (accesso), `server` (app desktop), `home`, `profile`, `customers`, `notifications`, `announcements` (comunicazioni), `assistant` |
 | `shared/`                  | utilità (UUID v7) |
 
 ## Prerequisiti
@@ -63,7 +65,7 @@ gestionale/
 
 ## Avvio locale (sviluppo)
 
-Quattro processi: database, Keycloak, API, web. I comandi sono per PowerShell/bash; con Docker
+Cinque processi: database, Keycloak, Mailpit (email di prova), API, web. I comandi sono per PowerShell/bash; con Docker
 sostituisci `podman` con `docker`. Su Windows e macOS, con Podman, prima `podman machine start`.
 
 **1. Database** (PostgreSQL 17), dalla radice del repository:
@@ -81,14 +83,22 @@ Le password coincidono con i default del profilo `dev`.
 podman run -d --name gestionale-keycloak -p 8180:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin -e GESTIONALE_WEB_URL=http://localhost:4200 -v ./infra/keycloak/realm/gestionale-realm.json:/opt/keycloak/data/import/gestionale-realm.json:ro,Z -v ./infra/keycloak/dev/gestionale-users-0.json:/opt/keycloak/data/import/gestionale-users-0.json:ro,Z quay.io/keycloak/keycloak:26.8.2 start-dev --import-realm
 ```
 
-**3. API** (applica le migrazioni e crea il tenant demo):
+**3. Mailpit** (server email di sviluppo; le email delle notifiche si leggono su <http://localhost:8025>):
+
+```bash
+podman run -d --name gestionale-mailpit -p 1025:1025 -p 8025:8025 docker.io/axllent/mailpit:v1.34.0
+```
+
+Se non lo avvii l'app funziona lo stesso; l'API segnala nei log che le email non partono.
+
+**4. API** (applica le migrazioni e crea il tenant demo):
 
 ```bash
 cd apps/api
 ./mvnw spring-boot:run          # su Windows/PowerShell: .\mvnw.cmd spring-boot:run
 ```
 
-**4. Web**:
+**5. Web**:
 
 ```bash
 cd apps/web
@@ -100,7 +110,7 @@ Apri <http://localhost:4200> e accedi con un utente demo (password `demo-passwor
 
 | Utente | Ruolo | Cosa vede |
 |--------|-------|-----------|
-| `admin.demo` | Amministratore | tutto |
+| `admin.demo` | Amministratore | tutto, comprese le comunicazioni ai dipendenti |
 | `operatore.demo` | Operatore | clienti (lettura e inserimento), assistente |
 | `lettore.demo` | Consultazione | clienti in sola lettura |
 
@@ -138,6 +148,7 @@ Con Podman: `podman compose -f infra/docker/compose.yml up --build`.
 | web (nginx) | <http://localhost:8081> (proxy `/api` verso l'API) |
 | api | <http://localhost:8080/api/health> |
 | keycloak | <http://localhost:8180/admin> |
+| mailpit (email) | <http://localhost:8025> |
 | db | `localhost:5432` |
 
 L'immagine web genera `config.json` all'avvio dalle variabili `WEB_API_URL`, `OIDC_AUTHORITY`,
@@ -189,7 +200,25 @@ Dettagli, prerequisiti e cose da fare prima della vendita (firma, aggiornamenti)
 | `customers:read` — consultare i clienti | ✓ | ✓ | ✓ |
 | `customers:write` — creare e modificare i clienti | ✓ | ✓ | |
 | `assistant:use` — usare l'assistente (se incluso nel piano) | ✓ | ✓ | |
+| `notifications:send` — inviare comunicazioni ai dipendenti e vederne la presa visione | ✓ | | |
 | `users:manage` — gestire gli utenti (area da realizzare) | ✓ | | |
+
+## Notifiche e comunicazioni
+
+Dettagli: [ADR 0005](docs/decisioni/0005-notifiche.md).
+
+- **Dipendenti**: campanella con il numero di notifiche (in alto nella home), elenco in *Notifiche*;
+  le comunicazioni che richiedono la **presa visione** si confermano con un pulsante e restano
+  segnalate in home finché non sono confermate.
+- **Amministratori**: *Comunicazioni ai dipendenti* → titolo, testo, destinatari (tutta l'azienda,
+  un ruolo, una persona), presa visione, invio anche per email; per ogni comunicazione il report
+  di chi l'ha letta, chi ha confermato e lo stato dell'email.
+- **Sistema**: i moduli del gestionale creano notifiche con `NotificationService`.
+- Le persone compaiono tra i destinatari dopo il loro primo accesso; chi entra dopo l'invio riceve
+  comunque le comunicazioni con presa visione indirizzate alla sua azienda o al suo ruolo.
+- Email: in sviluppo Mailpit; in produzione `EMAIL_ENABLED=true`, `SPRING_MAIL_HOST`,
+  `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD`, `MAIL_FROM`, `APP_PUBLIC_URL`;
+  `EMAIL_INCLUDE_BODY=false` per inviare solo titolo e link.
 
 ## CI e deploy
 

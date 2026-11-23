@@ -29,6 +29,21 @@ export interface LocalCustomer {
   updatedAt: string;
 }
 
+/** Copia locale di una notifica dell'utente (stesso schema di GET /api/notifications). */
+export interface LocalNotification {
+  id: string;
+  kind: 'system' | 'announcement';
+  type: string;
+  title: string;
+  body: string;
+  link: string | null;
+  senderName: string | null;
+  createdAt: string;
+  requiresAck: boolean;
+  readAt: string | null;
+  acknowledgedAt: string | null;
+}
+
 /** Stato della sincronizzazione, ad esempio il cursore dell'ultimo pull per entità. */
 export interface SyncState {
   key: string;
@@ -42,6 +57,7 @@ export interface SyncState {
 export class LocalDb extends Dexie {
   outbox!: Table<OutboxEntry, string>;
   customers!: Table<LocalCustomer, string>;
+  notifications!: Table<LocalNotification, string>;
   syncState!: Table<SyncState, string>;
 
   // Nota: in Dexie si dichiarano solo chiave primaria e indici; i campi non indicizzati
@@ -52,6 +68,10 @@ export class LocalDb extends Dexie {
       outbox: 'id, createdAt, entity',
       customers: 'id, tenantId, updatedAt',
       syncState: 'key',
+    });
+    // v2: notifiche dell'utente.
+    this.version(2).stores({
+      notifications: 'id, createdAt',
     });
   }
 }

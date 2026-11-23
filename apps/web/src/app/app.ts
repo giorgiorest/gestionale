@@ -1,5 +1,8 @@
 import { Component } from '@angular/core';
-import { IonApp, IonRouterOutlet } from '@ionic/angular';
+// Entry point per singolo componente: importare dal barrel '@ionic/angular' porterebbe nel
+// bundle iniziale tutti i componenti Ionic usati anche dalle pagine caricate on demand.
+import { IonApp } from '@ionic/angular/ion-app';
+import { IonRouterOutlet } from '@ionic/angular/ion-router-outlet';
 
 @Component({
   selector: 'app-root',

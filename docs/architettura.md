@@ -93,6 +93,21 @@ Dettagli e motivazioni (anche per la rivendita): [ADR 0003](decisioni/0003-ident
 - Accesso a una funzione = **ruolo** dell'utente (permesso) **e** **piano** del tenant (entitlement).
 - L'attributo `tenant_id` lo modificano solo gli amministratori di Keycloak.
 
+## Notifiche
+
+Dettagli: [ADR 0005](decisioni/0005-notifiche.md).
+
+- Notifiche di sistema e comunicazioni degli amministratori, a una persona, a un ruolo o a tutta
+  l'azienda; una riga per destinatario con `read_at` e `acknowledged_at` (presa visione, ora del server).
+- I destinatari si risolvono da una **rubrica locale** (`app_users`) aggiornata a ogni accesso dai
+  claim del token, senza API del provider di identità. Al primo accesso un utente riceve le
+  comunicazioni con presa visione ancora valide per la sua azienda o il suo ruolo.
+- Canali: portale (campanella aggiornata ogni minuto, copia offline, letture e conferme via outbox)
+  ed email (coda `email_deliveries`, invio pianificato con tentativi). In seguito: tempo reale (SSE)
+  e push (Web Push, desktop, mobile).
+- Il processo di invio email lavora per tutti i tenant con `app.worker = 'email-dispatcher'`:
+  una policy RLS dedicata gli mostra solo la coda email.
+
 ## Multi-tenant
 
 - Ogni tenant è un'**azienda cliente** (`kind=customer`) o un **tenant demo** (`kind=demo`).

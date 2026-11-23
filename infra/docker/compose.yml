@@ -1,4 +1,4 @@
-# Stack locale di sviluppo: PostgreSQL + Keycloak + API + web.
+# Stack locale di sviluppo: PostgreSQL + Keycloak + Mailpit + API + web.
 # Funziona con Docker Compose e con Podman (podman compose): le immagini hanno il nome completo.
 # Avvio dalla radice del repository:
 #   cp infra/docker/.env.example infra/docker/.env   # poi impostare le password
@@ -46,6 +46,13 @@ services:
     ports:
       - "8180:8080"
 
+  mailpit:
+    # Server SMTP di sviluppo: cattura le email delle notifiche (interfaccia su http://localhost:8025).
+    image: docker.io/axllent/mailpit:v1.34.0
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
   api:
     build:
       context: ../../apps/api
@@ -64,6 +71,13 @@ services:
       # Le chiavi di firma si leggono dalla rete interna; l'issuer resta quello pubblico.
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/gestionale/protocol/openid-connect/certs
       LICENSE_PUBLIC_KEY: ${LICENSE_PUBLIC_KEY:-}
+      # Email delle notifiche (in produzione: SMTP reale e mittente dell'azienda).
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-true}
+      SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-mailpit}
+      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-1025}
+      MAIL_FROM: ${MAIL_FROM:-Gestionale <noreply@localhost>}
+      EMAIL_INCLUDE_BODY: ${EMAIL_INCLUDE_BODY:-true}
+      APP_PUBLIC_URL: ${GESTIONALE_WEB_URL:-http://localhost:8081}
       AI_PROVIDER: ${AI_PROVIDER:-none}
       AI_API_KEY: ${AI_API_KEY:-}
     ports:
