@@ -1,0 +1,36 @@
+name: Infrastruttura (tentativi)
+
+# Le macchine A1 gratuite spesso non sono disponibili ("Out of capacity"): questo workflow
+# riprova a creare l'infrastruttura ogni ora e si disattiva da solo quando la macchina esiste.
+# Si accende con la variabile di repository OCI_RETRY_ENABLED = true.
+# Guida: infra/terraform/oracle/README.md
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  create:
+    if: vars.OCI_RETRY_ENABLED == 'true'
+    uses: ./.github/workflows/infra.yml
+    with:
+      action: apply
+      small_shape_fallback: true
+      allow_destroy: false
+    secrets: inherit
+
+  stop:
+    needs: create
+    if: needs.create.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Macchina creata, disattivo i tentativi
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow disable infra-retry.yml --repo "$GITHUB_REPOSITORY"
