@@ -3,7 +3,7 @@
 #
 # Due modalità, dalla cartella infra/docker (dopo aver copiato .env.example in .env):
 #
-#   podman-compose up -d                     solo servizi di supporto: database, Keycloak, Mailpit.
+#   podman-compose up -d                     solo servizi di supporto: database (con db-init), Keycloak, Mailpit.
 #                                            API e web si avviano a mano (mvnw / npm start), per sviluppare.
 #   podman-compose --profile app up -d --build
 #                                            tutto in container, anche API e web: per provare l'app
@@ -21,12 +21,8 @@ services:
       # Utente proprietario dello schema, usato solo dalle migrazioni Flyway.
       POSTGRES_USER: ${POSTGRES_USER:-gestionale}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?impostare POSTGRES_PASSWORD in infra/docker/.env}
-      # Ruolo applicativo (non superuser), creato da postgres-init al primo avvio.
-      DB_USER: ${DB_USER:-gestionale_app}
-      DB_PASSWORD: ${DB_PASSWORD:?impostare DB_PASSWORD in infra/docker/.env}
     volumes:
       - db-data:/var/lib/postgresql/data
-      - ./postgres-init:/docker-entrypoint-initdb.d:ro,z
     ports:
       - "5432:5432"
     healthcheck:
@@ -37,6 +33,33 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  db-init:
+    # Crea (o riallinea al .env) il ruolo con cui si collega l'applicazione: non superuser, non
+    # proprietario delle tabelle, senza BYPASSRLS. I privilegi sulle tabelle li concede Flyway.
+    # Il comando è scritto qui e non in uno script montato: niente problemi di fine riga (CRLF)
+    # sulle copie del repository scaricate su Windows. Gira a ogni avvio e poi termina.
+    image: docker.io/library/postgres:17
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    environment:
+      PGHOST: db
+      PGDATABASE: ${POSTGRES_DB:-gestionale}
+      PGUSER: ${POSTGRES_USER:-gestionale}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?impostare POSTGRES_PASSWORD in infra/docker/.env}
+      APP_USER: ${DB_USER:-gestionale_app}
+      APP_PASSWORD: ${DB_PASSWORD:?impostare DB_PASSWORD in infra/docker/.env}
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        psql -v ON_ERROR_STOP=1 -v app_user="$$APP_USER" -v app_password="$$APP_PASSWORD" <<'SQL'
+        SELECT format('CREATE ROLE %I LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS', :'app_user')
+        WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = :'app_user') \gexec
+        SELECT format('ALTER ROLE %I PASSWORD %L', :'app_user', :'app_password') \gexec
+        SQL
+        echo "Ruolo applicativo $$APP_USER pronto"
 
   keycloak:
     # Provider di identità (OIDC). Il realm "gestionale" è configurazione di prodotto versionata
@@ -75,8 +98,8 @@ services:
       context: ../../apps/api
       dockerfile: Dockerfile
     depends_on:
-      db:
-        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
       DB_URL: ${DB_URL:-jdbc:postgresql://db:5432/gestionale}

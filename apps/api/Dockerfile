@@ -6,7 +6,9 @@ WORKDIR /workspace
 # Prima solo wrapper e pom, per sfruttare la cache delle dipendenze.
 COPY mvnw pom.xml ./
 COPY .mvn .mvn
-RUN chmod +x mvnw && ./mvnw -B -q dependency:go-offline
+# Fine riga Unix anche se il repository è stato scaricato su Windows con CRLF.
+RUN sed -i 's/\r$//' mvnw .mvn/wrapper/maven-wrapper.properties && chmod +x mvnw \
+    && ./mvnw -B -q dependency:go-offline
 COPY src src
 RUN ./mvnw -B package -DskipTests && cp target/gestionale-api-*.jar app.jar
 

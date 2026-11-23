@@ -13,6 +13,7 @@ RUN npm run build -- --configuration production
 FROM docker.io/library/nginx:alpine
 COPY infra/docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY infra/docker/web/40-runtime-config.sh /docker-entrypoint.d/40-runtime-config.sh
-RUN chmod 0755 /docker-entrypoint.d/40-runtime-config.sh
+# Fine riga Unix anche se il repository è stato scaricato su Windows con CRLF.
+RUN sed -i 's/\r$//' /docker-entrypoint.d/40-runtime-config.sh && chmod 0755 /docker-entrypoint.d/40-runtime-config.sh
 COPY --from=build /workspace/dist/web/browser /usr/share/nginx/html
 EXPOSE 80
