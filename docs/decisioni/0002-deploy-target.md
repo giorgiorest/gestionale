@@ -45,6 +45,21 @@ rilasci ripetibili da GitHub. Le domande aperte erano: provider, metodo, segreti
 - Le installazioni presso clienti (on-premise o cloud dedicato) possono riusare lo stesso
   `infra/deploy/oracle/compose.yml`, che non dipende da Oracle.
 
+## Aggiornamento — VPS a pagamento (novembre 2026)
+
+Le macchine A1 gratuite di Oracle nella regione di casa (Torino) risultavano spesso esaurite.
+La produzione può quindi stare anche su un **VPS a pagamento** (es. Aruba VPS H.4-8: 4 vCPU, 8 GB,
+data center in Italia, circa 5–11 € al mese), con **gli stessi file e lo stesso workflow Deploy**:
+servono solo SSH, Docker e il `.env` sulla macchina. Guida: [deploy-vps.md](../deploy-vps.md).
+
+- L'utente della macchina è sempre `ubuntu` (creato a mano dove il fornitore dà solo `root`);
+  accesso solo con chiave, firewall `ufw` con 22, 80 e 443.
+- Il workflow Deploy controlla la macchina prima di installare (Docker utilizzabile, `.env`
+  presente, `APP_DOMAIN` coerente con l'environment, `ACME_EMAIL` valida, spazio libero) e valida
+  la configurazione con `docker compose config` prima di scaricare le immagini.
+- Terraform e i tentativi automatici (ADR 0007) restano specifici di Oracle Cloud; su un VPS la
+  macchina si crea dal pannello del fornitore.
+
 ## Alternative scartate
 
 - **Kubernetes (anche OKE gratuito)**: complessità sproporzionata per una macchina e ~50 utenti per cliente.

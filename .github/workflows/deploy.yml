@@ -1,8 +1,9 @@
 name: Deploy
 
-# Installa una versione di civil beefy sulla macchina di produzione (Oracle Cloud), via SSH.
+# Installa una versione di civil beefy sulla macchina di produzione, via SSH: qualsiasi server
+# Linux con Docker (VPS come Aruba o OVH, oppure Oracle Cloud). I nomi OCI_* sono storici.
 # Manuale: si avvia da GitHub → Actions → Deploy → Run workflow.
-# Guida: docs/deploy-oracle-cloud.md
+# Guide: docs/deploy-vps.md (VPS), docs/deploy-oracle-cloud.md (Oracle Cloud)
 #
 # Configurazione nell'environment GitHub "production" (Settings → Environments):
 #   secrets:   OCI_SSH_HOST, OCI_SSH_USER, OCI_SSH_PRIVATE_KEY, OCI_SSH_KNOWN_HOSTS
@@ -82,9 +83,29 @@ jobs:
             StrictHostKeyChecking yes
           EOF
 
+      - name: Controlla la macchina
+        env:
+          DOMAIN: ${{ vars.APP_DOMAIN }}
+        run: |
+          [ -n "$DOMAIN" ] || { echo "::error::Manca la variabile APP_DOMAIN nell'environment production."; exit 1; }
+          # Controlli sulla macchina prima di toccare qualcosa: errori chiari invece di un compose che fallisce.
+          ssh server bash -s "$APP_DIR" "$DOMAIN" <<'EOF'
+          set -e
+          dir="$1"; domain="$2"
+          command -v docker > /dev/null || { echo "::error::Docker non è installato sulla macchina (docs/deploy-vps.md, passo 6)."; exit 1; }
+          docker info > /dev/null 2>&1 || { echo "::error::L'utente $(whoami) non può usare Docker: aggiungilo al gruppo docker (sudo usermod -aG docker $(whoami))."; exit 1; }
+          docker compose version > /dev/null 2>&1 || { echo "::error::Manca il plugin Docker Compose sulla macchina."; exit 1; }
+          [ -f "$dir/.env" ] || { echo "::error::Manca $dir/.env sulla macchina (docs/deploy-vps.md, passo 7)."; exit 1; }
+          grep -qx "APP_DOMAIN=$domain" "$dir/.env" || { echo "::error::APP_DOMAIN nel .env della macchina non è $domain (variabile APP_DOMAIN dell'environment)."; exit 1; }
+          grep -Eq '^ACME_EMAIL=[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$' "$dir/.env" || { echo "::error::ACME_EMAIL nel .env non è un indirizzo email valido: serve a Let's Encrypt per il certificato."; exit 1; }
+          free=$(df -Pk "$dir" | awk 'NR==2 {print int($4 / 1048576)}')
+          [ "$free" -ge 5 ] || echo "::warning::Sulla macchina restano solo $free GB liberi."
+          echo "Macchina pronta: $(docker --version), $free GB liberi."
+          EOF
+
       - name: Copia la configurazione sulla macchina
         run: |
-          ssh server "mkdir -p '$APP_DIR/keycloak/realm' '$APP_DIR/keycloak/themes' && test -f '$APP_DIR/.env' || { echo 'Manca $APP_DIR/.env: vedi docs/deploy-oracle-cloud.md'; exit 1; }"
+          ssh server "mkdir -p '$APP_DIR/keycloak/realm' '$APP_DIR/keycloak/themes'"
           scp infra/deploy/oracle/compose.yml infra/deploy/oracle/Caddyfile server:"$APP_DIR/"
           scp infra/keycloak/realm/gestionale-realm.json server:"$APP_DIR/keycloak/realm/"
           tar -C infra/keycloak/themes -cf - gestionale | ssh server "rm -rf '$APP_DIR/keycloak/themes/gestionale' && tar -C '$APP_DIR/keycloak/themes' -xf -"
@@ -94,6 +115,8 @@ jobs:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.version.outputs.tag }}
         run: |
+          # La configurazione (compose + .env) deve essere completa prima di scaricare qualcosa.
+          ssh server "cd '$APP_DIR' && docker compose config -q"
           # Il token (valido solo per questo job) passa sull'input standard, non sulla riga di comando.
           printf '%s' "$TOKEN" | ssh server "docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
           ssh server "set -e
