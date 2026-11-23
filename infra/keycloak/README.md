@@ -10,9 +10,9 @@ Decisioni e motivazioni: [ADR 0003](../../docs/decisioni/0003-identita-keycloak.
 
 ## Avvio in sviluppo
 
-Con compose parte da solo: da `infra/docker`, `podman compose up -d`
+Con compose parte da solo: da `infra/docker`, `podman-compose up -d`
 (vedi [docs/avvio-locale.md](../../docs/avvio-locale.md)). Dopo modifiche al realm o al tema:
-`podman compose up -d --force-recreate keycloak`.
+`podman-compose up -d --force-recreate keycloak`.
 
 Senza compose, con Podman o Docker, dalla radice del repository:
 
