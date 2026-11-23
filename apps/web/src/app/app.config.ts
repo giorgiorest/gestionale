@@ -10,12 +10,13 @@ import {
 } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
-import { provideIonicAngular } from '@ionic/angular/provide';
+import { MatIconRegistry } from '@angular/material/icon';
 import { provideServiceWorker } from '@angular/service-worker';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/auth/auth.interceptor';
 import { AuthService } from './core/auth/auth.service';
 import { AppConfigService } from './core/config/app-config';
+import { BrandingService } from './core/branding/branding.service';
 import { isPackagedDesktopApp } from './core/platform';
 
 // Date e numeri in italiano.
@@ -30,15 +31,19 @@ export const appConfig: ApplicationConfig = {
       // inject() va chiamato prima del primo await: dopo si è fuori dal contesto di injection.
       const config = inject(AppConfigService);
       const auth = inject(AuthService);
+      const branding = inject(BrandingService);
+      // Icone Material Symbols (incluse nell'app, non scaricate da Google).
+      inject(MatIconRegistry).setDefaultFontSetClass('material-symbols-outlined');
       // Nell'app desktop non ancora collegata a un server la configurazione manca:
       // authGuard porta alla pagina /server.
-      if (await config.load()) {
+      const loaded = await config.load();
+      branding.apply(loaded?.branding);
+      if (loaded) {
         await auth.init();
       }
     }),
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withInterceptors([authInterceptor])),
-    provideIonicAngular({}),
     provideServiceWorker('ngsw-worker.js', {
       // Nell'app desktop i file sono già locali: niente service worker.
       enabled: !isDevMode() && !isPackagedDesktopApp(),

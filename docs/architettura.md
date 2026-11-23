@@ -10,7 +10,7 @@ principalmente la propria parte** dei dati. Deve funzionare su web, mobile e des
 
 ```
 ┌────────────── Client (stesso codice Angular) ──────────────┐
-│  Web/PWA     Mobile (Ionic + Capacitor)     Desktop (Tauri)│
+│  Web/PWA     Mobile (Capacitor)     Desktop (Tauri)        │
 │        IndexedDB (Dexie): dati locali + outbox             │
 └───────────────┬───────────────────────────────┬────────────┘
                 │ login OIDC (code + PKCE)      │ HTTPS + JWT
@@ -28,7 +28,10 @@ principalmente la propria parte** dei dati. Deve funzionare su web, mobile e des
 
 ## Client
 
-- **Una sola web app Angular** in `apps/web`, con componenti **Ionic**.
+- **Una sola web app Angular** in `apps/web`, con componenti **Angular Material** e layout per il PC
+  (barra superiore e menu laterale; [ADR 0006](decisioni/0006-interfaccia-angular-material.md)).
+- **Marchio**: tema Material 3 di prodotto; nome, logo e colore principale personalizzabili per
+  installazione da `config.json` (`BrandingService`). Font e icone inclusi nell'app.
   - **Web**: PWA con service worker (`@angular/pwa`), installabile e utilizzabile offline.
   - **Mobile**: la stessa build impacchettata con **Capacitor** (iOS, Android).
   - **Desktop**: la stessa build incapsulata da **Tauri 2** (`apps/desktop`).

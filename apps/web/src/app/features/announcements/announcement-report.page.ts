@@ -1,94 +1,104 @@
 import { DatePipe } from '@angular/common';
 import { Component, effect, inject, input, signal } from '@angular/core';
-import {
-  IonBackButton,
-  IonButtons,
-  IonContent,
-  IonHeader,
-  IonNote,
-  IonText,
-  IonTitle,
-  IonToolbar,
-} from '@ionic/angular';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTableModule } from '@angular/material/table';
+import { RouterLink } from '@angular/router';
 import { AnnouncementSummary, AnnouncementsService, RecipientStatus } from './announcements.service';
 
 /** Report di una comunicazione: chi l'ha letta e chi ha confermato la presa visione. */
 @Component({
   selector: 'app-announcement-report',
-  imports: [DatePipe, IonBackButton, IonButtons, IonContent, IonHeader, IonNote, IonText, IonTitle, IonToolbar],
+  imports: [DatePipe, RouterLink, MatButtonModule, MatCardModule, MatIconModule, MatTableModule],
   template: `
-    <ion-header>
-      <ion-toolbar>
-        <ion-buttons slot="start"><ion-back-button defaultHref="/comunicazioni"></ion-back-button></ion-buttons>
-        <ion-title>Stato della comunicazione</ion-title>
-      </ion-toolbar>
-    </ion-header>
-    <ion-content class="ion-padding">
+    <div class="page">
+      <a mat-button routerLink="/comunicazioni" class="back"><mat-icon>arrow_back</mat-icon>Comunicazioni</a>
       @if (summary(); as s) {
-        <ion-text><h1>{{ s.title }}</h1></ion-text>
-        <ion-note>Inviata da {{ s.senderName ?? 'Gestionale' }} il {{ s.createdAt | date: 'd MMMM y, HH:mm' }}</ion-note>
-        <p data-testid="totals">
-          Destinatari {{ s.recipients }} · Lette {{ s.read }}
+        <div class="page-header">
+          <div>
+            <h1>{{ s.title }}</h1>
+            <span class="subtitle">Inviata da {{ s.senderName ?? 'Gestionale' }} il {{ s.createdAt | date: 'd MMMM y, HH:mm' }}</span>
+          </div>
+        </div>
+        <div class="cards totals" data-testid="totals">
+          <mat-card appearance="outlined"><mat-card-content><span class="kpi">{{ s.recipients }}</span>Destinatari</mat-card-content></mat-card>
+          <mat-card appearance="outlined"><mat-card-content><span class="kpi">{{ s.read }}</span>Lette</mat-card-content></mat-card>
           @if (s.requiresAck) {
-            · Presa visione {{ s.acknowledged }}
+            <mat-card appearance="outlined"><mat-card-content><span class="kpi">{{ s.acknowledged }}</span>Presa visione</mat-card-content></mat-card>
           }
           @if (s.sendEmail) {
-            · Email inviate {{ s.emailsSent }}
-            @if (s.emailsFailed) {
-              (fallite {{ s.emailsFailed }})
-            }
+            <mat-card appearance="outlined">
+              <mat-card-content>
+                <span class="kpi">{{ s.emailsSent }}</span>Email inviate
+                @if (s.emailsFailed) {
+                  <span class="status todo">{{ s.emailsFailed }} non consegnate</span>
+                }
+              </mat-card-content>
+            </mat-card>
           }
-        </p>
-        <div class="table-wrap">
-          <table data-testid="recipients">
-            <thead>
-              <tr>
-                <th>Persona</th>
-                <th>Letta</th>
-                @if (s.requiresAck) {
-                  <th>Presa visione</th>
-                }
-                @if (s.sendEmail) {
-                  <th>Email</th>
-                }
-              </tr>
-            </thead>
-            <tbody>
-              @for (r of recipients(); track r.userId) {
-                <tr>
-                  <td>{{ r.name ?? r.userId }}<br /><small>{{ r.email ?? 'nessuna email' }}</small></td>
-                  <td>{{ r.readAt ? (r.readAt | date: 'd/MM/yy HH:mm') : '—' }}</td>
-                  @if (s.requiresAck) {
-                    <td [class.missing]="!r.acknowledgedAt">{{ r.acknowledgedAt ? (r.acknowledgedAt | date: 'd/MM/yy HH:mm') : 'Non confermata' }}</td>
-                  }
-                  @if (s.sendEmail) {
-                    <td>{{ emailLabel(r) }}</td>
-                  }
-                </tr>
-              }
-            </tbody>
-          </table>
         </div>
+        @if (s.body) {
+          <mat-card appearance="outlined" class="body"><mat-card-content>{{ s.body }}</mat-card-content></mat-card>
+        }
+        <mat-card appearance="outlined">
+          <mat-card-content>
+            <table mat-table [dataSource]="recipients()" data-testid="recipients">
+              <ng-container matColumnDef="person">
+                <th mat-header-cell *matHeaderCellDef>Persona</th>
+                <td mat-cell *matCellDef="let r">
+                  <strong>{{ r.name ?? r.userId }}</strong>
+                  <div class="muted">{{ r.email ?? 'nessuna email' }}</div>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="read">
+                <th mat-header-cell *matHeaderCellDef>Letta</th>
+                <td mat-cell *matCellDef="let r">{{ r.readAt ? (r.readAt | date: 'd/MM/yy HH:mm') : '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="ack">
+                <th mat-header-cell *matHeaderCellDef>Presa visione</th>
+                <td mat-cell *matCellDef="let r">
+                  @if (r.acknowledgedAt) {
+                    <span class="status ok">{{ r.acknowledgedAt | date: 'd/MM/yy HH:mm' }}</span>
+                  } @else {
+                    <span class="status todo">Non confermata</span>
+                  }
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="email">
+                <th mat-header-cell *matHeaderCellDef>Email</th>
+                <td mat-cell *matCellDef="let r">{{ emailLabel(r) }}</td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="columnsFor(s)"></tr>
+              <tr mat-row *matRowDef="let row; columns: columnsFor(s)"></tr>
+              <tr class="mat-row" *matNoDataRow>
+                <td class="mat-cell empty" [attr.colspan]="columnsFor(s).length">Nessun destinatario ha ancora effettuato l'accesso.</td>
+              </tr>
+            </table>
+          </mat-card-content>
+        </mat-card>
       }
-    </ion-content>
+    </div>
   `,
   styles: `
-    .table-wrap {
-      overflow-x: auto;
+    .back {
+      margin-bottom: 12px;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    .totals {
+      margin-bottom: 16px;
     }
-    th,
-    td {
-      text-align: left;
-      padding: 8px;
-      border-bottom: 1px solid var(--ion-color-step-150, #ddd);
-      vertical-align: top;
+    .kpi {
+      display: block;
+      font: var(--mat-sys-display-small);
+      color: var(--mat-sys-primary);
     }
-    .missing {
-      color: var(--ion-color-danger);
+    .body {
+      margin-bottom: 16px;
+      white-space: pre-wrap;
+    }
+    .empty {
+      padding: 16px;
+      color: var(--mat-sys-on-surface-variant);
     }
   `,
 })
@@ -105,6 +115,10 @@ export class AnnouncementReportPage {
       void this.service.get(id).then((s) => this.summary.set(s));
       void this.service.recipients(id).then((r) => this.recipients.set(r));
     });
+  }
+
+  columnsFor(s: AnnouncementSummary): string[] {
+    return ['person', 'read', ...(s.requiresAck ? ['ack'] : []), ...(s.sendEmail ? ['email'] : [])];
   }
 
   emailLabel(r: RecipientStatus): string {

@@ -17,7 +17,7 @@ Il team è ridotto: una sola base di codice client e un backend convenzionale ri
 | Database | PostgreSQL 17 | Row Level Security nativa per il multi-tenant, JSONB, affidabilità |
 | Migrazioni | Flyway | Migrazioni SQL versionate e ripetibili, integrate in Spring Boot |
 | Autenticazione | OAuth2/OIDC con Keycloak 26; API come resource server JWT; `oidc-client-ts` nel frontend | Standard, open source e rivendibile, provider sostituibile; il tenant viaggia nel token (vedi [ADR 0003](0003-identita-keycloak.md)) |
-| Frontend | Angular 22 + Ionic 9 | Un solo codice per web e mobile, componenti adatti al touch, TypeScript strict |
+| Frontend | Angular 22 + Angular Material (in origine Ionic 9, sostituito: [ADR 0006](0006-interfaccia-angular-material.md)) | Un solo codice per web, desktop e mobile, TypeScript strict |
 | Web | PWA (`@angular/pwa`) | Installabile e utilizzabile offline senza store |
 | Mobile | Capacitor | Riusa la build web, accesso alle API native |
 | Desktop | Tauri 2 | Binari leggeri rispetto a Electron, riusa la build web |

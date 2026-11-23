@@ -1,67 +1,71 @@
 import { DatePipe } from '@angular/common';
 import { Component, effect, inject, input, signal } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
-import {
-  IonBackButton,
-  IonButton,
-  IonButtons,
-  IonContent,
-  IonHeader,
-  IonNote,
-  IonText,
-  IonTitle,
-  IonToolbar,
-} from '@ionic/angular';
 import { NotificationsService } from '../../core/notifications/notifications.service';
 import { LocalNotification } from '../../db/local-db';
 
 /** Dettaglio di una notifica: apertura = letta; presa visione esplicita se richiesta. */
 @Component({
   selector: 'app-notification-detail',
-  imports: [DatePipe, RouterLink, IonBackButton, IonButton, IonButtons, IonContent, IonHeader, IonNote, IonText, IonTitle, IonToolbar],
+  imports: [DatePipe, RouterLink, MatButtonModule, MatCardModule, MatIconModule],
   template: `
-    <ion-header>
-      <ion-toolbar>
-        <ion-buttons slot="start"><ion-back-button defaultHref="/notifiche"></ion-back-button></ion-buttons>
-        <ion-title>Notifica</ion-title>
-      </ion-toolbar>
-    </ion-header>
-    <ion-content class="ion-padding">
+    <div class="page narrow">
+      <a mat-button routerLink="/notifiche" class="back"><mat-icon>arrow_back</mat-icon>Notifiche</a>
       @if (notification(); as n) {
-        <ion-text><h1 data-testid="title">{{ n.title }}</h1></ion-text>
-        <ion-note>{{ n.senderName ?? 'Gestionale' }} · {{ n.createdAt | date: 'd MMMM y, HH:mm' }}</ion-note>
-        <p class="body" data-testid="body">{{ n.body }}</p>
-        @if (n.link) {
-          <ion-button fill="outline" [routerLink]="n.link">Apri</ion-button>
-        }
-        @if (n.requiresAck) {
-          <div class="ack">
-            @if (n.acknowledgedAt) {
-              <ion-text color="success">
-                <p data-testid="acknowledged">Presa visione confermata il {{ n.acknowledgedAt | date: 'd MMMM y, HH:mm' }}.</p>
-              </ion-text>
-            } @else {
-              <p>Questa comunicazione richiede la tua conferma di presa visione.</p>
-              <ion-button expand="block" (click)="acknowledge(n)" [disabled]="busy()" data-testid="ack-button">
-                Confermo di aver letto e compreso
-              </ion-button>
+        <mat-card appearance="outlined">
+          <mat-card-header>
+            <mat-card-title data-testid="title">{{ n.title }}</mat-card-title>
+            <mat-card-subtitle>{{ n.senderName ?? 'Gestionale' }} · {{ n.createdAt | date: 'd MMMM y, HH:mm' }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <p class="body" data-testid="body">{{ n.body }}</p>
+            @if (n.requiresAck) {
+              <div class="ack">
+                @if (n.acknowledgedAt) {
+                  <span class="status ok" data-testid="acknowledged">
+                    <mat-icon inline>task_alt</mat-icon>
+                    Presa visione confermata il {{ n.acknowledgedAt | date: 'd MMMM y, HH:mm' }}.
+                  </span>
+                } @else {
+                  <p>Questa comunicazione richiede la tua conferma di presa visione.</p>
+                }
+              </div>
             }
-          </div>
-        }
+          </mat-card-content>
+          <mat-card-actions align="end">
+            @if (n.link) {
+              <a mat-button [routerLink]="n.link">Apri</a>
+            }
+            @if (n.requiresAck && !n.acknowledgedAt) {
+              <button mat-flat-button (click)="acknowledge(n)" [disabled]="busy()" data-testid="ack-button">
+                <mat-icon>task_alt</mat-icon>Confermo di aver letto e compreso
+              </button>
+            }
+          </mat-card-actions>
+        </mat-card>
       } @else if (loaded()) {
-        <p>Notifica non trovata.</p>
+        <p class="muted">Notifica non trovata.</p>
       }
-    </ion-content>
+    </div>
   `,
   styles: `
+    .narrow {
+      max-width: 820px;
+    }
+    .back {
+      margin-bottom: 12px;
+    }
     .body {
       white-space: pre-wrap;
+      font: var(--mat-sys-body-large);
       margin: 16px 0;
     }
     .ack {
-      margin-top: 24px;
-      border-top: 1px solid var(--ion-color-step-150, #ddd);
-      padding-top: 8px;
+      border-top: 1px solid var(--mat-sys-outline-variant);
+      padding-top: 12px;
     }
   `,
 })

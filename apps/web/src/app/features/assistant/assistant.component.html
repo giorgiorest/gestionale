@@ -1,33 +1,24 @@
-<ion-header>
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/"></ion-back-button>
-    </ion-buttons>
-    <ion-title>Assistente</ion-title>
-  </ion-toolbar>
-</ion-header>
-
-<ion-content class="ion-padding">
-  <ion-list>
-    @for (message of messages(); track $index) {
-      <ion-item [class]="'message-' + message.role">
-        <ion-label class="ion-text-wrap">
-          <strong>{{ message.role === 'user' ? 'Tu' : 'Assistente' }}:</strong> {{ message.content }}
-        </ion-label>
-      </ion-item>
-    } @empty {
-      <p class="ion-text-center">Scrivi una domanda per iniziare.</p>
-    }
-  </ion-list>
-</ion-content>
-
-<ion-footer>
-  <ion-toolbar>
-    <form (ngSubmit)="send()">
-      <ion-item lines="none">
-        <ion-input name="draft" [(ngModel)]="draft" placeholder="Scrivi un messaggio" aria-label="Messaggio"></ion-input>
-        <ion-button slot="end" type="submit" [disabled]="!draft.trim()">Invia</ion-button>
-      </ion-item>
-    </form>
-  </ion-toolbar>
-</ion-footer>
+<div class="page narrow">
+  <div class="page-header"><h1>Assistente</h1></div>
+  <mat-card appearance="outlined" class="chat">
+    <mat-card-content class="messages">
+      @for (message of messages(); track $index) {
+        <div class="message" [class.user]="message.role === 'user'">
+          <span class="who">{{ message.role === 'user' ? 'Tu' : 'Assistente' }}</span>
+          <p>{{ message.content }}</p>
+        </div>
+      } @empty {
+        <p class="muted">Scrivi una domanda per iniziare.</p>
+      }
+    </mat-card-content>
+    <mat-card-actions>
+      <form (ngSubmit)="send()" class="input">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="grow">
+          <mat-label>Messaggio</mat-label>
+          <input matInput name="draft" [(ngModel)]="draft" />
+        </mat-form-field>
+        <button mat-flat-button type="submit" [disabled]="!draft.trim()"><mat-icon>send</mat-icon>Invia</button>
+      </form>
+    </mat-card-actions>
+  </mat-card>
+</div>

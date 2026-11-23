@@ -2,7 +2,7 @@
 
 ## Stack
 - Backend: Spring Boot (Java 21, Maven) in apps/api, PostgreSQL, Flyway per le migrazioni.
-- Frontend: Angular con Ionic e Capacitor (mobile), PWA per il web, Dexie per il database locale in apps/web.
+- Frontend: Angular con Angular Material (layout per PC), PWA per il web, Capacitor per il mobile, Dexie per il database locale in apps/web.
 - Desktop: Tauri 2 in apps/desktop, che incapsula la build web (Windows). Un solo installer per tutti i clienti: il server si sceglie al primo avvio. Installer generati da ci-desktop.yml.
 - Identità: Keycloak 26 (OIDC), realm versionato in infra/keycloak/realm; utenti demo solo in infra/keycloak/dev. Frontend con oidc-client-ts (Authorization Code + PKCE).
 - Infrastruttura locale: infra/docker/compose.yml (compatibile con Docker e Podman).
@@ -34,7 +34,8 @@
 - Dati personali verso provider AI: inviare solo ciò che serve al task, e solo se il tenant ha un contratto di elaborazione dati e la configurazione lo consente.
 - Notifiche: il codice di dominio le crea solo con `NotificationService.send(...)` (mai insert diretti); i destinatari si risolvono dalla rubrica `app_users`. La presa visione è distinta dalla lettura e si registra con l'ora del server.
 - Processi di sistema che lavorano per tutti i tenant: mai disattivare la RLS. Si usa `WorkerContext` (app.worker) con una policy dedicata solo sulla tabella tecnica che serve, documentata in un ADR.
-- Nel codice caricato all'avvio (app.ts, app.config.ts, core/) i componenti Ionic si importano dagli entry point per componente (`@ionic/angular/ion-…`, `@ionic/angular/provide`), non dal barrel `@ionic/angular`, che porterebbe nel bundle iniziale tutti i componenti usati dalle pagine lazy.
+- Interfaccia: solo componenti Angular Material. Colori, forme e tipografia solo dalle variabili di sistema (`var(--mat-sys-…)`), mai colori fissi: il marchio del cliente (`branding` in config.json) deve applicarsi ovunque. Font e icone restano inclusi nell'app (niente Google Fonts o CDN esterni).
+- Ogni nuova libreria UI o di componenti va verificata sulla licenza prima di adottarla: il prodotto viene rivenduto (es. PrimeNG è commerciale oltre certe soglie, vedi ADR 0006).
 - Gli ID delle entità sono UUID generati dal client (preferibilmente v7).
 - Le scritture offline passano dalla tabella outbox. Non chiamare direttamente le API di scrittura dai componenti.
 - Prima di concludere un task: build e test del modulo toccato devono passare.

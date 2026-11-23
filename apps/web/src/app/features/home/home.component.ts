@@ -1,91 +1,129 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
-import {
-  IonButton,
-  IonButtons,
-  IonContent,
-  IonHeader,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonNote,
-  IonTitle,
-  IonToolbar,
-} from '@ionic/angular';
-import { HasFeatureDirective } from '../../core/entitlements/has-feature.directive';
-import { HasPermissionDirective } from '../../core/profile/has-permission.directive';
-import { ProfileService } from '../../core/profile/profile.service';
-import { NotificationBellComponent } from '../../core/notifications/notification-bell.component';
+import { EntitlementsService } from '../../core/entitlements/entitlements.service';
 import { NotificationsService } from '../../core/notifications/notifications.service';
+import { ProfileService } from '../../core/profile/profile.service';
 
+/** Pagina iniziale: saluto, comunicazioni da confermare, accessi rapidi. */
 @Component({
   selector: 'app-home',
-  imports: [
-    RouterLink,
-    HasFeatureDirective,
-    HasPermissionDirective,
-    NotificationBellComponent,
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonHeader,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonNote,
-    IonTitle,
-    IonToolbar,
-  ],
+  imports: [RouterLink, MatButtonModule, MatCardModule, MatIconModule],
   template: `
-    <ion-header>
-      <ion-toolbar>
-        <ion-title>Gestionale</ion-title>
-        <ion-buttons slot="end">
-          <app-notification-bell></app-notification-bell>
-          <ion-button routerLink="/profilo">Profilo</ion-button>
-        </ion-buttons>
-      </ion-toolbar>
-    </ion-header>
-    <ion-content class="ion-padding">
-      @if (profile.me(); as me) {
-        <h2>Ciao, {{ me.name || me.username }}</h2>
-        <ion-note>{{ me.tenant?.name ?? 'Nessuna azienda associata' }}</ion-note>
-      }
+    <div class="page">
+      <div class="page-header">
+        <div>
+          <h1>{{ greeting() }}{{ firstName() ? ', ' + firstName() : '' }}</h1>
+          <span class="subtitle">{{ profile.me()?.tenant?.name ?? '' }}</span>
+        </div>
+      </div>
+
       @if (notifications.counts().toAcknowledge > 0) {
-        <ion-item color="warning" routerLink="/notifiche" lines="none" class="ion-margin-top" data-testid="ack-banner">
-          <ion-label>
+        <a class="banner warn" routerLink="/notifiche" data-testid="ack-banner">
+          <mat-icon>assignment_late</mat-icon>
+          <span>
             Hai {{ notifications.counts().toAcknowledge }} comunicazion{{ notifications.counts().toAcknowledge === 1 ? 'e' : 'i' }}
             da confermare
-          </ion-label>
-        </ion-item>
+          </span>
+        </a>
       }
-      <ion-list>
-        <ion-item routerLink="/notifiche" detail>
-          <ion-label>Notifiche</ion-label>
-        </ion-item>
-        <ion-item *appHasPermission="'notifications:send'" routerLink="/comunicazioni" detail>
-          <ion-label>Comunicazioni ai dipendenti</ion-label>
-        </ion-item>
-        <ion-item *appHasPermission="'customers:read'" routerLink="/clienti" detail>
-          <ion-label>Clienti</ion-label>
-        </ion-item>
-        <ng-container *appHasPermission="'assistant:use'">
-          <ion-item *appHasFeature="'aiAssistant'" routerLink="/assistente" detail>
-            <ion-label>Assistente</ion-label>
-          </ion-item>
-        </ng-container>
-        <ion-item routerLink="/profilo" detail>
-          <ion-label>Profilo</ion-label>
-        </ion-item>
-      </ion-list>
-    </ion-content>
+
+      <div class="cards">
+        @if (can('customers:read')) {
+          <a routerLink="/clienti" class="tile">
+            <mat-card appearance="outlined">
+              <mat-card-content>
+                <mat-icon>groups</mat-icon>
+                <h2>Clienti</h2>
+                <p class="muted">Anagrafica dei clienti dell'azienda</p>
+              </mat-card-content>
+            </mat-card>
+          </a>
+        }
+        <a routerLink="/notifiche" class="tile">
+          <mat-card appearance="outlined">
+            <mat-card-content>
+              <mat-icon>notifications</mat-icon>
+              <h2>Notifiche</h2>
+              <p class="muted">
+                @if (notifications.counts().unread > 0) {
+                  {{ notifications.counts().unread }} da leggere
+                } @else {
+                  Nessuna notifica da leggere
+                }
+              </p>
+            </mat-card-content>
+          </mat-card>
+        </a>
+        @if (can('notifications:send')) {
+          <a routerLink="/comunicazioni" class="tile">
+            <mat-card appearance="outlined">
+              <mat-card-content>
+                <mat-icon>campaign</mat-icon>
+                <h2>Comunicazioni</h2>
+                <p class="muted">Avvisi ai dipendenti e presa visione</p>
+              </mat-card-content>
+            </mat-card>
+          </a>
+        }
+        @if (can('assistant:use') && entitlements.features().has('aiAssistant')) {
+          <a routerLink="/assistente" class="tile">
+            <mat-card appearance="outlined">
+              <mat-card-content>
+                <mat-icon>smart_toy</mat-icon>
+                <h2>Assistente</h2>
+                <p class="muted">Chiedi aiuto all'assistente</p>
+              </mat-card-content>
+            </mat-card>
+          </a>
+        }
+      </div>
+    </div>
+  `,
+  styles: `
+    .banner {
+      text-decoration: none;
+    }
+    .tile {
+      text-decoration: none;
+      color: inherit;
+    }
+    .tile mat-card {
+      height: 100%;
+      transition: background 0.15s;
+    }
+    .tile:hover mat-card {
+      background: var(--mat-sys-surface-container-high);
+    }
+    .tile mat-icon {
+      color: var(--mat-sys-primary);
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+    }
+    .tile h2 {
+      font: var(--mat-sys-title-medium);
+      margin: 12px 0 4px;
+    }
+    .tile p {
+      margin: 0;
+    }
   `,
 })
 export class HomeComponent {
   readonly profile = inject(ProfileService);
   readonly notifications = inject(NotificationsService);
+  readonly entitlements = inject(EntitlementsService);
 
-  constructor() {
-    void this.profile.load();
+  readonly firstName = computed(() => (this.profile.me()?.name ?? '').split(' ')[0]);
+  readonly greeting = computed(() => {
+    const hour = new Date().getHours();
+    return hour < 13 ? 'Buongiorno' : hour < 18 ? 'Buon pomeriggio' : 'Buonasera';
+  });
+
+  can(permission: string): boolean {
+    return this.profile.permissions().has(permission);
   }
 }

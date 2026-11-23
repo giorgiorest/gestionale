@@ -1,6 +1,10 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { IonButton, IonContent, IonHeader, IonInput, IonItem, IonList, IonNote, IonText, IonTitle, IonToolbar } from '@ionic/angular';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { BrandingService } from '../../core/branding/branding.service';
 import { AppConfigService } from '../../core/config/app-config';
 
 /**
@@ -9,44 +13,49 @@ import { AppConfigService } from '../../core/config/app-config';
  */
 @Component({
   selector: 'app-server',
-  imports: [FormsModule, IonButton, IonContent, IonHeader, IonInput, IonItem, IonList, IonNote, IonText, IonTitle, IonToolbar],
+  imports: [FormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatInputModule],
   template: `
-    <ion-header>
-      <ion-toolbar>
-        <ion-title>Gestionale</ion-title>
-      </ion-toolbar>
-    </ion-header>
-    <ion-content class="ion-padding">
-      <form class="server" (ngSubmit)="connect()">
-        <ion-text><h1>Collegati alla tua azienda</h1></ion-text>
-        <p>Inserisci l'indirizzo del gestionale che ti ha comunicato l'amministratore.</p>
-        <ion-list>
-          <ion-item>
-            <ion-input
-              label="Indirizzo del server"
-              labelPlacement="stacked"
-              name="url"
-              placeholder="https://gestionale.azienda.it"
-              [(ngModel)]="url"
-            ></ion-input>
-          </ion-item>
-        </ion-list>
-        <ion-button type="submit" expand="block" [disabled]="!url.trim() || busy()">Connetti</ion-button>
-        @if (error()) {
-          <ion-note color="danger" data-testid="server-error">{{ error() }}</ion-note>
-        }
-      </form>
-    </ion-content>
+    <div class="centered">
+      <mat-card appearance="outlined" class="card">
+        <mat-card-content>
+          <img [src]="branding.logoUrl()" alt="" class="logo" />
+          <h1>Collegati alla tua azienda</h1>
+          <p class="muted">Inserisci l'indirizzo del gestionale che ti ha comunicato l'amministratore.</p>
+          <form (ngSubmit)="connect()">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Indirizzo del server</mat-label>
+              <input matInput name="url" placeholder="https://gestionale.azienda.it" [(ngModel)]="url" />
+            </mat-form-field>
+            <button mat-flat-button type="submit" class="full-width" [disabled]="!url.trim() || busy()">Connetti</button>
+          </form>
+          @if (error()) {
+            <div class="banner error" role="alert" data-testid="server-error">{{ error() }}</div>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
   `,
   styles: `
-    .server {
-      max-width: 420px;
-      margin: 12vh auto 0;
+    .card {
+      width: 100%;
+      max-width: 440px;
+      padding: 16px 8px;
+    }
+    .logo {
+      height: 48px;
+    }
+    h1 {
+      font: var(--mat-sys-headline-small);
+      margin: 16px 0 4px;
+    }
+    .banner {
+      margin-top: 16px;
     }
   `,
 })
 export class ServerPage {
   private readonly config = inject(AppConfigService);
+  readonly branding = inject(BrandingService);
   readonly busy = signal(false);
   readonly error = signal<string | null>(this.config.lastError);
   url = this.config.serverUrl ?? '';

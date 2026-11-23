@@ -1,18 +1,9 @@
 import { Component, inject } from '@angular/core';
-import {
-  IonBackButton,
-  IonButton,
-  IonButtons,
-  IonChip,
-  IonContent,
-  IonHeader,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonTitle,
-  IonToolbar,
-} from '@ionic/angular';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatIconModule } from '@angular/material/icon';
+import { MatListModule } from '@angular/material/list';
 import { AuthService } from '../../core/auth/auth.service';
 import { AppConfigService } from '../../core/config/app-config';
 import { PERMISSION_LABELS, ProfileService, ROLE_LABELS } from '../../core/profile/profile.service';
@@ -20,90 +11,83 @@ import { PERMISSION_LABELS, ProfileService, ROLE_LABELS } from '../../core/profi
 /** Profilo utente: dati personali, azienda, ruoli e permessi. */
 @Component({
   selector: 'app-profile',
-  imports: [
-    IonBackButton,
-    IonButton,
-    IonButtons,
-    IonChip,
-    IonContent,
-    IonHeader,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonListHeader,
-    IonTitle,
-    IonToolbar,
-  ],
+  imports: [MatButtonModule, MatCardModule, MatChipsModule, MatIconModule, MatListModule],
   template: `
-    <ion-header>
-      <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-back-button defaultHref="/"></ion-back-button>
-        </ion-buttons>
-        <ion-title>Profilo</ion-title>
-      </ion-toolbar>
-    </ion-header>
-    <ion-content class="ion-padding">
+    <div class="page">
+      <div class="page-header"><h1>Profilo</h1></div>
       @if (profile.me(); as me) {
-        <ion-list>
-          <ion-item>
-            <ion-label>
-              <p>Nome</p>
-              <h2 data-testid="profile-name">{{ me.name || '—' }}</h2>
-            </ion-label>
-          </ion-item>
-          <ion-item>
-            <ion-label>
-              <p>Utente</p>
-              <h2>{{ me.username || '—' }}</h2>
-            </ion-label>
-          </ion-item>
-          <ion-item>
-            <ion-label>
-              <p>Email</p>
-              <h2>{{ me.email || '—' }}</h2>
-            </ion-label>
-          </ion-item>
-          <ion-item>
-            <ion-label>
-              <p>Azienda</p>
-              <h2>{{ me.tenant?.name ?? 'Nessuna azienda associata' }}</h2>
-            </ion-label>
-          </ion-item>
-        </ion-list>
+        <div class="grid-2">
+          <mat-card appearance="outlined">
+            <mat-card-header>
+              <mat-icon mat-card-avatar>account_circle</mat-icon>
+              <mat-card-title data-testid="profile-name">{{ me.name || '—' }}</mat-card-title>
+              <mat-card-subtitle>{{ me.username }}</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <mat-list>
+                <mat-list-item>
+                  <mat-icon matListItemIcon>mail</mat-icon>
+                  <span matListItemTitle>Email</span>
+                  <span matListItemLine>{{ me.email || '—' }}</span>
+                </mat-list-item>
+                <mat-list-item>
+                  <mat-icon matListItemIcon>apartment</mat-icon>
+                  <span matListItemTitle>Azienda</span>
+                  <span matListItemLine>{{ me.tenant?.name ?? 'Nessuna azienda associata' }}</span>
+                </mat-list-item>
+                @if (appConfig.desktop) {
+                  <mat-list-item>
+                    <mat-icon matListItemIcon>dns</mat-icon>
+                    <span matListItemTitle>Server</span>
+                    <span matListItemLine>{{ appConfig.serverUrl }}</span>
+                  </mat-list-item>
+                }
+              </mat-list>
+            </mat-card-content>
+            <mat-card-actions align="end">
+              @if (appConfig.desktop) {
+                <button mat-button (click)="changeServer()">Cambia server</button>
+              }
+              <a mat-button [href]="auth.accountUrl()" target="_blank" rel="noopener">Account e password</a>
+              <button mat-flat-button (click)="auth.logout()">Esci</button>
+            </mat-card-actions>
+          </mat-card>
 
-        <ion-list>
-          <ion-list-header><ion-label>Ruoli</ion-label></ion-list-header>
-          <ion-item lines="none">
-            @for (role of me.roles; track role) {
-              <ion-chip data-testid="role">{{ roleLabel(role) }}</ion-chip>
-            } @empty {
-              <ion-label>Nessun ruolo assegnato</ion-label>
-            }
-          </ion-item>
-          <ion-list-header><ion-label>Cosa puoi fare</ion-label></ion-list-header>
-          @for (permission of me.permissions; track permission) {
-            <ion-item><ion-label>{{ permissionLabel(permission) }}</ion-label></ion-item>
-          }
-        </ion-list>
+          <mat-card appearance="outlined">
+            <mat-card-header><mat-card-title>Ruoli e permessi</mat-card-title></mat-card-header>
+            <mat-card-content>
+              <mat-chip-set aria-label="Ruoli">
+                @for (role of me.roles; track role) {
+                  <mat-chip data-testid="role">{{ roleLabel(role) }}</mat-chip>
+                } @empty {
+                  <span class="muted">Nessun ruolo assegnato</span>
+                }
+              </mat-chip-set>
+              <h3>Cosa puoi fare</h3>
+              <mat-list>
+                @for (permission of me.permissions; track permission) {
+                  <mat-list-item>
+                    <mat-icon matListItemIcon>check_circle</mat-icon>
+                    <span matListItemTitle>{{ permissionLabel(permission) }}</span>
+                  </mat-list-item>
+                }
+              </mat-list>
+            </mat-card-content>
+          </mat-card>
+        </div>
       } @else {
-        <p>Profilo non disponibile.</p>
+        <p class="muted">Profilo non disponibile.</p>
       }
-
-      <ion-button expand="block" fill="outline" [href]="auth.accountUrl()" target="_blank">
-        Gestisci account e password
-      </ion-button>
-      @if (appConfig.desktop) {
-        <ion-item lines="none">
-          <ion-label>
-            <p>Server</p>
-            <h2>{{ appConfig.serverUrl }}</h2>
-          </ion-label>
-        </ion-item>
-        <ion-button expand="block" fill="clear" (click)="changeServer()">Cambia server</ion-button>
-      }
-      <ion-button expand="block" color="medium" (click)="auth.logout()">Esci</ion-button>
-    </ion-content>
+    </div>
+  `,
+  styles: `
+    h3 {
+      font: var(--mat-sys-title-small);
+      margin: 24px 0 0;
+    }
+    mat-list-item mat-icon {
+      color: var(--mat-sys-primary);
+    }
   `,
 })
 export class ProfilePage {

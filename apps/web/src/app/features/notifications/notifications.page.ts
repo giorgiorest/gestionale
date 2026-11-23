@@ -1,65 +1,62 @@
 import { DatePipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
+import { MatListModule } from '@angular/material/list';
 import { RouterLink } from '@angular/router';
-import {
-  IonBackButton,
-  IonButtons,
-  IonContent,
-  IonHeader,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonNote,
-  IonText,
-  IonTitle,
-  IonToolbar,
-} from '@ionic/angular';
 import { NotificationsService } from '../../core/notifications/notifications.service';
 
 /** Elenco delle notifiche dell'utente. */
 @Component({
   selector: 'app-notifications',
-  imports: [DatePipe, RouterLink, IonBackButton, IonButtons, IonContent, IonHeader, IonItem, IonLabel, IonList, IonNote, IonText, IonTitle, IonToolbar],
+  imports: [DatePipe, RouterLink, MatCardModule, MatIconModule, MatListModule],
   template: `
-    <ion-header>
-      <ion-toolbar>
-        <ion-buttons slot="start"><ion-back-button defaultHref="/"></ion-back-button></ion-buttons>
-        <ion-title>Notifiche</ion-title>
-      </ion-toolbar>
-    </ion-header>
-    <ion-content class="ion-padding">
+    <div class="page">
+      <div class="page-header">
+        <h1>Notifiche</h1>
+        <span class="subtitle">{{ service.counts().unread }} da leggere</span>
+      </div>
       @if (service.offline()) {
-        <ion-note color="warning">Server non raggiungibile: stai vedendo le notifiche salvate sul dispositivo.</ion-note>
+        <div class="banner warn"><mat-icon>cloud_off</mat-icon>Server non raggiungibile: stai vedendo le notifiche salvate sul dispositivo.</div>
       }
       @if (service.counts().toAcknowledge > 0) {
-        <ion-text color="danger">
-          <p data-testid="to-ack">
-            Hai {{ service.counts().toAcknowledge }} comunicazion{{ service.counts().toAcknowledge === 1 ? 'e' : 'i' }} da confermare.
-          </p>
-        </ion-text>
+        <div class="banner warn" data-testid="to-ack">
+          <mat-icon>assignment_late</mat-icon>
+          Hai {{ service.counts().toAcknowledge }} comunicazion{{ service.counts().toAcknowledge === 1 ? 'e' : 'i' }} da confermare.
+        </div>
       }
-      <ion-list data-testid="notifications">
-        @for (n of service.notifications(); track n.id) {
-          <ion-item [routerLink]="['/notifiche', n.id]" detail>
-            <ion-label>
-              <h2 [class.unread]="!n.readAt">{{ n.title }}</h2>
-              <p>{{ n.senderName ?? 'Gestionale' }} · {{ n.createdAt | date: 'd MMM y, HH:mm' }}</p>
-            </ion-label>
-            @if (n.requiresAck) {
-              <ion-note slot="end" [color]="n.acknowledgedAt ? 'success' : 'danger'">
-                {{ n.acknowledgedAt ? 'Confermata' : 'Da confermare' }}
-              </ion-note>
-            }
-          </ion-item>
-        } @empty {
-          <ion-item lines="none"><ion-label>Nessuna notifica.</ion-label></ion-item>
-        }
-      </ion-list>
-    </ion-content>
+      <mat-card appearance="outlined">
+        <mat-nav-list data-testid="notifications">
+          @for (n of service.notifications(); track n.id) {
+            <a mat-list-item [routerLink]="['/notifiche', n.id]" [class.unread]="!n.readAt">
+              <mat-icon matListItemIcon>{{ n.kind === 'system' ? 'info' : 'campaign' }}</mat-icon>
+              <span matListItemTitle class="title">{{ n.title }}</span>
+              <span matListItemLine>{{ n.senderName ?? 'Gestionale' }} · {{ n.createdAt | date: 'd MMM y, HH:mm' }}</span>
+              @if (n.requiresAck) {
+                <span matListItemMeta class="status" [class.ok]="n.acknowledgedAt" [class.todo]="!n.acknowledgedAt">
+                  {{ n.acknowledgedAt ? 'Confermata' : 'Da confermare' }}
+                </span>
+              }
+            </a>
+          } @empty {
+            <div class="empty muted">Nessuna notifica.</div>
+          }
+        </mat-nav-list>
+      </mat-card>
+    </div>
   `,
   styles: `
-    .unread {
+    .unread .title {
       font-weight: 700;
+    }
+    .unread mat-icon {
+      color: var(--mat-sys-primary);
+    }
+    .status {
+      align-self: center;
+    }
+    .empty {
+      padding: 24px;
     }
   `,
 })
