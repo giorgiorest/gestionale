@@ -1,7 +1,7 @@
 {
   "realm": "gestionale",
-  "displayName": "Gestionale",
-  "displayNameHtml": "<div class=\"kc-logo-text\"><span>Gestionale</span></div>",
+  "displayName": "civil beefy",
+  "displayNameHtml": "<div class=\"kc-logo-text\"><span>civil beefy</span></div>",
   "loginTheme": "gestionale",
   "enabled": true,
   "sslRequired": "external",
@@ -42,7 +42,7 @@
   "clients": [
     {
       "clientId": "gestionale-web",
-      "name": "Gestionale (web, PWA, desktop)",
+      "name": "civil beefy (web, PWA, desktop)",
       "description": "Client pubblico con Authorization Code + PKCE",
       "enabled": true,
       "publicClient": true,
@@ -123,7 +123,7 @@
     },
     {
       "clientId": "gestionale-desktop",
-      "name": "Gestionale (app desktop)",
+      "name": "civil beefy (app desktop)",
       "description": "Client pubblico dell'app desktop Tauri (Authorization Code + PKCE). Origini fisse del protocollo interno di Tauri: uguali per ogni installazione.",
       "enabled": true,
       "publicClient": true,

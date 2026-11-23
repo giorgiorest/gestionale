@@ -14,7 +14,7 @@ describe('BrandingService', () => {
     service.apply(undefined);
     expect(service.name()).toBe(DEFAULT_BRANDING.name);
     expect(service.logoUrl()).toBe(DEFAULT_BRANDING.logoUrl);
-    expect(document.title).toBe('Gestionale');
+    expect(document.title).toBe('civil beefy');
     expect(root().getPropertyValue('--mat-sys-primary')).toBe('');
   });
 

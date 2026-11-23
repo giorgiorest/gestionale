@@ -13,7 +13,7 @@ Scelte e motivazioni: [ADR 0004](../../docs/decisioni/0004-app-desktop.md).
 ## Come funziona
 
 - **Un solo installer per tutti i clienti.** Al primo avvio l'app chiede l'**indirizzo del server**
-  dell'azienda (es. `https://gestionale.azienda.it`), scarica da lì `config.json` e conserva
+  dell'azienda (es. `https://civilbeefy.azienda.it`), scarica da lì `config.json` e conserva
   l'ultima copia per avviarsi anche offline. Il server si cambia da *Profilo → Cambia server*.
 - **Login**: stesso Keycloak della web, client pubblico `gestionale-desktop`. La pagina di login
   si apre nella finestra dell'app e al termine torna nell'app.
@@ -39,7 +39,7 @@ installer su Windows.
 
 1. GitHub → repository → **Actions** → workflow **CI Desktop** → l'esecuzione più recente su `main`.
 2. In fondo alla pagina, sezione **Artifacts**: scarica `gestionale-desktop-windows` (zip).
-3. Dentro ci sono `Gestionale_<versione>_x64_it-IT.msi` e `Gestionale_<versione>_x64-setup.exe`.
+3. Dentro ci sono `civil beefy_<versione>_x64_it-IT.msi` e `civil beefy_<versione>_x64-setup.exe`.
 
 Con GitHub CLI:
 
@@ -95,7 +95,7 @@ La prima build richiede 10–15 minuti (compilazione Rust); le successive sono m
 Risultato:
 
 ```
-apps/desktop/src-tauri/target/release/bundle/msi/Gestionale_0.1.0_x64_it-IT.msi
+apps/desktop/src-tauri/target/release/bundle/msi/civil beefy_0.1.0_x64_it-IT.msi
 ```
 
 La versione nel nome del file è `version` in `src-tauri/tauri.conf.json`: aumentala a ogni
@@ -105,7 +105,7 @@ rilascio, altrimenti Windows non aggiorna un'installazione esistente.
 
 1. Doppio clic sull'MSI. L'installer **non è ancora firmato**: Windows SmartScreen mostra
    «Windows ha protetto il PC» → *Ulteriori informazioni* → *Esegui comunque*.
-2. Avvia **Gestionale** dal menu Start: compare *Collegati alla tua azienda*.
+2. Avvia **civil beefy** dal menu Start: compare *Collegati alla tua azienda*.
 3. Inserisci l'indirizzo del server e accedi.
 
 ### Con lo stack locale (sviluppo)
@@ -157,6 +157,6 @@ Tracciati come issue su GitHub.
 - **Versione**: allineare `version` di `tauri.conf.json` ai rilasci (tag Git).
 - **Login nel browser di sistema** (pratica raccomandata per le app native, RFC 8252): da valutare.
 - **Distribuzione aziendale**: l'MSI si presta all'installazione silenziosa
-  (`msiexec /i Gestionale_x.y.z_x64_it-IT.msi /qn`) via Intune o criteri di gruppo; in futuro si
+  (`msiexec /i "civil beefy_x.y.z_x64_it-IT.msi" /qn`) via Intune o criteri di gruppo; in futuro si
   potrà precompilare l'indirizzo del server con una proprietà dell'MSI.
 - **macOS e Linux**: rimandati.

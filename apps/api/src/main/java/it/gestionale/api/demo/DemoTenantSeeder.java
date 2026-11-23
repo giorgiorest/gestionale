@@ -103,7 +103,7 @@ public class DemoTenantSeeder implements ApplicationRunner {
         customers.flush();
         // Comunicazione con presa visione a tutta l'azienda: chi accede dopo la riceve comunque.
         notifications.send(new NewNotification(UUID.randomUUID(), NewNotification.ANNOUNCEMENT, "announcement",
-                "Benvenuto nel gestionale",
+                "Benvenuto in civil beefy",
                 "Questa è una comunicazione di prova dell'ambiente demo. Leggila e conferma la presa visione.",
                 "/clienti", Audience.tenant(), true, true, null, "Amministrazione Demo"));
     }

@@ -166,7 +166,7 @@ public class NotificationService {
 
     private String emailText(UUID id, String title, String body, String senderName, boolean requiresAck) {
         StringBuilder text = new StringBuilder();
-        text.append(senderName == null ? "Il gestionale" : senderName)
+        text.append(senderName == null ? "civil beefy" : senderName)
             .append(requiresAck ? " ti ha inviato una comunicazione che richiede la presa visione." : " ti ha inviato una comunicazione.")
             .append("\n\n").append(title).append("\n");
         if (properties.email().includeBody() && body != null && !body.isBlank()) {
@@ -174,11 +174,11 @@ public class NotificationService {
         }
         String appUrl = properties.email().appUrl();
         if (appUrl != null && !appUrl.isBlank()) {
-            text.append("\n").append(requiresAck ? "Apri il gestionale per leggerla e confermare la presa visione:"
-                    : "Apri il gestionale per leggerla:")
+            text.append("\n").append(requiresAck ? "Apri civil beefy per leggerla e confermare la presa visione:"
+                    : "Apri civil beefy per leggerla:")
                 .append("\n").append(appUrl.replaceAll("/$", "")).append("/notifiche/").append(id).append("\n");
         } else if (requiresAck) {
-            text.append("\nApri il gestionale per confermare la presa visione.\n");
+            text.append("\nApri civil beefy per confermare la presa visione.\n");
         }
         return text.toString();
     }

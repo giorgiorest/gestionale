@@ -31,7 +31,7 @@ import { NotificationsService } from '../../core/notifications/notifications.ser
             <a mat-list-item [routerLink]="['/notifiche', n.id]" [class.unread]="!n.readAt">
               <mat-icon matListItemIcon>{{ n.kind === 'system' ? 'info' : 'campaign' }}</mat-icon>
               <span matListItemTitle class="title">{{ n.title }}</span>
-              <span matListItemLine>{{ n.senderName ?? 'Gestionale' }} · {{ n.createdAt | date: 'd MMM y, HH:mm' }}</span>
+              <span matListItemLine>{{ n.senderName ?? 'civil beefy' }} · {{ n.createdAt | date: 'd MMM y, HH:mm' }}</span>
               @if (n.requiresAck) {
                 <span matListItemMeta class="status" [class.ok]="n.acknowledgedAt" [class.todo]="!n.acknowledgedAt">
                   {{ n.acknowledgedAt ? 'Confermata' : 'Da confermare' }}

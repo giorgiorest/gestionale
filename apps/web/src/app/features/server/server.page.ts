@@ -20,11 +20,11 @@ import { AppConfigService } from '../../core/config/app-config';
         <mat-card-content>
           <img [src]="branding.logoUrl()" alt="" class="logo" />
           <h1>Collegati alla tua azienda</h1>
-          <p class="muted">Inserisci l'indirizzo del gestionale che ti ha comunicato l'amministratore.</p>
+          <p class="muted">Inserisci l'indirizzo di civil beefy che ti ha comunicato l'amministratore.</p>
           <form (ngSubmit)="connect()">
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Indirizzo del server</mat-label>
-              <input matInput name="url" placeholder="https://gestionale.azienda.it" [(ngModel)]="url" />
+              <input matInput name="url" placeholder="https://civilbeefy.azienda.it" [(ngModel)]="url" />
             </mat-form-field>
             <button mat-flat-button type="submit" class="full-width" [disabled]="!url.trim() || busy()">Connetti</button>
           </form>

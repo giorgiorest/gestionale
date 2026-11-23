@@ -4,7 +4,7 @@ import { Branding } from '../config/app-config';
 
 /** Marchio di prodotto, usato quando l'installazione non ne indica uno proprio. */
 export const DEFAULT_BRANDING: Required<Pick<Branding, 'name' | 'logoUrl'>> = {
-  name: 'Gestionale',
+  name: 'civil beefy',
   logoUrl: 'branding/logo.svg',
 };
 

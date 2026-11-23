@@ -1,9 +1,12 @@
-# gestionale
+# civil beefy
 
-Gestionale multi-piattaforma e multi-tenant: un'unica base di codice per **web** (PWA),
+**civil beefy** è un gestionale multi-piattaforma e multi-tenant: un'unica base di codice per **web** (PWA),
 **mobile** (Capacitor) e **desktop** (Tauri), con funzionamento **offline** e
 sincronizzazione verso un backend **Spring Boot** su **PostgreSQL**. Login e profili utente
 con **Keycloak** (OIDC).
+
+Il nome del prodotto è «civil beefy»; `gestionale` resta il nome tecnico (repository, pacchetti,
+realm e client Keycloak, database), che non va cambiato perché lo usano configurazioni e token.
 
 Visione e scelte tecniche: [docs/architettura.md](docs/architettura.md) e [docs/decisioni/](docs/decisioni/).
 
@@ -195,7 +198,8 @@ Interfaccia con **Angular Material** (gratuita, MIT), pensata per il PC: barra s
 e menu laterale. Scelta e alternative: [ADR 0006](docs/decisioni/0006-interfaccia-angular-material.md).
 
 - **Logo e colori del prodotto**: `apps/web/public/branding/logo.svg` e palette generata dal
-  colore principale (comando in [apps/web/README.md](apps/web/README.md)). Quelli attuali sono provvisori.
+  colore principale `#0B5C8E` (procedura in [apps/web/README.md](apps/web/README.md)). Il simbolo a celle
+  esagonali è usato anche come icona della scheda del browser, della PWA e dell'app desktop.
 - **Marchio di un cliente** senza ricompilare: `branding` in `config.json` (nome, logo, colore
   principale) o, con Docker, `BRAND_NAME`, `BRAND_LOGO_URL`, `BRAND_PRIMARY_COLOR`.
 - Font (Inter) e icone (Material Symbols) sono inclusi nell'app: niente Google Fonts.
