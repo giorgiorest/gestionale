@@ -1,0 +1,169 @@
+# civil beefy in produzione su una macchina virtuale (es. Oracle Cloud Always Free, Ampere A1 arm64).
+# Guida: docs/deploy-oracle-cloud.md
+#
+# Sulla macchina, nella cartella dell'applicazione (es. /opt/civilbeefy):
+#   docker compose up -d          (lo esegue il workflow GitHub "Deploy")
+#
+# Solo Caddy è raggiungibile da Internet (80/443, HTTPS automatico con Let's Encrypt):
+#   https://<APP_DOMAIN>/        web app            (container web, nginx)
+#   https://<APP_DOMAIN>/api/    API                (container api)
+#   https://<APP_DOMAIN>/sso/    Keycloak (login)   (container keycloak)
+name: civilbeefy
+
+x-logging: &logging
+  # Log a dimensione limitata: il disco della macchina gratuita è piccolo.
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  caddy:
+    image: docker.io/library/caddy:2.11.9
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      - web
+      - api
+      - keycloak
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?impostare APP_DOMAIN nel .env}
+      ACME_EMAIL: ${ACME_EMAIL:?impostare ACME_EMAIL nel .env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+  db:
+    image: docker.io/library/postgres:17
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      POSTGRES_DB: gestionale
+      # Proprietario dello schema: usato solo dalle migrazioni Flyway e da db-init.
+      POSTGRES_USER: ${POSTGRES_USER:-gestionale}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?impostare POSTGRES_PASSWORD nel .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  db-init:
+    # Crea (o riallinea al .env) il ruolo dell'applicazione (non superuser, senza BYPASSRLS) e
+    # l'utente e il database di Keycloak. Gira a ogni avvio e poi termina.
+    image: docker.io/library/postgres:17
+    restart: "no"
+    logging: *logging
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGDATABASE: gestionale
+      PGUSER: ${POSTGRES_USER:-gestionale}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?impostare POSTGRES_PASSWORD nel .env}
+      APP_USER: gestionale_app
+      APP_PASSWORD: ${DB_PASSWORD:?impostare DB_PASSWORD nel .env}
+      KC_USER: keycloak
+      KC_PASSWORD: ${KEYCLOAK_DB_PASSWORD:?impostare KEYCLOAK_DB_PASSWORD nel .env}
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        psql -v ON_ERROR_STOP=1 -v app_user="$$APP_USER" -v app_password="$$APP_PASSWORD" \
+             -v kc_user="$$KC_USER" -v kc_password="$$KC_PASSWORD" <<'SQL'
+        SELECT format('CREATE ROLE %I LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS', :'app_user')
+        WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = :'app_user') \gexec
+        SELECT format('ALTER ROLE %I PASSWORD %L', :'app_user', :'app_password') \gexec
+        SELECT format('CREATE ROLE %I LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE', :'kc_user')
+        WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = :'kc_user') \gexec
+        SELECT format('ALTER ROLE %I PASSWORD %L', :'kc_user', :'kc_password') \gexec
+        SELECT format('CREATE DATABASE keycloak OWNER %I', :'kc_user')
+        WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'keycloak') \gexec
+        SQL
+        echo "Ruoli e database pronti"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.2
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    # Realm di prodotto (senza utenti demo): importato solo se non esiste già.
+    command: ["start", "--import-realm"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:?impostare KEYCLOAK_DB_PASSWORD nel .env}
+      # Keycloak è servito da Caddy su https://<dominio>/sso
+      KC_HOSTNAME: https://${APP_DOMAIN:?impostare APP_DOMAIN nel .env}/sso
+      KC_HTTP_RELATIVE_PATH: /sso
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HEALTH_ENABLED: "true"
+      # Amministratore temporaneo, usato solo al primo avvio: poi crearne uno nominativo e rimuoverlo.
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?impostare KEYCLOAK_ADMIN_PASSWORD nel .env}
+      # Indirizzo della web app nel realm (redirect e CORS).
+      GESTIONALE_WEB_URL: https://${APP_DOMAIN}
+    volumes:
+      - ./keycloak/realm/gestionale-realm.json:/opt/keycloak/data/import/gestionale-realm.json:ro
+      - ./keycloak/themes/gestionale:/opt/keycloak/themes/gestionale:ro
+
+  api:
+    image: ${IMAGE_REGISTRY:?impostare IMAGE_REGISTRY nel .env}/gestionale-api:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:postgresql://db:5432/gestionale
+      DB_USER: gestionale_app
+      DB_PASSWORD: ${DB_PASSWORD:?impostare DB_PASSWORD nel .env}
+      DB_MIGRATION_USER: ${POSTGRES_USER:-gestionale}
+      DB_MIGRATION_PASSWORD: ${POSTGRES_PASSWORD:?impostare POSTGRES_PASSWORD nel .env}
+      JWT_ISSUER_URI: https://${APP_DOMAIN}/sso/realms/gestionale
+      # Chiavi di firma lette dalla rete interna; l'issuer resta quello pubblico.
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/sso/realms/gestionale/protocol/openid-connect/certs
+      # Azienda demo con dati di esempio (utile per far provare il prodotto).
+      DEMO_ENABLED: ${DEMO_ENABLED:-false}
+      APP_PUBLIC_URL: https://${APP_DOMAIN}
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
+      SPRING_MAIL_HOST: ${SMTP_HOST:-}
+      SPRING_MAIL_PORT: ${SMTP_PORT:-587}
+      SPRING_MAIL_USERNAME: ${SMTP_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${SMTP_PASSWORD:-}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "true"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
+      MAIL_FROM: ${MAIL_FROM:-civil beefy <noreply@localhost>}
+      LICENSE_PUBLIC_KEY: ${LICENSE_PUBLIC_KEY:-}
+      AI_PROVIDER: ${AI_PROVIDER:-none}
+      AI_API_KEY: ${AI_API_KEY:-}
+
+  web:
+    image: ${IMAGE_REGISTRY:?impostare IMAGE_REGISTRY nel .env}/gestionale-web:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      WEB_API_URL: /api
+      OIDC_AUTHORITY: https://${APP_DOMAIN}/sso/realms/gestionale
+      OIDC_CLIENT_ID: gestionale-web
+      BRAND_NAME: ${BRAND_NAME:-}
+      BRAND_LOGO_URL: ${BRAND_LOGO_URL:-}
+      BRAND_PRIMARY_COLOR: ${BRAND_PRIMARY_COLOR:-}
+      BRAND_ACCENT_COLOR: ${BRAND_ACCENT_COLOR:-}
+
+volumes:
+  db-data:
+  caddy-data:
+  caddy-config:

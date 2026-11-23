@@ -36,16 +36,19 @@ jobs:
           name: gestionale-web-dist
           path: apps/web/dist/
 
-  # Verifica che l'immagine web (usata da "podman compose --profile app") si costruisca: non viene pubblicata.
+  # Verifica che l'immagine web si costruisca (amd64 e arm64): non viene pubblicata.
+  # La pubblica release-images.yml a ogni push su main.
   image:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: docker/setup-qemu-action@v4
       - uses: docker/setup-buildx-action@v4
       - name: Build immagine web
         uses: docker/build-push-action@v7
         with:
           context: .
           file: infra/docker/web.Dockerfile
+          platforms: linux/amd64,linux/arm64
           push: false
           tags: gestionale-web:ci

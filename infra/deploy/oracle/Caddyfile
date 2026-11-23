@@ -1,0 +1,31 @@
+# Ingresso pubblico di civil beefy: HTTPS automatico (Let's Encrypt) e instradamento ai container.
+{
+	email {$ACME_EMAIL}
+}
+
+{$APP_DOMAIN} {
+	encode zstd gzip
+
+	# Keycloak (pagine di login e console): servito sotto /sso (KC_HTTP_RELATIVE_PATH).
+	handle /sso* {
+		reverse_proxy keycloak:8080
+	}
+
+	# API direttamente da Caddy, che invia X-Forwarded-Proto=https e X-Forwarded-Host:
+	# l'API riconosce così l'indirizzo pubblico (controllo CORS sullo stesso sito).
+	handle /api/* {
+		reverse_proxy api:8080
+	}
+
+	# Tutto il resto: web app (nginx con i file statici e config.json).
+	handle {
+		reverse_proxy web:80
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}

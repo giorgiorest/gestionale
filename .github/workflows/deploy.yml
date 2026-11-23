@@ -1,24 +1,118 @@
 name: Deploy
 
+# Installa una versione di civil beefy sulla macchina di produzione (Oracle Cloud), via SSH.
+# Manuale: si avvia da GitHub → Actions → Deploy → Run workflow.
+# Guida: docs/deploy-oracle-cloud.md
+#
+# Configurazione nell'environment GitHub "production" (Settings → Environments):
+#   secrets:   OCI_SSH_HOST, OCI_SSH_USER, OCI_SSH_PRIVATE_KEY, OCI_SSH_KNOWN_HOSTS
+#   variables: APP_DOMAIN, OCI_APP_DIR (facoltativa, default /opt/civilbeefy)
+
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: Ambiente di destinazione
-        type: choice
-        options: [staging, production]
-        required: true
+      commit:
+        description: Commit di main da installare (vuoto = l'ultimo). Per tornare indietro, indica un commit precedente.
+        required: false
+        type: string
 
 permissions:
   contents: read
+  packages: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
+    environment:
+      name: production
+      url: https://${{ vars.APP_DOMAIN }}
+    env:
+      APP_DIR: ${{ vars.OCI_APP_DIR || '/opt/civilbeefy' }}
+      REGISTRY: ghcr.io/${{ github.repository_owner }}
     steps:
-      - name: Placeholder
+      - name: Versione da installare
+        id: version
+        env:
+          REQUESTED: ${{ inputs.commit }}
         run: |
-          echo "TODO: definire il target di deploy (macchine cloud, metodo e segreti)."
-          echo "Vedi docs/decisioni/ per la scelta del provider."
+          sha="${REQUESTED:-$GITHUB_SHA}"
+          if ! echo "$sha" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error::Indica il commit completo (40 caratteri esadecimali)."; exit 1
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "tag=sha-$sha" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.version.outputs.sha }}
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Le immagini di questo commit esistono?
+        run: |
+          for image in gestionale-api gestionale-web; do
+            if ! docker buildx imagetools inspect "$REGISTRY/$image:${{ steps.version.outputs.tag }}" > /dev/null; then
+              echo "::error::Immagine $image:${{ steps.version.outputs.tag }} non trovata: attendi la fine del workflow 'Release immagini' per questo commit."
+              exit 1
+            fi
+          done
+
+      - name: Configura SSH
+        env:
+          SSH_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.OCI_SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host server
+            HostName ${{ secrets.OCI_SSH_HOST }}
+            User ${{ secrets.OCI_SSH_USER }}
+            IdentityFile ~/.ssh/id_deploy
+            StrictHostKeyChecking yes
+          EOF
+
+      - name: Copia la configurazione sulla macchina
+        run: |
+          ssh server "mkdir -p '$APP_DIR/keycloak/realm' '$APP_DIR/keycloak/themes' && test -f '$APP_DIR/.env' || { echo 'Manca $APP_DIR/.env: vedi docs/deploy-oracle-cloud.md'; exit 1; }"
+          scp infra/deploy/oracle/compose.yml infra/deploy/oracle/Caddyfile server:"$APP_DIR/"
+          scp infra/keycloak/realm/gestionale-realm.json server:"$APP_DIR/keycloak/realm/"
+          tar -C infra/keycloak/themes -cf - gestionale | ssh server "rm -rf '$APP_DIR/keycloak/themes/gestionale' && tar -C '$APP_DIR/keycloak/themes' -xf -"
+
+      - name: Aggiorna i servizi
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          # Il token (valido solo per questo job) passa sull'input standard, non sulla riga di comando.
+          printf '%s' "$TOKEN" | ssh server "docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
+          ssh server "set -e
+            cd '$APP_DIR'
+            if grep -q '^IMAGE_TAG=' .env; then sed -i 's/^IMAGE_TAG=.*/IMAGE_TAG=$TAG/' .env; else echo 'IMAGE_TAG=$TAG' >> .env; fi
+            docker compose pull --quiet || { docker logout ghcr.io; exit 1; }
+            docker logout ghcr.io
+            docker compose up -d --remove-orphans
+            docker image prune -f > /dev/null
+            docker compose ps"
+
+      - name: Verifica
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS "https://${{ vars.APP_DOMAIN }}/api/health"; then
+              echo; echo "Installata la versione ${{ steps.version.outputs.tag }}"; exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::L'API non risponde su https://${{ vars.APP_DOMAIN }}/api/health"
+          ssh server "cd '$APP_DIR' && docker compose ps && docker compose logs --tail=80 api"
           exit 1
