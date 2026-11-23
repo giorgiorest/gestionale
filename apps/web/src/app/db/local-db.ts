@@ -16,6 +16,8 @@ export interface OutboxEntry {
   createdAt: string;
   /** Tentativi di invio falliti. */
   attempts: number;
+  /** Ultimo errore definitivo del server (es. dati non validi): la voce resta in coda da correggere. */
+  lastError?: string;
 }
 
 /** Copia locale di un cliente (stesso schema dell'API). */
@@ -42,6 +44,8 @@ export class LocalDb extends Dexie {
   customers!: Table<LocalCustomer, string>;
   syncState!: Table<SyncState, string>;
 
+  // Nota: in Dexie si dichiarano solo chiave primaria e indici; i campi non indicizzati
+  // (es. OutboxEntry.lastError) si aggiungono senza nuova versione.
   constructor(name = 'gestionale') {
     super(name);
     this.version(1).stores({

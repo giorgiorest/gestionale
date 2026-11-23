@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,6 +34,7 @@ public class AssistantController {
     }
 
     @PostMapping("/chat")
+    @PreAuthorize("hasAuthority('assistant:use')")
     public ChatReply chat(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody ChatRequest request) {
         List<AiMessage> messages = request.messages().stream()
                 .map(m -> new AiMessage(m.role(), m.content()))

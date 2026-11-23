@@ -26,8 +26,10 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          # Provider di identità (OIDC). Viene contattato solo alla prima richiesta autenticata.
+          # Provider di identità OIDC (Keycloak, realm "gestionale"). Contattato alla prima richiesta autenticata.
           issuer-uri: ${JWT_ISSUER_URI}
+          # Il token deve essere emesso per questa API (claim aud).
+          audiences: ${JWT_AUDIENCE:gestionale-api}
 
 server:
   port: 8080
@@ -39,6 +41,9 @@ management:
         include: health,info
 
 gestionale:
+  security:
+    # Claim JWT con i ruoli applicativi (admin, operator, viewer).
+    roles-claim: roles
   tenancy:
     # Nome del claim JWT che contiene l'id del tenant.
     tenant-claim: tenant_id

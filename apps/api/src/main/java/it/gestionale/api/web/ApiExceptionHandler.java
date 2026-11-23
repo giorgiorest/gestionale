@@ -5,6 +5,7 @@ import it.gestionale.api.ai.AiUnavailableException;
 import it.gestionale.api.licensing.FeatureNotEnabledException;
 import it.gestionale.api.licensing.InvalidLicenseException;
 import it.gestionale.api.tenancy.MissingTenantException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -32,6 +33,12 @@ public class ApiExceptionHandler {
     @ExceptionHandler(AiUnavailableException.class)
     ProblemDetail aiUnavailable(AiUnavailableException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage());
+    }
+
+    /** Es. id già usato da un record non visibile (altro tenant): conflitto, senza rivelare altro. */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    ProblemDetail conflict(DataIntegrityViolationException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Operazione in conflitto con i dati esistenti");
     }
 
     @ExceptionHandler(InvalidLicenseException.class)

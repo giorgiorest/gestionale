@@ -9,18 +9,21 @@ principalmente la propria parte** dei dati. Deve funzionare su web, mobile e des
 ## Panoramica
 
 ```
- ┌──────────── Client (stesso codice Angular) ─────────────┐
- │  Web/PWA        Mobile (Ionic + Capacitor)   Desktop (Tauri) │
- │        └──────── IndexedDB (Dexie): dati + outbox ───────┘   │
- └───────────────────────────┬──────────────────────────────┘
-                             │ HTTPS, JWT (claim tenant_id)
-                 ┌───────────▼───────────┐
-                 │  API Spring Boot      │  tenancy · licensing · ai · domini
-                 └───────────┬───────────┘
-                             │ app.tenant_id per connessione
-                 ┌───────────▼───────────┐
-                 │  PostgreSQL + RLS     │  Flyway per le migrazioni
-                 └───────────────────────┘
+┌────────────── Client (stesso codice Angular) ──────────────┐
+│  Web/PWA     Mobile (Ionic + Capacitor)     Desktop (Tauri)│
+│        IndexedDB (Dexie): dati locali + outbox             │
+└───────────────┬───────────────────────────────┬────────────┘
+                │ login OIDC (code + PKCE)      │ HTTPS + JWT
+                ▼                               │ (tenant_id, roles, aud)
+      ┌──────────────────┐                      ▼
+      │  Keycloak        │  chiavi   ┌───────────────────────┐
+      │  realm           │──────────▶│  API Spring Boot      │ auth · tenancy · licensing
+      │  "gestionale"    │  (JWKS)   │                       │ ai · domini
+      └──────────────────┘           └──────────┬────────────┘
+                                                │ app.tenant_id per connessione
+                                     ┌──────────▼────────────┐
+                                     │  PostgreSQL + RLS     │ Flyway per le migrazioni
+                                     └───────────────────────┘
 ```
 
 ## Client
@@ -29,8 +32,13 @@ principalmente la propria parte** dei dati. Deve funzionare su web, mobile e des
   - **Web**: PWA con service worker (`@angular/pwa`), installabile e utilizzabile offline.
   - **Mobile**: la stessa build impacchettata con **Capacitor** (iOS, Android).
   - **Desktop**: la stessa build incapsulata da **Tauri 2** (`apps/desktop`).
-- Il frontend nasconde la UI non inclusa nel piano (`*appHasFeature`, `featureGuard`),
-  ma **non è una protezione**: ogni controllo vale solo se ripetuto nel backend.
+- Il frontend nasconde la UI non inclusa nel piano (`*appHasFeature`, `featureGuard`) o non
+  consentita dal ruolo (`*appHasPermission`, `permissionGuard`), ma **non è una protezione**:
+  ogni controllo vale solo se ripetuto nel backend.
+- **Configurazione a runtime**: URL dell'API e del provider di identità arrivano da `config.json`
+  caricato all'avvio (in Docker è generato dalle variabili d'ambiente del container). La stessa
+  build serve quindi qualsiasi installazione o cliente; il service worker conserva l'ultima
+  configurazione per l'avvio offline.
 
 ## Offline e sincronizzazione
 
@@ -39,10 +47,15 @@ principalmente la propria parte** dei dati. Deve funzionare su web, mobile e des
 - **Outbox**: ogni scrittura locale aggiorna il dato in IndexedDB e accoda un'operazione
   (`entity`, `operation`, `payload`, `createdAt`, `attempts`) nella tabella `outbox`.
   I componenti non chiamano direttamente le API di scrittura: passano da `SyncService.enqueue()`.
-- **Invio (`flush`)**: la outbox viene inviata in ordine di creazione; le voci confermate
-  vengono rimosse, gli errori incrementano `attempts` con backoff. Le operazioni devono essere
-  idempotenti lato server (stesso id = stessa operazione).
-- **Ricezione (`pullChanges`)**: sincronizzazione incrementale con **cursore** per entità
+- **Invio (`flush`, implementato)**: la outbox viene inviata in ordine di creazione con
+  `PUT /api/{entità}/{id}` (creazione o modifica) e `DELETE /api/{entità}/{id}`; le voci confermate
+  vengono rimosse. Errori di rete, 5xx, 401, 408 e 429 fermano l'invio (si riprova al ritorno
+  della connessione o al successivo caricamento); gli altri 4xx sono errori definitivi: la voce
+  resta in coda con `lastError` e l'invio prosegue. Le API di scrittura sono **idempotenti**
+  (stesso id = stessa operazione), così un reinvio non crea duplicati.
+- **Lettura**: per ora ogni pagina scarica l'elenco completo e lo salva in IndexedDB; se il
+  server non risponde mostra la copia locale (esempio: `features/customers`).
+- **Ricezione (`pullChanges`, da implementare)**: sincronizzazione incrementale con **cursore** per entità
   (`syncState`): il client chiede le modifiche successive all'ultimo cursore ricevuto
   (es. `updated_at` + id, o una sequenza di modifica) e le applica localmente.
 - **Conflitti**: con 50 utenti che modificano soprattutto la propria parte, i conflitti sono
@@ -52,9 +65,24 @@ principalmente la propria parte** dei dati. Deve funzionare su web, mobile e des
 
 ## Backend
 
-- **Spring Boot 3.5**, Java 21, API REST stateless, autenticazione **OAuth2/OIDC** (JWT).
+- **Spring Boot 3.5**, Java 21, API REST stateless, autenticazione **OAuth2/OIDC** (JWT emessi da Keycloak).
 - **PostgreSQL 17** con migrazioni **Flyway** (mai modificare una migrazione già applicata).
 - Errori in formato RFC 9457 (`application/problem+json`).
+
+## Identità e profilazione
+
+Dettagli e motivazioni (anche per la rivendita): [ADR 0003](decisioni/0003-identita-keycloak.md).
+
+- **Keycloak 26**, realm `gestionale` versionato in `infra/keycloak/realm` (configurazione come codice).
+- La web app usa il flusso **Authorization Code + PKCE** con `oidc-client-ts` (client pubblico
+  `gestionale-web`, nessun segreto nell'app); il token viaggia come `Authorization: Bearer`.
+- L'API valida firma, issuer e audience (`gestionale-api`) e legge solo claim neutri:
+  `sub`, `preferred_username`, `name`, `email`, `tenant_id`, `roles`.
+- **Profilazione**: in Keycloak si assegnano ruoli (`admin`, `operator`, `viewer`); il backend
+  li traduce in permessi (`customers:read`, `customers:write`, `assistant:use`, `users:manage`)
+  controllati con `@PreAuthorize`. `GET /api/me` restituisce profilo, tenant, ruoli e permessi.
+- Accesso a una funzione = **ruolo** dell'utente (permesso) **e** **piano** del tenant (entitlement).
+- L'attributo `tenant_id` lo modificano solo gli amministratori di Keycloak.
 
 ## Multi-tenant
 
@@ -63,7 +91,7 @@ principalmente la propria parte** dei dati. Deve funzionare su web, mobile e des
 - **Row Level Security** su PostgreSQL, abilitata e forzata con `CALL enable_tenant_rls('tabella')`:
   la policy confronta `tenant_id` con `current_tenant_id()`, che legge `app.tenant_id`.
 - Catena della richiesta:
-  1. `TenantFilter` legge il claim `tenant_id` dal JWT e lo mette in `TenantContext`;
+  1. `TenantFilter` legge il claim `tenant_id` dal JWT (attributo utente in Keycloak) e lo mette in `TenantContext`;
   2. `TenantAwareDataSource` imposta `app.tenant_id` su ogni connessione presa dal pool
      (stringa vuota se manca il tenant: nessuna riga visibile, *fail-closed*);
   3. le policy RLS filtrano letture e bloccano scritture su altri tenant.

@@ -1,15 +1,38 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/auth/auth.guard';
 import { featureGuard } from './core/entitlements/feature.guard';
+import { permissionGuard } from './core/profile/permission.guard';
 
 export const routes: Routes = [
   {
-    path: '',
-    loadComponent: () => import('./features/home/home.component').then((m) => m.HomeComponent),
+    path: 'accesso',
+    loadComponent: () => import('./features/auth/login.page').then((m) => m.LoginPage),
   },
+  // Ritorno dal provider di identità: gestito da AuthService prima del routing.
+  { path: 'auth/callback', redirectTo: '' },
   {
-    path: 'assistente',
-    canActivate: [featureGuard('aiAssistant')],
-    loadComponent: () => import('./features/assistant/assistant.component').then((m) => m.AssistantComponent),
+    path: '',
+    canActivateChild: [authGuard],
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./features/home/home.component').then((m) => m.HomeComponent),
+      },
+      {
+        path: 'profilo',
+        loadComponent: () => import('./features/profile/profile.page').then((m) => m.ProfilePage),
+      },
+      {
+        path: 'clienti',
+        canActivate: [permissionGuard('customers:read')],
+        loadComponent: () => import('./features/customers/customers.page').then((m) => m.CustomersPage),
+      },
+      {
+        path: 'assistente',
+        canActivate: [permissionGuard('assistant:use'), featureGuard('aiAssistant')],
+        loadComponent: () => import('./features/assistant/assistant.component').then((m) => m.AssistantComponent),
+      },
+    ],
   },
   { path: '**', redirectTo: '' },
 ];
