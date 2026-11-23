@@ -59,6 +59,17 @@ Con Docker le stesse impostazioni arrivano da `BRAND_NAME`, `BRAND_LOGO_URL`, `B
 Il logo conviene ospitarlo sullo stesso sito: un logo su un altro dominio fa arrivare a quel dominio
 l'indirizzo IP di chi apre l'app (vedi [docs/privacy-gdpr.md](../../docs/privacy-gdpr.md)).
 
+## Service worker (PWA)
+
+`ngsw-config.json` → `navigationUrls`: il service worker risponde con la web app (anche offline)
+alle navigazioni dell'utente, **tranne** `/sso/**` (Keycloak, sullo stesso dominio in produzione),
+`/api/**` e `/downloads/**`. Senza queste esclusioni il clic su «Accedi» tornava alla pagina di
+accesso: il service worker serviva la web app al posto della pagina di login di Keycloak. Un nuovo
+percorso servito da un altro servizio dietro lo stesso dominio va aggiunto qui.
+
+Un aggiornamento arriva ai browser che hanno già l'app quando il service worker, a pagina aperta e
+inattiva per qualche secondo, scarica la nuova versione: vale dalla successiva apertura.
+
 ## Privacy e dati sul dispositivo
 
 - Pagina pubblica **/privacy** («Privacy e cookie»): elenco dei cookie tecnici e dei dati salvati nel
