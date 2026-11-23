@@ -1,0 +1,50 @@
+name: CI Desktop
+
+# Installer Windows dell'app desktop (Tauri 2): .msi e setup .exe come artifact.
+# Gli installer NON sono ancora firmati (vedi apps/desktop/README.md, "Firma e aggiornamenti").
+
+on:
+  push:
+    branches: [main]
+    paths: ['apps/desktop/**', 'apps/web/**', '.github/workflows/ci-desktop.yml']
+  pull_request:
+    paths: ['apps/desktop/**', 'apps/web/**', '.github/workflows/ci-desktop.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            apps/web/package-lock.json
+            apps/desktop/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri -> target
+      - name: Dipendenze web
+        working-directory: apps/web
+        run: npm ci
+      - name: Dipendenze desktop
+        working-directory: apps/desktop
+        run: npm ci
+      # beforeBuildCommand (tauri.conf.json) esegue prima la build di produzione di apps/web.
+      - name: Build installer
+        working-directory: apps/desktop
+        run: npm run build
+      - name: Pubblica gli installer
+        uses: actions/upload-artifact@v7
+        with:
+          name: gestionale-desktop-windows
+          path: |
+            apps/desktop/src-tauri/target/release/bundle/msi/*.msi
+            apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
+          if-no-files-found: error

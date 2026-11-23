@@ -11,7 +11,8 @@ cat > /usr/share/nginx/html/config.json <<EOF
   "apiUrl": "${WEB_API_URL:-/api}",
   "auth": {
     "authority": "${OIDC_AUTHORITY}",
-    "clientId": "${OIDC_CLIENT_ID:-gestionale-web}"
+    "clientId": "${OIDC_CLIENT_ID:-gestionale-web}",
+    "desktopClientId": "${OIDC_DESKTOP_CLIENT_ID:-gestionale-desktop}"
   }
 }
 EOF

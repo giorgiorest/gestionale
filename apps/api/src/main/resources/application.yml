@@ -41,6 +41,9 @@ management:
         include: health,info
 
 gestionale:
+  cors:
+    # Origini dell'app desktop (Tauri). Altre origini: CORS_ALLOWED_ORIGINS, separate da virgola.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://tauri.localhost,tauri://localhost}
   security:
     # Claim JWT con i ruoli applicativi (admin, operator, viewer).
     roles-claim: roles

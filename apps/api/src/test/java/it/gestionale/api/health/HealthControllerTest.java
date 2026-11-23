@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import it.gestionale.api.auth.SecurityProperties;
+import it.gestionale.api.config.CorsProperties;
 import it.gestionale.api.config.SecurityConfig;
 import it.gestionale.api.tenancy.TenancyProperties;
 import org.junit.jupiter.api.Test;
@@ -18,7 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(HealthController.class)
 @Import(SecurityConfig.class)
-@EnableConfigurationProperties({TenancyProperties.class, SecurityProperties.class})
+@EnableConfigurationProperties({TenancyProperties.class, SecurityProperties.class, CorsProperties.class})
 class HealthControllerTest {
 
     @Autowired

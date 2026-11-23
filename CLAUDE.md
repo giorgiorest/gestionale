@@ -3,7 +3,7 @@
 ## Stack
 - Backend: Spring Boot (Java 21, Maven) in apps/api, PostgreSQL, Flyway per le migrazioni.
 - Frontend: Angular con Ionic e Capacitor (mobile), PWA per il web, Dexie per il database locale in apps/web.
-- Desktop: Tauri 2 in apps/desktop, che incapsula la build web.
+- Desktop: Tauri 2 in apps/desktop, che incapsula la build web (Windows). Un solo installer per tutti i clienti: il server si sceglie al primo avvio. Installer generati da ci-desktop.yml.
 - Identità: Keycloak 26 (OIDC), realm versionato in infra/keycloak/realm; utenti demo solo in infra/keycloak/dev. Frontend con oidc-client-ts (Authorization Code + PKCE).
 - Infrastruttura locale: infra/docker/compose.yml (compatibile con Docker e Podman).
 - AI: modulo `ai/` in apps/api, provider-agnostico. Assistente chat nel frontend in `features/assistant`.
@@ -26,6 +26,7 @@
 - Profilazione: in Keycloak si assegnano solo ruoli; la mappatura ruolo → permessi sta in `Role`/`Permission` (apps/api, modulo `auth/`). Ogni endpoint dichiara il permesso con `@PreAuthorize("hasAuthority('…')")`. Un nuovo ruolo si aggiunge nel realm, in `Role`, nelle etichette del frontend e nella documentazione.
 - Il codice dipende solo da claim OIDC neutri (`sub`, `tenant_id`, `roles`, `aud`), mai da API specifiche di Keycloak: il prodotto viene rivenduto e il provider di identità deve restare sostituibile.
 - La configurazione di un'installazione (URL, client, chiavi pubbliche) arriva da variabili d'ambiente o da `config.json`, mai ricompilando: la stessa build serve clienti diversi.
+- Il codice web resta unico per browser e desktop: le differenze passano da `isPackagedDesktopApp()` e dalla configurazione, mai da build separate. Firma del codice e chiavi degli aggiornamenti stanno solo nei GitHub Secrets.
 - Le modifiche al realm si fanno nel file JSON versionato; non committare mai utenti reali, password reali o segreti di client.
 - Le feature flag tecniche e gli entitlement commerciali sono concetti distinti: non usare un flag per decidere cosa include un piano.
 - Le licenze offline sono token firmati. La chiave privata non sta mai nel repository né nell'app distribuita.
