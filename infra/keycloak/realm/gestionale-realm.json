@@ -13,6 +13,10 @@
   "editUsernameAllowed": false,
   "bruteForceProtected": true,
   "failureFactor": 10,
+  "eventsEnabled": true,
+  "eventsExpiration": 7776000,
+  "adminEventsEnabled": true,
+  "adminEventsDetailsEnabled": false,
   "passwordPolicy": "length(10) and notUsername and notEmail",
   "internationalizationEnabled": true,
   "supportedLocales": [

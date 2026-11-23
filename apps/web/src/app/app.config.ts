@@ -18,6 +18,7 @@ import { AuthService } from './core/auth/auth.service';
 import { AppConfigService } from './core/config/app-config';
 import { BrandingService } from './core/branding/branding.service';
 import { isPackagedDesktopApp } from './core/platform';
+import { LocalDataService } from './core/privacy/local-data.service';
 
 // Date e numeri in italiano.
 registerLocaleData(localeIt);
@@ -32,6 +33,7 @@ export const appConfig: ApplicationConfig = {
       const config = inject(AppConfigService);
       const auth = inject(AuthService);
       const branding = inject(BrandingService);
+      const localData = inject(LocalDataService);
       // Icone Material Symbols (incluse nell'app, non scaricate da Google).
       inject(MatIconRegistry).setDefaultFontSetClass('material-symbols-outlined');
       // Nell'app desktop non ancora collegata a un server la configurazione manca:
@@ -40,6 +42,12 @@ export const appConfig: ApplicationConfig = {
       branding.apply(loaded?.branding);
       if (loaded) {
         await auth.init();
+        // I dati offline sul dispositivo appartengono a un solo utente: se è cambiato, si cancellano
+        // prima che qualsiasi pagina li mostri.
+        const owner = auth.ownerKey();
+        if (owner) {
+          await localData.claim(owner);
+        }
       }
     }),
     provideRouter(routes, withComponentInputBinding()),

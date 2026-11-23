@@ -178,7 +178,8 @@ Con l'utente `gestionale_app` la Row Level Security nasconde tutto finché non i
 ## Immagine web e configurazione
 
 L'immagine web (`infra/docker/web.Dockerfile`, nginx) genera `config.json` all'avvio dalle variabili
-`WEB_API_URL`, `OIDC_AUTHORITY`, `OIDC_CLIENT_ID` e `BRAND_*`: la stessa immagine si installa presso
+`WEB_API_URL`, `OIDC_AUTHORITY`, `OIDC_CLIENT_ID`, `BRAND_*` e `LEGAL_*` (link a informativa privacy e
+condizioni d'uso): la stessa immagine si installa presso
 clienti diversi senza ricompilare. nginx inoltra `/api` all'API con gli header `X-Forwarded-*`, che
 l'API usa per riconoscere l'indirizzo pubblico.
 
@@ -235,7 +236,9 @@ e menu laterale. Scelta e alternative: [ADR 0006](docs/decisioni/0006-interfacci
 - La pagina di login di Keycloak usa il tema `gestionale`, con logo, colore e font dell'applicazione
   (`infra/keycloak/themes/gestionale`; tema per un cliente: [infra/keycloak/README.md](infra/keycloak/README.md)).
 - Utenti e ruoli si gestiscono in Keycloak (realm `gestionale`); ogni utente ha l'attributo
-  `tenant_id` (azienda). Guida: [infra/keycloak/README.md](infra/keycloak/README.md).
+  `tenant_id` (azienda). Guida per chi amministra (utenti, ruoli, nuove aziende e licenze):
+  [docs/gestione-utenti-e-aziende.md](docs/gestione-utenti-e-aziende.md); dettagli tecnici:
+  [infra/keycloak/README.md](infra/keycloak/README.md).
 - Ogni ruolo concede dei permessi, definiti nel backend (`apps/api/.../auth/Role.java`):
 
 | Permesso | admin | operator | viewer |
@@ -245,6 +248,17 @@ e menu laterale. Scelta e alternative: [ADR 0006](docs/decisioni/0006-interfacci
 | `assistant:use` — usare l'assistente (se incluso nel piano) | ✓ | ✓ | |
 | `notifications:send` — inviare comunicazioni ai dipendenti e vederne la presa visione | ✓ | | |
 | `users:manage` — gestire gli utenti (area da realizzare) | ✓ | | |
+
+## Privacy e GDPR
+
+- Solo **cookie tecnici** (accesso): nessun banner di consenso; informativa nella pagina pubblica
+  `/privacy`, con i link ai documenti del titolare (`LEGAL_PRIVACY_URL`, `LEGAL_TERMS_URL`).
+- I dati salvati nel browser per l'uso offline appartengono a un solo utente e si cancellano
+  all'uscita o se accede un altro utente.
+- Keycloak registra gli accessi (90 giorni) e le operazioni degli amministratori.
+- Ruoli GDPR, obblighi di chi vende il servizio (DPA, registro, data breach), diritti degli
+  interessati e cosa manca: [docs/privacy-gdpr.md](docs/privacy-gdpr.md) ·
+  [ADR 0008](docs/decisioni/0008-privacy-dati-sul-dispositivo.md).
 
 ## Notifiche e comunicazioni
 

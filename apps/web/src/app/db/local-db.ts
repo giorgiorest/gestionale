@@ -50,8 +50,16 @@ export interface SyncState {
   cursor: string | null;
 }
 
+/** Informazioni sul database locale stesso (es. a chi appartengono i dati). */
+export interface LocalMeta {
+  key: string;
+  value: string;
+}
+
 /**
  * Database locale (IndexedDB) per l'uso offline.
+ * Contiene dati personali: appartiene a un solo utente (`meta.owner`) e si svuota all'uscita
+ * (vedi LocalDataService).
  * Ogni modifica allo schema richiede una nuova `version()`: non modificare quelle esistenti.
  */
 export class LocalDb extends Dexie {
@@ -59,6 +67,7 @@ export class LocalDb extends Dexie {
   customers!: Table<LocalCustomer, string>;
   notifications!: Table<LocalNotification, string>;
   syncState!: Table<SyncState, string>;
+  meta!: Table<LocalMeta, string>;
 
   // Nota: in Dexie si dichiarano solo chiave primaria e indici; i campi non indicizzati
   // (es. OutboxEntry.lastError) si aggiungono senza nuova versione.
@@ -72,6 +81,10 @@ export class LocalDb extends Dexie {
     // v2: notifiche dell'utente.
     this.version(2).stores({
       notifications: 'id, createdAt',
+    });
+    // v3: proprietario dei dati locali.
+    this.version(3).stores({
+      meta: 'key',
     });
   }
 }

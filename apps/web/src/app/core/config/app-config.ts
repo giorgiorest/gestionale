@@ -15,6 +15,16 @@ export interface AppConfig {
   };
   /** Personalizzazione dell'installazione (facoltativa): nome, logo e colore principale. */
   branding?: Branding;
+  /** Documenti legali di chi offre il servizio (facoltativi). */
+  legal?: Legal;
+}
+
+/** Link ai documenti legali dell'installazione, mostrati nella pagina Privacy e cookie. */
+export interface Legal {
+  /** Informativa privacy (art. 13 GDPR) del titolare del trattamento. */
+  privacyUrl?: string;
+  /** Condizioni d'uso del servizio. */
+  termsUrl?: string;
 }
 
 /** Marchio mostrato nell'app. Senza valori si usa quello di prodotto. */
@@ -119,6 +129,10 @@ export class AppConfigService {
       branding: config.branding && {
         ...config.branding,
         logoUrl: config.branding.logoUrl ? new URL(config.branding.logoUrl, base).href : undefined,
+      },
+      legal: config.legal && {
+        privacyUrl: config.legal.privacyUrl ? new URL(config.legal.privacyUrl, base).href : undefined,
+        termsUrl: config.legal.termsUrl ? new URL(config.legal.termsUrl, base).href : undefined,
       },
     };
   }
