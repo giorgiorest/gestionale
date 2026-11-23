@@ -8,6 +8,11 @@ export const routes: Routes = [
     path: 'accesso',
     loadComponent: () => import('./features/auth/login.page').then((m) => m.LoginPage),
   },
+  {
+    // App desktop: indirizzo del server dell'azienda.
+    path: 'server',
+    loadComponent: () => import('./features/server/server.page').then((m) => m.ServerPage),
+  },
   // Ritorno dal provider di identità: gestito da AuthService prima del routing.
   { path: 'auth/callback', redirectTo: '' },
   {

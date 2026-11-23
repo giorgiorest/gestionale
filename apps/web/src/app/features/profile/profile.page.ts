@@ -14,6 +14,7 @@ import {
   IonToolbar,
 } from '@ionic/angular';
 import { AuthService } from '../../core/auth/auth.service';
+import { AppConfigService } from '../../core/config/app-config';
 import { PERMISSION_LABELS, ProfileService, ROLE_LABELS } from '../../core/profile/profile.service';
 
 /** Profilo utente: dati personali, azienda, ruoli e permessi. */
@@ -92,6 +93,15 @@ import { PERMISSION_LABELS, ProfileService, ROLE_LABELS } from '../../core/profi
       <ion-button expand="block" fill="outline" [href]="auth.accountUrl()" target="_blank">
         Gestisci account e password
       </ion-button>
+      @if (appConfig.desktop) {
+        <ion-item lines="none">
+          <ion-label>
+            <p>Server</p>
+            <h2>{{ appConfig.serverUrl }}</h2>
+          </ion-label>
+        </ion-item>
+        <ion-button expand="block" fill="clear" (click)="changeServer()">Cambia server</ion-button>
+      }
       <ion-button expand="block" color="medium" (click)="auth.logout()">Esci</ion-button>
     </ion-content>
   `,
@@ -99,9 +109,17 @@ import { PERMISSION_LABELS, ProfileService, ROLE_LABELS } from '../../core/profi
 export class ProfilePage {
   readonly profile = inject(ProfileService);
   readonly auth = inject(AuthService);
+  readonly appConfig = inject(AppConfigService);
 
   constructor() {
     void this.profile.load(true);
+  }
+
+  /** App desktop: dimentica server e sessione, poi torna alla scelta del server. */
+  changeServer(): void {
+    this.appConfig.disconnect();
+    sessionStorage.clear();
+    window.location.replace(new URL('server', document.baseURI).href);
   }
 
   roleLabel(role: string): string {

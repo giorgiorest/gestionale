@@ -16,6 +16,7 @@ import { routes } from './app.routes';
 import { authInterceptor } from './core/auth/auth.interceptor';
 import { AuthService } from './core/auth/auth.service';
 import { AppConfigService } from './core/config/app-config';
+import { isPackagedDesktopApp } from './core/platform';
 
 // Date e numeri in italiano.
 registerLocaleData(localeIt);
@@ -29,14 +30,18 @@ export const appConfig: ApplicationConfig = {
       // inject() va chiamato prima del primo await: dopo si è fuori dal contesto di injection.
       const config = inject(AppConfigService);
       const auth = inject(AuthService);
-      await config.load();
-      await auth.init();
+      // Nell'app desktop non ancora collegata a un server la configurazione manca:
+      // authGuard porta alla pagina /server.
+      if (await config.load()) {
+        await auth.init();
+      }
     }),
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withInterceptors([authInterceptor])),
     provideIonicAngular({}),
     provideServiceWorker('ngsw-worker.js', {
-      enabled: !isDevMode(),
+      // Nell'app desktop i file sono già locali: niente service worker.
+      enabled: !isDevMode() && !isPackagedDesktopApp(),
       registrationStrategy: 'registerWhenStable:30000',
     }),
   ],

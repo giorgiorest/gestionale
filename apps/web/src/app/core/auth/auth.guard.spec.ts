@@ -1,25 +1,35 @@
 import { TestBed } from '@angular/core/testing';
 import { Router, UrlTree, provideRouter } from '@angular/router';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import { AppConfigService } from '../config/app-config';
 import { authGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 
 describe('authGuard', () => {
-  function run(authenticated: boolean, url: string) {
+  function run(authenticated: boolean, url: string, hasConfig = true) {
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), { provide: AuthService, useValue: { isAuthenticated: () => authenticated } }],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: { isAuthenticated: () => authenticated } },
+        { provide: AppConfigService, useValue: { hasConfig } },
+      ],
     });
     return TestBed.runInInjectionContext(() =>
       authGuard({} as ActivatedRouteSnapshot, { url } as RouterStateSnapshot),
     );
   }
 
+  const serialize = (tree: unknown) => TestBed.inject(Router).serializeUrl(tree as UrlTree);
+
   it('lascia passare gli utenti autenticati', () => {
     expect(run(true, '/clienti')).toBe(true);
   });
 
   it('manda gli altri alla pagina di accesso ricordando la destinazione', () => {
-    const result = run(false, '/clienti') as UrlTree;
-    expect(TestBed.inject(Router).serializeUrl(result)).toBe('/accesso?returnUrl=%2Fclienti');
+    expect(serialize(run(false, '/clienti'))).toBe('/accesso?returnUrl=%2Fclienti');
+  });
+
+  it('nell\'app desktop senza server porta alla scelta del server', () => {
+    expect(serialize(run(false, '/clienti', false))).toBe('/server');
   });
 });

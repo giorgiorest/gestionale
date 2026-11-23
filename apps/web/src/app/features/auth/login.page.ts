@@ -2,6 +2,7 @@ import { Component, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { IonButton, IonContent, IonHeader, IonNote, IonText, IonTitle, IonToolbar } from '@ionic/angular';
 import { AuthService } from '../../core/auth/auth.service';
+import { AppConfigService } from '../../core/config/app-config';
 
 /** Pagina di accesso: rimanda al provider di identità (Keycloak). */
 @Component({
@@ -38,11 +39,14 @@ export class LoginPage {
 
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly appConfig = inject(AppConfigService);
   readonly busy = signal(false);
   readonly error = signal<string | null>(null);
 
   constructor() {
-    if (this.auth.isAuthenticated()) {
+    if (!this.appConfig.hasConfig) {
+      void this.router.navigateByUrl('/server');
+    } else if (this.auth.isAuthenticated()) {
       void this.router.navigateByUrl(this.returnUrl());
     }
   }
