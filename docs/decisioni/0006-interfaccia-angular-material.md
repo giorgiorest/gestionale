@@ -42,11 +42,12 @@ Alternative valutate (versioni compatibili con Angular 22, novembre 2026):
 ## Conseguenze
 
 - Bundle iniziale della web app sceso da 645 kB a 430 kB.
-- Per un marchio di prodotto definitivo: sostituire `apps/web/public/branding/logo.svg` e
-  rigenerare la palette con il colore principale (vedi `apps/web/README.md`).
+- Marchio di prodotto: simbolo a celle esagonali (`apps/web/public/branding/logo.svg`, usato anche
+  per favicon, icone PWA e desktop) e colore principale `#0B5C8E`; procedura per cambiarli in
+  `apps/web/README.md`.
 - Il colore per cliente modifica il colore principale e le sue tinte; la palette completa
   (secondario, terziario, neutri) resta quella di prodotto.
 - Tabelle molto avanzate (raggruppamenti, export, modifica in linea) andranno affiancate da
   una griglia dedicata (es. AG Grid Community, MIT) quando serviranno.
 - Da fare: tema chiaro/scuro a scelta dell'utente, tema di login Keycloak con lo stesso marchio,
-  icone dell'app (PWA e desktop) dal logo definitivo.
+  esportazione originale del simbolo (ora ridisegnato in SVG da un'immagine).
