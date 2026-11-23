@@ -58,33 +58,105 @@ gestionale/
 
 ## Prerequisiti
 
-- Git
-- Java 21 (JDK) — Maven non serve, c'è il wrapper (`mvnw` / `mvnw.cmd`)
-- Node.js 22 e npm
-- Un motore di container: **Docker** oppure **Podman** (per PostgreSQL e Keycloak in sviluppo,
-  e per i test di integrazione con Testcontainers)
-- Per l'app desktop: Rust e Microsoft C++ Build Tools (vedi `apps/desktop/README.md`)
-- Facoltativo: GitHub CLI (`gh`)
+| Serve per | Cosa installare (Windows, PowerShell) |
+|-----------|----------------------------------------|
+| tutto | Git |
+| database, Keycloak, email di prova | **Podman** (`winget install RedHat.Podman`, poi `podman machine init`) e **podman-compose** (`winget install Python.Python.3.13`, poi in un nuovo terminale `pip install podman-compose`) |
+| API | **Java 21** (JDK), ad esempio `winget install EclipseAdoptium.Temurin.21.JDK`. Maven non serve: c'è il wrapper `mvnw.cmd` |
+| web | **Node.js 22** (`winget install OpenJS.NodeJS.LTS` o la versione 22 dal sito) |
+| MSI dell'app desktop | **Rust** (`winget install Rustlang.Rustup`, poi `rustup default stable-msvc`) e **Microsoft C++ Build Tools** con il carico «Sviluppo di applicazioni desktop con C++»; funzionalità facoltativa di Windows **VBSCRIPT** attiva |
 
-## Avvio locale
+Su macOS e Linux gli stessi strumenti si installano con `brew` o con i pacchetti della distribuzione.
+Docker non serve: va bene anche al posto di Podman (sostituisci `podman-compose` con `docker compose`).
 
-Guida passo passo: **[docs/avvio-locale.md](docs/avvio-locale.md)**. Si usa `podman-compose`
-(nessun componente Docker; vanno bene anche `podman compose` e `docker compose`). In breve, dalla
-radice del repository:
+## Avvio locale (passo passo)
+
+Guida completa, con la modalità «tutto in container» e i problemi frequenti:
+[docs/avvio-locale.md](docs/avvio-locale.md). Qui la sequenza per sviluppare. I comandi sono per
+PowerShell; su macOS/Linux usa `./mvnw` al posto di `.\mvnw.cmd`.
+
+### 1. Servizi di supporto (database, Keycloak, email)
+
+La prima volta, dalla radice del repository:
 
 ```bash
 cd infra/docker
-cp .env.example .env
-podman-compose up -d                              # modalità A: database, Keycloak, Mailpit
-podman-compose --profile app up -d --build        # modalità B: anche API e web in container
+copy .env.example .env
 ```
 
-Nella modalità A si avviano a mano l'API (`apps/api`: `./mvnw spring-boot:run`) e la web app
-(`apps/web`: `npm ci` e `npm start`). In entrambe l'app è su <http://localhost:4200>; utenti demo
-`admin.demo`, `operatore.demo`, `lettore.demo` con password `demo-password`.
+(su macOS/Linux: `cp .env.example .env`). Poi, ogni volta (su Windows e macOS prima `podman machine start`):
 
-`npm start` inoltra `/api` all'API su `localhost:8080` (`apps/web/proxy.conf.json`); nel container
-web lo fa nginx. La configurazione della web app in sviluppo è in `apps/web/public/config.json`.
+```bash
+cd infra/docker
+podman-compose up -d
+podman-compose ps
+```
+
+Devono risultare attivi `db`, `keycloak` e `mailpit`; `db-init` compare come terminato
+(`Exited (0)`): crea il ruolo del database con cui si collega l'API. Keycloak è pronto dopo circa
+un minuto.
+
+### 2. API
+
+In un nuovo terminale:
+
+```bash
+cd apps/api
+.\mvnw.cmd spring-boot:run
+```
+
+Al primo avvio applica le migrazioni e crea l'azienda demo. È pronta quando il log mostra
+`Started GestionaleApiApplication`; verifica: <http://localhost:8080/api/health> → `{"status":"ok"}`.
+
+### 3. Web
+
+In un altro terminale:
+
+```bash
+cd apps/web
+npm ci
+npm start
+```
+
+`npm ci` serve la prima volta e dopo ogni `git pull`. Quando compare `Local: http://localhost:4200/`
+apri **<http://localhost:4200>** e accedi con un utente demo (password `demo-password`):
+
+| Utente | Ruolo | Cosa vede |
+|--------|-------|-----------|
+| `admin.demo` | Amministratore | tutto, comprese le comunicazioni ai dipendenti |
+| `operatore.demo` | Operatore | clienti (lettura e inserimento), assistente |
+| `lettore.demo` | Consultazione | clienti in sola lettura |
+
+Email inviate dall'app: <http://localhost:8025>. Console di Keycloak: <http://localhost:8180/admin>
+(`admin` / `admin`).
+
+`npm start` inoltra `/api` all'API su `localhost:8080` (`apps/web/proxy.conf.json`). La configurazione
+della web app in sviluppo è in `apps/web/public/config.json`.
+
+### 4. MSI dell'app desktop
+
+Con le dipendenze della web già installate (`npm ci` in `apps/web`), da un terminale:
+
+```bash
+cd apps/desktop
+npm ci
+npm run build -- --bundles msi
+```
+
+La prima build richiede 10–15 minuti (compilazione Rust e download di WiX). Il file è in
+`apps/desktop/src-tauri/target/release/bundle/msi/civil beefy_<versione>_x64_it-IT.msi`.
+Senza `--bundles msi` viene creato anche il setup `.exe`.
+
+All'installazione l'MSI non è ancora firmato: SmartScreen chiede *Ulteriori informazioni* →
+*Esegui comunque*. Al primo avvio indica il server (in locale `http://localhost:4200`). Dettagli,
+modalità sviluppo (`npm run dev`) e problemi frequenti: [apps/desktop/README.md](apps/desktop/README.md).
+In alternativa l'MSI già pronto si scarica da GitHub → Actions → **CI Desktop** → artifact
+`gestionale-desktop-windows`.
+
+### Fermare tutto
+
+`Ctrl+C` nei terminali di API e web, poi da `infra/docker`: `podman-compose down`
+(con `down -v` si cancellano anche i dati del database).
 
 ### Accesso al database con un client SQL
 
@@ -94,10 +166,9 @@ Con l'utente `gestionale_app` la Row Level Security nasconde tutto finché non i
 
 ### Problemi frequenti
 
-- **Container del database in stato `Exited (127)`** con «required file not found» nei log:
-  lo script `.sh` ha fine riga Windows (CRLF). Il `.gitattributes` del repository lo impedisce;
-  se la copia era stata scaricata prima, riallinea i file: `git rm -r --cached . -q` seguito da
-  `git reset --hard` (attenzione: scarta le modifiche non committate), poi ricrea il container.
+- **L'API si ferma con `password authentication failed`**: il ruolo del database non è stato creato
+  o ha un'altra password. Controlla che `db-init` sia `Exited (0)` (`podman-compose ps`, log con
+  `podman-compose logs db-init`) e rilancia `podman-compose up -d`: `db-init` riallinea la password al `.env`.
 - **Pagina di accesso con «Servizio di accesso non raggiungibile»**: Keycloak non è avviato
   o non è su `localhost:8180`.
 - **Dopo il login torna un errore di redirect di Keycloak**: `GESTIONALE_WEB_URL` di Keycloak

@@ -22,7 +22,7 @@ I comandi valgono per PowerShell, bash e zsh.
 
    ```bash
    cd infra/docker
-   cp .env.example .env
+   copy .env.example .env          # macOS/Linux: cp .env.example .env
    ```
 
    Le password del `.env` di esempio sono solo per lo sviluppo e coincidono con quelle che l'API
@@ -32,7 +32,8 @@ Su Windows e macOS, a ogni riavvio del PC: `podman machine start`.
 
 ## Modalità A — sviluppo (consigliata)
 
-In container solo i servizi di supporto; API e web li avvii tu, con ricarica automatica del codice.
+In container solo i servizi di supporto (database, Keycloak, Mailpit; `db-init` prepara il ruolo
+del database e termina); API e web li avvii tu, con ricarica automatica del codice.
 Servono Java 21 e Node.js 22.
 
 ```bash
@@ -107,10 +108,10 @@ Keycloak non conserva dati: a ogni nuovo container reimporta realm, utenti demo 
 | `podman-compose` non trovato (Windows) | Riapri il terminale dopo `pip install`. Se ancora non lo trova, usa `py -m podman_compose …` al posto di `podman-compose …`, oppure aggiungi al PATH la cartella `Scripts` di Python indicata da pip. |
 | `podman-compose` dice che non trova `podman` o non riesce a collegarsi | Avvia la macchina Podman: `podman machine start`, poi `podman info` deve rispondere. |
 | `required variable POSTGRES_PASSWORD is missing` | Manca `infra/docker/.env`: copia `.env.example` (vedi sopra) ed esegui i comandi da `infra/docker`. |
-| L'API si ferma con `password authentication failed` | Il volume del database è stato creato con password diverse da quelle attuali del `.env`. PostgreSQL le legge solo al primo avvio: `podman-compose --profile app down -v` e riparti (cancella i dati di prova). |
+| L'API si ferma con `password authentication failed` | Il ruolo dell'app (`gestionale_app`) lo crea e lo riallinea al `.env` il servizio `db-init` a ogni `podman-compose up -d`: controlla che risulti `Exited (0)` (`podman-compose logs db-init`). Se è la password del proprietario (`gestionale`) a non coincidere, il volume è stato creato con un `.env` diverso: `podman-compose --profile app down -v` e riparti (cancella i dati di prova). |
 | Porta già in uso (5432, 8080, 8180, 4200…) | Un altro programma o un vecchio container la occupa: `podman ps -a` e rimuovi i container avviati a mano (`podman rm -f gestionale-db gestionale-keycloak gestionale-mailpit`). |
 | Login: «Servizio di accesso non raggiungibile» | Keycloak non è ancora pronto (serve circa un minuto) o non è avviato: `podman-compose logs keycloak`. |
 | Keycloak: «Invalid parameter: redirect_uri» | La web app non è su `http://localhost:4200` o `GESTIONALE_WEB_URL` nel `.env` è diverso. |
-| Container del database in `Exited (127)`, «required file not found» | Fine riga Windows negli script: vedi «Problemi frequenti» nel README principale. |
+| `db-init` in `Exited (1)` | Il database non era ancora pronto o le password del `.env` non coincidono con quelle del volume: guarda `podman-compose logs db-init`, poi `podman-compose up -d`. Non dipende più dai fine riga di Windows: il comando è scritto in `compose.yml`. |
 | La pagina mostra ancora il vecchio logo o colori | Cache del browser: Ctrl+F5 o finestra anonima. |
 | Modalità A: `npm start` fallisce dopo un `git pull` | Esegui `npm ci` in `apps/web`. |
