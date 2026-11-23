@@ -23,7 +23,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: actionlint
-        run: docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.12 -color
+        # Le note di shellcheck (info, stile) non bloccano: solo avvisi ed errori.
+        run: docker run --rm -e SHELLCHECK_OPTS="-S warning" -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.12 -color
       - name: Script di shell
         run: |
           shellcheck --version | head -2

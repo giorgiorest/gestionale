@@ -143,7 +143,7 @@ jobs:
           DOMAIN: ${{ vars.APP_DOMAIN }}
           TAG: ${{ steps.version.outputs.tag }}
         run: |
-          for i in $(seq 1 30); do
+          for _ in $(seq 1 30); do
             if curl -fsS "https://$DOMAIN/api/health"; then
               echo
               echo "Installata la versione $TAG"

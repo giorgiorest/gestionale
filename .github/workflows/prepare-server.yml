@@ -77,7 +77,7 @@ jobs:
           fi
           ssh server "sudo systemctl reboot" || true
           sleep 30
-          for i in $(seq 1 30); do
+          for _ in $(seq 1 30); do
             if ssh -o ConnectTimeout=10 server true 2> /dev/null; then
               echo "Macchina di nuovo raggiungibile."; exit 0
             fi
