@@ -10,16 +10,19 @@ Decisioni e motivazioni: [ADR 0003](../../docs/decisioni/0003-identita-keycloak.
 
 ## Avvio in sviluppo
 
-Con compose parte da solo (`docker compose -f infra/docker/compose.yml up`).
-Da solo, con Podman o Docker, dalla radice del repository:
+Con compose parte da solo: da `infra/docker`, `podman compose up -d`
+(vedi [docs/avvio-locale.md](../../docs/avvio-locale.md)). Dopo modifiche al realm o al tema:
+`podman compose up -d --force-recreate keycloak`.
+
+Senza compose, con Podman o Docker, dalla radice del repository:
 
 ```bash
 podman run -d --name gestionale-keycloak -p 8180:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin -e GESTIONALE_WEB_URL=http://localhost:4200 -v ./infra/keycloak/realm/gestionale-realm.json:/opt/keycloak/data/import/gestionale-realm.json:ro,Z -v ./infra/keycloak/dev/gestionale-users-0.json:/opt/keycloak/data/import/gestionale-users-0.json:ro,Z -v ./infra/keycloak/themes/gestionale:/opt/keycloak/themes/gestionale:ro,Z quay.io/keycloak/keycloak:26.8.2 start-dev --import-realm
 ```
 
 - Console di amministrazione: <http://localhost:8180/admin> (admin / admin in sviluppo).
-- `GESTIONALE_WEB_URL` è l'indirizzo della web app: `http://localhost:4200` con `npm start`,
-  `http://localhost:8081` con compose. Finisce nei redirect URI e nei web origins del client.
+- `GESTIONALE_WEB_URL` è l'indirizzo della web app: `http://localhost:4200` sia con `npm start` sia
+  con il container web di compose. Finisce nei redirect URI e nei web origins del client.
 - L'import usa la strategia *ignora se esiste*: per ricaricare il realm dopo una modifica al file
   ricrea il container (in `start-dev` i dati non sono persistenti).
 

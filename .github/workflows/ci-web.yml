@@ -3,9 +3,9 @@ name: CI Web
 on:
   push:
     branches: [main]
-    paths: ['apps/web/**', '.github/workflows/ci-web.yml']
+    paths: ['apps/web/**', 'infra/docker/web.Dockerfile', 'infra/docker/nginx.conf', 'infra/docker/web/**', '.github/workflows/ci-web.yml']
   pull_request:
-    paths: ['apps/web/**', '.github/workflows/ci-web.yml']
+    paths: ['apps/web/**', 'infra/docker/web.Dockerfile', 'infra/docker/nginx.conf', 'infra/docker/web/**', '.github/workflows/ci-web.yml']
   workflow_dispatch:
 
 permissions:
@@ -35,3 +35,17 @@ jobs:
         with:
           name: gestionale-web-dist
           path: apps/web/dist/
+
+  # Verifica che l'immagine web (usata da "podman compose --profile app") si costruisca: non viene pubblicata.
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - name: Build immagine web
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: infra/docker/web.Dockerfile
+          push: false
+          tags: gestionale-web:ci

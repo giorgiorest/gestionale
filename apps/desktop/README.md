@@ -114,7 +114,7 @@ Servono database, Keycloak, API e web avviati come nel README principale, con du
 
 - **Keycloak deve conoscere il client `gestionale-desktop`.** Se il container di Keycloak è stato
   creato prima dell'app desktop, ricrealo (l'import del realm avviene solo alla creazione):
-  `podman rm -f gestionale-keycloak` e poi di nuovo il comando `podman run …` del README principale.
+  da `infra/docker`, `podman compose up -d --force-recreate keycloak`.
 - Come indirizzo del server inserisci `http://localhost:4200` (con `npm start` in apps/web).
 
 Se dopo l'indirizzo l'app segnala «Server non raggiungibile» anche con il server acceso,

@@ -66,59 +66,23 @@ gestionale/
 - Per l'app desktop: Rust e Microsoft C++ Build Tools (vedi `apps/desktop/README.md`)
 - Facoltativo: GitHub CLI (`gh`)
 
-## Avvio locale (sviluppo)
+## Avvio locale
 
-Cinque processi: database, Keycloak, Mailpit (email di prova), API, web. I comandi sono per PowerShell/bash; con Docker
-sostituisci `podman` con `docker`. Su Windows e macOS, con Podman, prima `podman machine start`.
-
-**1. Database** (PostgreSQL 17), dalla radice del repository:
+Guida passo passo: **[docs/avvio-locale.md](docs/avvio-locale.md)**. In breve, dalla radice del repository:
 
 ```bash
-podman run -d --name gestionale-db -p 5432:5432 -e POSTGRES_DB=gestionale -e POSTGRES_USER=gestionale -e POSTGRES_PASSWORD=gestionale -e DB_USER=gestionale_app -e DB_PASSWORD=gestionale_app -v ./infra/docker/postgres-init:/docker-entrypoint-initdb.d:ro,Z docker.io/library/postgres:17
+cd infra/docker
+cp .env.example .env
+podman compose up -d                              # modalità A: database, Keycloak, Mailpit
+podman compose --profile app up -d --build        # modalità B: anche API e web in container
 ```
 
-Lo script in `postgres-init` crea `gestionale_app`, il ruolo (non superuser) con cui si collega l'API.
-Le password coincidono con i default del profilo `dev`.
+Nella modalità A si avviano a mano l'API (`apps/api`: `./mvnw spring-boot:run`) e la web app
+(`apps/web`: `npm ci` e `npm start`). In entrambe l'app è su <http://localhost:4200>; utenti demo
+`admin.demo`, `operatore.demo`, `lettore.demo` con password `demo-password`.
 
-**2. Keycloak**, dalla radice del repository:
-
-```bash
-podman run -d --name gestionale-keycloak -p 8180:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin -e GESTIONALE_WEB_URL=http://localhost:4200 -v ./infra/keycloak/realm/gestionale-realm.json:/opt/keycloak/data/import/gestionale-realm.json:ro,Z -v ./infra/keycloak/dev/gestionale-users-0.json:/opt/keycloak/data/import/gestionale-users-0.json:ro,Z -v ./infra/keycloak/themes/gestionale:/opt/keycloak/themes/gestionale:ro,Z quay.io/keycloak/keycloak:26.8.2 start-dev --import-realm
-```
-
-**3. Mailpit** (server email di sviluppo; le email delle notifiche si leggono su <http://localhost:8025>):
-
-```bash
-podman run -d --name gestionale-mailpit -p 1025:1025 -p 8025:8025 docker.io/axllent/mailpit:v1.34.0
-```
-
-Se non lo avvii l'app funziona lo stesso; l'API segnala nei log che le email non partono.
-
-**4. API** (applica le migrazioni e crea il tenant demo):
-
-```bash
-cd apps/api
-./mvnw spring-boot:run          # su Windows/PowerShell: .\mvnw.cmd spring-boot:run
-```
-
-**5. Web**:
-
-```bash
-cd apps/web
-npm ci
-npm start
-```
-
-Apri <http://localhost:4200> e accedi con un utente demo (password `demo-password`):
-
-| Utente | Ruolo | Cosa vede |
-|--------|-------|-----------|
-| `admin.demo` | Amministratore | tutto, comprese le comunicazioni ai dipendenti |
-| `operatore.demo` | Operatore | clienti (lettura e inserimento), assistente |
-| `lettore.demo` | Consultazione | clienti in sola lettura |
-
-`npm start` inoltra `/api` all'API su `localhost:8080` (`apps/web/proxy.conf.json`), quindi non
-serve configurare CORS. La configurazione della web app in sviluppo è in `apps/web/public/config.json`.
+`npm start` inoltra `/api` all'API su `localhost:8080` (`apps/web/proxy.conf.json`); nel container
+web lo fa nginx. La configurazione della web app in sviluppo è in `apps/web/public/config.json`.
 
 ### Accesso al database con un client SQL
 
@@ -135,27 +99,15 @@ Con l'utente `gestionale_app` la Row Level Security nasconde tutto finché non i
 - **Pagina di accesso con «Servizio di accesso non raggiungibile»**: Keycloak non è avviato
   o non è su `localhost:8180`.
 - **Dopo il login torna un errore di redirect di Keycloak**: `GESTIONALE_WEB_URL` di Keycloak
-  non coincide con l'indirizzo della web app (4200 con `npm start`, 8081 con compose).
+  non coincide con l'indirizzo della web app (`http://localhost:4200`).
+- Altri casi (porte occupate, password del database, cache del browser): [docs/avvio-locale.md](docs/avvio-locale.md).
 
-## Stack completo con compose
+## Immagine web e configurazione
 
-```bash
-cp infra/docker/.env.example infra/docker/.env   # poi impostare le password
-docker compose -f infra/docker/compose.yml up --build
-```
-
-Con Podman: `podman compose -f infra/docker/compose.yml up --build`.
-
-| Servizio | URL |
-|----------|-----|
-| web (nginx) | <http://localhost:8081> (proxy `/api` verso l'API) |
-| api | <http://localhost:8080/api/health> |
-| keycloak | <http://localhost:8180/admin> |
-| mailpit (email) | <http://localhost:8025> |
-| db | `localhost:5432` |
-
-L'immagine web genera `config.json` all'avvio dalle variabili `WEB_API_URL`, `OIDC_AUTHORITY`,
-`OIDC_CLIENT_ID`: la stessa immagine si installa presso clienti diversi senza ricompilare.
+L'immagine web (`infra/docker/web.Dockerfile`, nginx) genera `config.json` all'avvio dalle variabili
+`WEB_API_URL`, `OIDC_AUTHORITY`, `OIDC_CLIENT_ID` e `BRAND_*`: la stessa immagine si installa presso
+clienti diversi senza ricompilare. nginx inoltra `/api` all'API con gli header `X-Forwarded-*`, che
+l'API usa per riconoscere l'indirizzo pubblico.
 
 ## Build e test
 
@@ -240,11 +192,11 @@ Dettagli: [ADR 0005](docs/decisioni/0005-notifiche.md).
 
 ### Provare le notifiche in locale
 
-1. Avvia lo stack locale con **Mailpit** (passo 3 dell'avvio locale). Dopo aver aggiornato il codice
-   riavvia l'API: la migrazione V4 crea le tabelle delle notifiche.
+1. Avvia lo stack locale ([docs/avvio-locale.md](docs/avvio-locale.md)): Mailpit è già compreso.
+   Dopo aver aggiornato il codice riavvia l'API: le migrazioni creano le tabelle mancanti.
 2. Per avere la comunicazione di benvenuto del tenant demo serve un database nuovo (il seeder la
-   crea solo insieme al tenant): `podman rm -f gestionale-db`, poi di nuovo il comando del passo 1
-   e riavvio dell'API. In alternativa salta al punto 4 e inviane una tu.
+   crea solo insieme al tenant): da `infra/docker`, `podman compose --profile app down -v` e poi di
+   nuovo `podman compose up -d` (cancella i dati di prova). In alternativa salta al punto 4 e inviane una tu.
 3. Accedi come `operatore.demo`: in home compaiono la campanella con il numero e il banner
    «Hai 1 comunicazione da confermare». Aprila e premi *Confermo di aver letto e compreso*.
 4. In una **finestra anonima** (o un altro browser, per non condividere la sessione) accedi come

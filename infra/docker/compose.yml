@@ -1,8 +1,16 @@
-# Stack locale di sviluppo: PostgreSQL + Keycloak + Mailpit + API + web.
-# Funziona con Docker Compose e con Podman (podman compose): le immagini hanno il nome completo.
-# Avvio dalla radice del repository:
-#   cp infra/docker/.env.example infra/docker/.env   # poi impostare le password
-#   docker compose -f infra/docker/compose.yml up --build
+# Stack locale di civil beefy per Podman (podman compose) e Docker Compose.
+# Guida: docs/avvio-locale.md
+#
+# Due modalità, dalla cartella infra/docker (dopo aver copiato .env.example in .env):
+#
+#   podman compose up -d                     solo servizi di supporto: database, Keycloak, Mailpit.
+#                                            API e web si avviano a mano (mvnw / npm start), per sviluppare.
+#   podman compose --profile app up -d --build
+#                                            tutto in container, anche API e web: per provare l'app
+#                                            senza installare Java e Node.
+#
+# In entrambe la web app è su http://localhost:4200 (Keycloak non va riconfigurato).
+# Le immagini hanno il nome completo (docker.io/…, quay.io/…) come richiesto da Podman.
 name: gestionale
 
 services:
@@ -18,7 +26,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:?impostare DB_PASSWORD in infra/docker/.env}
     volumes:
       - db-data:/var/lib/postgresql/data
-      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro,z
     ports:
       - "5432:5432"
     healthcheck:
@@ -30,6 +38,7 @@ services:
   keycloak:
     # Provider di identità (OIDC). Il realm "gestionale" è configurazione di prodotto versionata
     # in infra/keycloak/realm; gli utenti demo (infra/keycloak/dev) si caricano solo in sviluppo.
+    # Dati non persistenti (start-dev): a ogni nuovo container il realm viene reimportato.
     image: quay.io/keycloak/keycloak:26.8.2
     command: ["start-dev", "--import-realm"]
     environment:
@@ -39,12 +48,12 @@ services:
       KC_HOSTNAME: ${KEYCLOAK_URL:-http://localhost:8180}
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       # Indirizzo della web app, usato nel realm per redirect e CORS.
-      GESTIONALE_WEB_URL: ${GESTIONALE_WEB_URL:-http://localhost:8081}
+      GESTIONALE_WEB_URL: ${GESTIONALE_WEB_URL:-http://localhost:4200}
     volumes:
-      - ../keycloak/realm/gestionale-realm.json:/opt/keycloak/data/import/gestionale-realm.json:ro
-      - ../keycloak/dev/gestionale-users-0.json:/opt/keycloak/data/import/gestionale-users-0.json:ro
+      - ../keycloak/realm/gestionale-realm.json:/opt/keycloak/data/import/gestionale-realm.json:ro,z
+      - ../keycloak/dev/gestionale-users-0.json:/opt/keycloak/data/import/gestionale-users-0.json:ro,z
       # Tema della pagina di login (logo, colori e font dell'applicazione).
-      - ../keycloak/themes/gestionale:/opt/keycloak/themes/gestionale:ro
+      - ../keycloak/themes/gestionale:/opt/keycloak/themes/gestionale:ro,z
     ports:
       - "8180:8080"
 
@@ -55,7 +64,10 @@ services:
       - "8025:8025"
       - "1025:1025"
 
+  # ------------------------------------------------------------------ profilo "app"
+
   api:
+    profiles: ["app"]
     build:
       context: ../../apps/api
       dockerfile: Dockerfile
@@ -79,13 +91,14 @@ services:
       SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-1025}
       MAIL_FROM: ${MAIL_FROM:-civil beefy <noreply@localhost>}
       EMAIL_INCLUDE_BODY: ${EMAIL_INCLUDE_BODY:-true}
-      APP_PUBLIC_URL: ${GESTIONALE_WEB_URL:-http://localhost:8081}
+      APP_PUBLIC_URL: ${GESTIONALE_WEB_URL:-http://localhost:4200}
       AI_PROVIDER: ${AI_PROVIDER:-none}
       AI_API_KEY: ${AI_API_KEY:-}
     ports:
       - "8080:8080"
 
   web:
+    profiles: ["app"]
     build:
       context: ../..
       dockerfile: infra/docker/web.Dockerfile
@@ -102,7 +115,8 @@ services:
       BRAND_PRIMARY_COLOR: ${BRAND_PRIMARY_COLOR:-}
       BRAND_ACCENT_COLOR: ${BRAND_ACCENT_COLOR:-}
     ports:
-      - "8081:80"
+      # Stessa porta di "npm start": Keycloak accetta un solo indirizzo della web app.
+      - "4200:80"
 
 volumes:
   db-data:
