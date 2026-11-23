@@ -80,7 +80,7 @@ Le password coincidono con i default del profilo `dev`.
 **2. Keycloak**, dalla radice del repository:
 
 ```bash
-podman run -d --name gestionale-keycloak -p 8180:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin -e GESTIONALE_WEB_URL=http://localhost:4200 -v ./infra/keycloak/realm/gestionale-realm.json:/opt/keycloak/data/import/gestionale-realm.json:ro,Z -v ./infra/keycloak/dev/gestionale-users-0.json:/opt/keycloak/data/import/gestionale-users-0.json:ro,Z quay.io/keycloak/keycloak:26.8.2 start-dev --import-realm
+podman run -d --name gestionale-keycloak -p 8180:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin -e GESTIONALE_WEB_URL=http://localhost:4200 -v ./infra/keycloak/realm/gestionale-realm.json:/opt/keycloak/data/import/gestionale-realm.json:ro,Z -v ./infra/keycloak/dev/gestionale-users-0.json:/opt/keycloak/data/import/gestionale-users-0.json:ro,Z -v ./infra/keycloak/themes/gestionale:/opt/keycloak/themes/gestionale:ro,Z quay.io/keycloak/keycloak:26.8.2 start-dev --import-realm
 ```
 
 **3. Mailpit** (server email di sviluppo; le email delle notifiche si leggono su <http://localhost:8025>):
@@ -191,6 +191,8 @@ Dettagli, prerequisiti e cose da fare prima della vendita (firma, aggiornamenti)
 
 ## Utenti, ruoli e permessi
 
+- La pagina di login di Keycloak usa il tema `gestionale`, con logo, colore e font dell'applicazione
+  (`infra/keycloak/themes/gestionale`; tema per un cliente: [infra/keycloak/README.md](infra/keycloak/README.md)).
 - Utenti e ruoli si gestiscono in Keycloak (realm `gestionale`); ogni utente ha l'attributo
   `tenant_id` (azienda). Guida: [infra/keycloak/README.md](infra/keycloak/README.md).
 - Ogni ruolo concede dei permessi, definiti nel backend (`apps/api/.../auth/Role.java`):

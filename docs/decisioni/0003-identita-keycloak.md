@@ -74,6 +74,8 @@ Nel frontend si usa `oidc-client-ts` (libreria OIDC generica), non l'adapter di 
 
 ## Conseguenze
 
+- Pagina di login con il marchio del prodotto: tema `gestionale` (eredita da `keycloak.v2`),
+  personalizzabile per cliente con un tema figlio che ridefinisce colore e logo.
 - In produzione Keycloak gira con database PostgreSQL proprio, HTTPS, `KC_HOSTNAME` pubblico e
   credenziali di bootstrap solo da variabili d'ambiente (vedi `infra/keycloak/README.md`).
 - Creare un tenant richiede due passi: riga in `tenants` (con licenza) e utenti in Keycloak con

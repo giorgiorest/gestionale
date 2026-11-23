@@ -43,6 +43,8 @@ services:
     volumes:
       - ../keycloak/realm/gestionale-realm.json:/opt/keycloak/data/import/gestionale-realm.json:ro
       - ../keycloak/dev/gestionale-users-0.json:/opt/keycloak/data/import/gestionale-users-0.json:ro
+      # Tema della pagina di login (logo, colori e font dell'applicazione).
+      - ../keycloak/themes/gestionale:/opt/keycloak/themes/gestionale:ro
     ports:
       - "8180:8080"
 

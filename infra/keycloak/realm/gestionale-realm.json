@@ -1,6 +1,8 @@
 {
   "realm": "gestionale",
   "displayName": "Gestionale",
+  "displayNameHtml": "<div class=\"kc-logo-text\"><span>Gestionale</span></div>",
+  "loginTheme": "gestionale",
   "enabled": true,
   "sslRequired": "external",
   "registrationAllowed": false,
