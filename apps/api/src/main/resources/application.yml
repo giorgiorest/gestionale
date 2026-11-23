@@ -33,6 +33,9 @@ spring:
 
 server:
   port: 8080
+  # L'API sta dietro un reverse proxy (nginx): usa X-Forwarded-Host/Proto per conoscere l'indirizzo
+  # pubblico (controllo CORS sullo stesso sito, URL generati). Non esporre la porta dell'API su Internet.
+  forward-headers-strategy: framework
 
 management:
   endpoints:
