@@ -220,6 +220,25 @@ Dettagli: [ADR 0005](docs/decisioni/0005-notifiche.md).
   `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD`, `MAIL_FROM`, `APP_PUBLIC_URL`;
   `EMAIL_INCLUDE_BODY=false` per inviare solo titolo e link.
 
+### Provare le notifiche in locale
+
+1. Avvia lo stack locale con **Mailpit** (passo 3 dell'avvio locale). Dopo aver aggiornato il codice
+   riavvia l'API: la migrazione V4 crea le tabelle delle notifiche.
+2. Per avere la comunicazione di benvenuto del tenant demo serve un database nuovo (il seeder la
+   crea solo insieme al tenant): `podman rm -f gestionale-db`, poi di nuovo il comando del passo 1
+   e riavvio dell'API. In alternativa salta al punto 4 e inviane una tu.
+3. Accedi come `operatore.demo`: in home compaiono la campanella con il numero e il banner
+   «Hai 1 comunicazione da confermare». Aprila e premi *Confermo di aver letto e compreso*.
+4. In una **finestra anonima** (o un altro browser, per non condividere la sessione) accedi come
+   `admin.demo` → *Comunicazioni ai dipendenti*: scegli destinatari, *Richiedi la presa visione*,
+   *Invia anche per email* → *Invia*.
+5. Accedi come destinatario (es. `lettore.demo` per il ruolo Consultazione) e conferma.
+   Chi accede per la prima volta dopo l'invio riceve comunque le comunicazioni con presa visione.
+6. Come `admin.demo` apri la comunicazione: report con lettura, presa visione ed email per persona.
+7. Le email sono su <http://localhost:8025> (Mailpit); il link porta alla notifica nel portale.
+
+La campanella si aggiorna ogni minuto: per vedere subito una notifica appena inviata ricarica la pagina.
+
 ## CI e deploy
 
 - `ci-api.yml`: build e test dell'API; su `main` pubblica l'immagine su GHCR.
