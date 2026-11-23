@@ -305,20 +305,31 @@ La campanella si aggiorna ogni minuto: per vedere subito una notifica appena inv
 - `ci-web.yml`: build di produzione, test e build dell'immagine web (amd64 e arm64).
 - `ci-desktop.yml`: installer Windows dell'app desktop sulle pull request (artifact `gestionale-desktop-windows`,
   non ancora firmato); su `main` lo richiama `release-images.yml`.
-- `release-images.yml`: a ogni push su `main` costruisce gli installer desktop e pubblica su GHCR le
-  immagini di API e web (la web contiene gli installer, scaricabili da `https://<dominio>/app-desktop`)
-  (amd64 e arm64) con le etichette `sha-<commit>` e `latest`.
-- `deploy.yml`: **manuale** (Actions → Deploy → Run workflow); installa un commit di `main` sulla
-  macchina di produzione via SSH e verifica che risponda. Per tornare indietro si indica un commit precedente.
+Il flusso di un rilascio:
 
-- `infra.yml` (**manuale**) e `infra-retry.yml` (ogni ora, se `OCI_RETRY_ENABLED=true`): creano con
-  Terraform rete, porte, macchina e IP fisso su Oracle Cloud, riprovando finché c'è capacità
-  ([infra/terraform/oracle](infra/terraform/oracle/README.md), [ADR 0007](docs/decisioni/0007-infrastruttura-terraform.md)).
-- `ci-infra.yml`: formato e validità dei file Terraform.
+```
+merge su main ─▶ Release immagini ─┬─ desktop (installer Windows)
+                                   ├─ immagini API e web (amd64, arm64; la web contiene gli installer)
+                                   └─ Deploy ─▶ ⏸ approvazione (environment production) ─▶ installazione e verifica
+```
+
+| Workflow | Quando | Cosa fa |
+|----------|--------|---------|
+| `ci-api.yml` | PR e `main` (API) | build e test dell'API |
+| `ci-web.yml` | PR e `main` (web) | build, test, immagine web (amd64 e arm64) |
+| `ci-desktop.yml` | PR (web, desktop); richiamato dal rilascio | installer Windows (artifact `gestionale-desktop-windows`, non ancora firmato) |
+| `ci-infra.yml` | PR (Terraform) | formato e validità dei file Terraform |
+| `ci-workflows.yml` | PR (workflow, script) | actionlint e shellcheck |
+| `release-images.yml` | ogni push su `main` | installer desktop, immagini su GHCR (`sha-<commit>`, `latest`), poi Deploy se `AUTO_DEPLOY=true` |
+| `deploy.yml` | dopo il rilascio (con **approvazione**) o a mano | controlla la macchina, installa un commit via SSH, verifica `/api/health`; a mano anche per tornare a un commit precedente |
+| `prepare-server.yml` | a mano | prepara o rimette in ordine il server: aggiornamenti, firewall, SSH, Docker, `.env`, backup |
+| `infra.yml`, `infra-retry.yml` | a mano / ogni ora se `OCI_RETRY_ENABLED=true` | solo Oracle Cloud: Terraform per rete, porte, macchina e IP fisso ([infra/terraform/oracle](infra/terraform/oracle/README.md), [ADR 0007](docs/decisioni/0007-infrastruttura-terraform.md)) |
+
+Scelte: [ADR 0009](docs/decisioni/0009-rilascio-continuo-con-approvazione.md).
 
 **Produzione su un VPS** (es. Aruba, OVH; da circa 5–11 € al mese): guida passo passo in
-[docs/deploy-vps.md](docs/deploy-vps.md). Il workflow Deploy controlla la macchina (Docker, `.env`,
-dominio, email per i certificati) prima di installare.
+[docs/deploy-vps.md](docs/deploy-vps.md): pochi passi a mano (VPS, utente, dominio, environment
+GitHub), poi **Prepara server** e i rilasci automatici con approvazione.
 
 **Produzione su Oracle Cloud (gratuito)**: guida passo passo in
 [docs/deploy-oracle-cloud.md](docs/deploy-oracle-cloud.md); file in `infra/deploy/oracle/`

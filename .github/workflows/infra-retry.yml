@@ -1,4 +1,4 @@
-name: Infrastruttura (tentativi)
+name: Infrastruttura Oracle (tentativi)
 
 # Le macchine A1 gratuite spesso non sono disponibili ("Out of capacity"): questo workflow
 # riprova a creare l'infrastruttura ogni ora e si disattiva da solo quando la macchina esiste.

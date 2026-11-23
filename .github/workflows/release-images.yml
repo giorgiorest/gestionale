@@ -6,6 +6,9 @@ name: Release immagini
 #   latest                 → ultima versione di main
 # L'immagine web contiene anche gli installer Windows dell'app desktop dello stesso commit
 # (pagina /app-desktop). Se la build desktop fallisce le immagini escono comunque, senza installer.
+#
+# Alla fine, se la variabile di repository AUTO_DEPLOY = true, richiama Deploy per lo stesso commit:
+# il deploy aspetta l'approvazione nell'environment "production" (Required reviewers).
 on:
   push:
     branches: [main]
@@ -14,10 +17,6 @@ on:
 permissions:
   contents: read
   packages: write
-
-concurrency:
-  group: release-images-${{ github.ref }}
-  cancel-in-progress: false
 
 jobs:
   desktop:
@@ -28,6 +27,10 @@ jobs:
     # Le immagini del server non dipendono dall'esito della build desktop.
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
+    # Le immagini si pubblicano in ordine; un deploy in attesa di approvazione non blocca i rilasci successivi.
+    concurrency:
+      group: release-image-${{ matrix.name }}
+      cancel-in-progress: false
     strategy:
       matrix:
         include:
@@ -79,3 +82,15 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  # Installazione in produzione dello stesso commit, dopo l'approvazione (environment production).
+  deploy:
+    needs: image
+    if: vars.AUTO_DEPLOY == 'true'
+    uses: ./.github/workflows/deploy.yml
+    with:
+      commit: ${{ github.sha }}
+    secrets: inherit
+    permissions:
+      contents: read
+      packages: read

@@ -1,7 +1,7 @@
-name: Infrastruttura
+name: Infrastruttura Oracle
 
 # Crea o aggiorna su Oracle Cloud la rete, le porte, la macchina e l'IP fisso di produzione
-# (Terraform, infra/terraform/oracle). Manuale, oppure richiamato da "Infrastruttura (tentativi)".
+# (Terraform, infra/terraform/oracle). Manuale, oppure richiamato da "Infrastruttura Oracle (tentativi)".
 # Guida: infra/terraform/oracle/README.md
 #
 # Configurazione nell'environment GitHub "oracle-cloud" (Settings → Environments):

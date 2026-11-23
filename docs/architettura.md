@@ -106,11 +106,15 @@ Dettagli: [ADR 0002](decisioni/0002-deploy-target.md), [guida VPS](deploy-vps.md
 - Produzione su un server Linux con Docker Compose, raggiunto via SSH: un VPS (es. Aruba, x86) o
   una macchina Oracle Cloud Always Free (Ampere A1, arm64). Stessi file e stesso workflow:
   Caddy (HTTPS automatico) → web, `/api` → API, `/sso` → Keycloak; PostgreSQL per app e Keycloak.
-- Immagini di API e web per amd64 e arm64 pubblicate su GHCR a ogni push su `main`
-  (`sha-<commit>`); il workflow Deploy, manuale, installa un commit via SSH e ne verifica la salute.
+- A ogni push su `main`, *Release immagini* costruisce gli installer desktop e le immagini di API e
+  web per amd64 e arm64 (`sha-<commit>`), poi richiama *Deploy* per lo stesso commit, che attende
+  l'**approvazione** nell'environment `production`, controlla la macchina, installa via SSH e
+  verifica la salute ([ADR 0009](decisioni/0009-rilascio-continuo-con-approvazione.md)).
+- *Prepara server* configura un server Ubuntu qualsiasi (aggiornamenti, firewall, SSH solo con
+  chiave, Docker, `.env` con password generate sulla macchina, backup notturno), in modo idempotente.
 - Infrastruttura come codice ([ADR 0007](decisioni/0007-infrastruttura-terraform.md)): Terraform in
   `infra/terraform/oracle` crea rete, porte, macchina e IP riservato; stato su Object Storage. I workflow
-  *Infrastruttura* la applicano (a mano, o a tentativi orari finché ci sono macchine A1 libere) e non
+  *Infrastruttura Oracle* la applicano (a mano, o a tentativi orari finché ci sono macchine A1 libere) e non
   eliminano risorse senza un'opzione esplicita.
 
 ## Privacy

@@ -1,0 +1,30 @@
+name: CI Workflow
+
+# Controllo statico dei workflow GitHub Actions e degli script di shell che contengono
+# (actionlint con shellcheck): errori di sintassi, espressioni ${{ }}, contesti non validi.
+
+on:
+  pull_request:
+    paths:
+      - .github/**
+      - infra/deploy/**
+      - infra/docker/web/**
+  push:
+    branches: [main]
+    paths:
+      - .github/**
+
+permissions:
+  contents: read
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: actionlint
+        run: docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.12 -color
+      - name: Script di shell
+        run: |
+          shellcheck --version | head -2
+          shellcheck -S warning infra/deploy/oracle/prepare-server.sh infra/docker/web/*.sh

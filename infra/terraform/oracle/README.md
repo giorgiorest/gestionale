@@ -19,14 +19,14 @@ passano da Terraform né dal suo stato.
 
 | Workflow | Quando | Cosa fa |
 |----------|--------|---------|
-| **Infrastruttura** (`infra.yml`) | a mano | `plan` mostra cosa cambierebbe; `apply` lo applica |
-| **Infrastruttura (tentativi)** (`infra-retry.yml`) | ogni ora, se `OCI_RETRY_ENABLED=true` | riprova `apply` finché la macchina esiste, poi si disattiva da solo |
+| **Infrastruttura Oracle** (`infra.yml`) | a mano | `plan` mostra cosa cambierebbe; `apply` lo applica |
+| **Infrastruttura Oracle (tentativi)** (`infra-retry.yml`) | ogni ora, se `OCI_RETRY_ENABLED=true` | riprova `apply` finché la macchina esiste, poi si disattiva da solo |
 | **CI Infrastruttura** (`ci-infra.yml`) | sulle pull request | controlla formato e validità dei file, senza credenziali |
 
 Le macchine A1 gratuite spesso non sono disponibili («Out of capacity»). Per questo:
 
 - se mancano 2 OCPU e 12 GB, il workflow riprova subito con **1 OCPU e 6 GB** (bastano per iniziare;
-  si ingrandisce poi cambiando `OCI_OCPUS` e `OCI_MEMORY_GB` e lanciando *Infrastruttura → apply*);
+  si ingrandisce poi cambiando `OCI_OCPUS` e `OCI_MEMORY_GB` e lanciando *Infrastruttura Oracle → apply*);
 - la mancanza di capacità non è un errore: il run finisce con un avviso e il tentativo successivo
   riparte da dove era rimasto (la rete resta creata).
 
@@ -95,11 +95,11 @@ Repository → **Settings → Environments → New environment** → `oracle-clo
 
 ### 6. Avvio
 
-1. **Actions → Infrastruttura → Run workflow**, azione `plan`: verifica che le credenziali funzionino
+1. **Actions → Infrastruttura Oracle → Run workflow**, azione `plan`: verifica che le credenziali funzionino
    e mostra le risorse che verranno create (nessuna modifica).
 2. Per i tentativi automatici: **Settings → Secrets and variables → Actions → Variables** (del
    *repository*, non dell'environment) → `OCI_RETRY_ENABLED` = `true`.
-   In alternativa **Infrastruttura → Run workflow** con `apply` per un singolo tentativo.
+   In alternativa **Infrastruttura Oracle → Run workflow** con `apply` per un singolo tentativo.
 3. Quando la macchina è creata, il riepilogo del run riporta **IP pubblico** e **impronta SSH**, e i
    tentativi si disattivano da soli.
 
@@ -123,7 +123,7 @@ Continua da [docs/deploy-oracle-cloud.md](../../../docs/deploy-oracle-cloud.md):
 ## Modifiche successive
 
 - Cambia i file `.tf` con una pull request (la CI li valida), poi dopo la merge
-  **Infrastruttura → plan** e, se il piano è quello atteso, **apply**.
+  **Infrastruttura Oracle → plan** e, se il piano è quello atteso, **apply**.
 - Ingrandire la macchina (es. da 1 a 2 OCPU): aggiorna `OCI_OCPUS` / `OCI_MEMORY_GB` e lancia
   `apply`. La macchina si riavvia, i dati restano.
 - Una nuova immagine Ubuntu o un `cloud-init.yaml` modificato valgono solo per una macchina nuova:
