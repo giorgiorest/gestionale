@@ -98,9 +98,10 @@ Dettagli e motivazioni (anche per la rivendita): [ADR 0003](decisioni/0003-ident
 
 ## Installazione e rilasci
 
-Dettagli: [ADR 0002](decisioni/0002-deploy-target.md) e [guida Oracle Cloud](deploy-oracle-cloud.md).
+Dettagli: [ADR 0002](decisioni/0002-deploy-target.md), [guida VPS](deploy-vps.md) e [guida Oracle Cloud](deploy-oracle-cloud.md).
 
-- Produzione su una macchina Oracle Cloud Always Free (Ampere A1, arm64) con Docker Compose:
+- Produzione su un server Linux con Docker Compose, raggiunto via SSH: un VPS (es. Aruba, x86) o
+  una macchina Oracle Cloud Always Free (Ampere A1, arm64). Stessi file e stesso workflow:
   Caddy (HTTPS automatico) → web, `/api` → API, `/sso` → Keycloak; PostgreSQL per app e Keycloak.
 - Immagini di API e web per amd64 e arm64 pubblicate su GHCR a ogni push su `main`
   (`sha-<commit>`); il workflow Deploy, manuale, installa un commit via SSH e ne verifica la salute.

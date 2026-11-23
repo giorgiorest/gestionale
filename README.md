@@ -311,6 +311,10 @@ La campanella si aggiorna ogni minuto: per vedere subito una notifica appena inv
   ([infra/terraform/oracle](infra/terraform/oracle/README.md), [ADR 0007](docs/decisioni/0007-infrastruttura-terraform.md)).
 - `ci-infra.yml`: formato e validità dei file Terraform.
 
+**Produzione su un VPS** (es. Aruba, OVH; da circa 5–11 € al mese): guida passo passo in
+[docs/deploy-vps.md](docs/deploy-vps.md). Il workflow Deploy controlla la macchina (Docker, `.env`,
+dominio, email per i certificati) prima di installare.
+
 **Produzione su Oracle Cloud (gratuito)**: guida passo passo in
 [docs/deploy-oracle-cloud.md](docs/deploy-oracle-cloud.md); file in `infra/deploy/oracle/`
 (Caddy con HTTPS automatico, PostgreSQL, Keycloak, API, web). Scelte: [ADR 0002](docs/decisioni/0002-deploy-target.md).

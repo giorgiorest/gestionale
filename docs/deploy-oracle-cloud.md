@@ -10,6 +10,8 @@ Internet ──HTTPS──▶ Caddy ──┬── /       ▶ web (Angular, ng
 ```
 
 Tutto gira su una sola macchina virtuale con Docker; i file sono in `infra/deploy/oracle/`.
+Su un VPS di un altro fornitore (Aruba, OVH, Hetzner…) gli stessi file e lo stesso workflow
+funzionano uguali: guida [deploy-vps.md](deploy-vps.md).
 Rilasci: a ogni merge su `main` il workflow **Release immagini** pubblica le immagini su GitHub
 (GHCR); il workflow **Deploy**, avviato a mano, le installa sulla macchina.
 
