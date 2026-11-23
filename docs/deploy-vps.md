@@ -237,7 +237,9 @@ Dopo `usermod` esci e ricollegati. Per il `.env` copia
 | `ssh-keyscan`: *unsupported KEX method* | OpenSSH di Windows troppo vecchio: leggi l'impronta dalla macchina (passo 3) |
 | `nslookup`: *Non-existent domain* | Prova `nslookup <dominio> 1.1.1.1`; se risponde, è il DNS della rete del PC |
 | Prepara server: *deve poter usare sudo senza password* | Rifai il comando del passo 3 come root |
-| Workflow: *Collegamento SSH … non riuscito* | Manca la chiave pubblica del deploy in `/home/ubuntu/.ssh/authorized_keys`, `OCI_SSH_PRIVATE_KEY` incompleto o `OCI_SSH_KNOWN_HOSTS` sbagliato |
+| Workflow: *No ED25519 host key is known* / *Host key verification failed* | `OCI_SSH_KNOWN_HOSTS` non corrisponde al server: rigenera la riga sul server (passo 3) e incollala intera, su una riga. Il workflow stampa l'impronta che ha ricevuto (*Impronta del server: SHA256:…*): sul server confrontala con `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` |
+| Workflow: *indirizzo diverso da OCI_SSH_HOST* | La riga dell'impronta deve iniziare con lo stesso indirizzo scritto in `OCI_SSH_HOST` (es. entrambi l'IP) |
+| Workflow: *Permission denied (publickey)* | Manca la chiave pubblica del deploy in `/home/ubuntu/.ssh/authorized_keys`, o `OCI_SSH_PRIVATE_KEY` è incompleto (deve includere le righe `BEGIN`/`END`) |
 | Deploy: *Docker non è installato* / *Manca .env* | Lancia **Prepara server** |
 | Deploy: *APP_DOMAIN … non è* / *ACME_EMAIL … non valido* | Correggi `/opt/civilbeefy/.env` o la variabile dell'environment |
 | Il deploy non parte dopo un merge | Manca `AUTO_DEPLOY = true` tra le variabili del repository, oppure *Release immagini* è fallito |

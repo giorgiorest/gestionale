@@ -37,19 +37,37 @@ runs:
           exit 1
         fi
         install -m 700 -d ~/.ssh
-        printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy
+        # Valori incollati da Windows o dal browser: via spazi agli estremi e ritorni a capo (\r).
+        host=$(printf '%s' "$SSH_HOST" | tr -d '\r' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+        printf '%s\n' "$SSH_KEY" | tr -d '\r' > ~/.ssh/id_deploy
         chmod 600 ~/.ssh/id_deploy
-        printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+        # Impronta: tiene solo le righe di chiave (non i commenti "# host:22 SSH-2.0…" di ssh-keyscan);
+        # una riga che inizia direttamente con il tipo di chiave riceve l'indirizzo davanti.
+        printf '%s\n' "$KNOWN_HOSTS" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e '/^#/d' -e '/^$/d' |
+          awk -v h="$host" '$1 ~ /^(ssh-|ecdsa-|sk-)/ { print h, $0; next } { print }' > ~/.ssh/known_hosts
+        if [ ! -s ~/.ssh/known_hosts ]; then
+          echo "::error::OCI_SSH_KNOWN_HOSTS non contiene una riga di chiave (attesa: <IP> ssh-ed25519 AAAA…). Rigenerala come in docs/deploy-vps.md, passo 3."
+          exit 1
+        fi
+        if ! awk -v h="$host" '{ n = split($1, names, ","); for (i = 1; i <= n; i++) if (names[i] == h || names[i] == "[" h "]:22") found = 1 } END { exit !found }' ~/.ssh/known_hosts; then
+          echo "::error::La riga di OCI_SSH_KNOWN_HOSTS inizia con un indirizzo diverso da OCI_SSH_HOST: devono essere uguali (es. entrambi l'IP del server)."
+          exit 1
+        fi
+        if ! ssh-keygen -l -f ~/.ssh/known_hosts > /dev/null 2>&1; then
+          echo "::error::La chiave in OCI_SSH_KNOWN_HOSTS non è valida (copiata incompleta?). Rigenerala come in docs/deploy-vps.md, passo 3."
+          exit 1
+        fi
+        echo "Impronta del server: $(ssh-keygen -l -f ~/.ssh/known_hosts | awk '{ print $4, $2 }' | head -n 1)"
         {
           echo "Host server"
-          echo "  HostName $SSH_HOST"
-          echo "  User $SSH_USER"
+          echo "  HostName $host"
+          echo "  User $(printf '%s' "$SSH_USER" | tr -d '\r' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
           echo "  IdentityFile ~/.ssh/id_deploy"
           echo "  IdentitiesOnly yes"
           echo "  StrictHostKeyChecking yes"
           echo "  ServerAliveInterval 30"
         } > ~/.ssh/config
         if ! ssh -o BatchMode=yes -o ConnectTimeout=20 server true; then
-          echo "::error::Collegamento SSH a $SSH_USER@$SSH_HOST non riuscito: controlla la chiave pubblica del deploy sulla macchina e OCI_SSH_KNOWN_HOSTS (docs/deploy-vps.md)."
+          echo "::error::Collegamento SSH a $SSH_USER@$host non riuscito. «Host key verification failed»: l'impronta in OCI_SSH_KNOWN_HOSTS non è quella del server. «Permission denied»: manca la chiave pubblica del deploy in ~/.ssh/authorized_keys sulla macchina, o OCI_SSH_PRIVATE_KEY è incompleta (docs/deploy-vps.md)."
           exit 1
         fi
