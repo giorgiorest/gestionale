@@ -40,6 +40,15 @@ principalmente la propria parte** dei dati. Deve funzionare su web, mobile e des
   build serve quindi qualsiasi installazione o cliente; il service worker conserva l'ultima
   configurazione per l'avvio offline.
 
+## App desktop
+
+Dettagli: [ADR 0004](decisioni/0004-app-desktop.md) e `apps/desktop/README.md`.
+
+- Tauri 2 incapsula la build web; l'app riconosce a runtime di girare nell'app installata.
+- **Un installer per tutti i clienti**: al primo avvio l'utente indica l'indirizzo del server,
+  l'app scarica `config.json` da lì e conserva l'ultima copia per l'avvio offline.
+- Login con il client Keycloak `gestionale-desktop`; l'API accetta le origini di Tauri via CORS.
+
 ## Offline e sincronizzazione
 
 - **ID generati dal client**: UUID v7 (ordinabili nel tempo), così un record creato offline

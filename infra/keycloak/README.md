@@ -37,7 +37,16 @@ Password per tutti: `demo-password`.
 L'API accetta un token solo se: firma valida, `iss` = issuer configurato (`JWT_ISSUER_URI`),
 `aud` contiene `gestionale-api`, claim `tenant_id` con un UUID. I ruoli arrivano nel claim `roles`.
 
-| Mapper sul client `gestionale-web` | Claim |
+Client del realm:
+
+| Client | Uso | Redirect / origini |
+|--------|-----|--------------------|
+| `gestionale-web` | web app e PWA | `${GESTIONALE_WEB_URL}` (variabile d'ambiente) |
+| `gestionale-desktop` | app desktop Tauri | fissi: `http://tauri.localhost`, `tauri://localhost` (uguali per ogni installazione) |
+
+Entrambi sono pubblici con PKCE e hanno gli stessi mapper:
+
+| Mapper | Claim |
 |-------------------------------------|-------|
 | `tenant_id` (attributo utente) | `tenant_id` |
 | `roles` (ruoli di realm) | `roles` |

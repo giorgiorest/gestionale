@@ -15,7 +15,7 @@ gestionale/
 ├── apps/
 │   ├── api/             # Spring Boot 3.5, Java 21, Maven
 │   ├── web/             # Angular 22 + Ionic 9, PWA, Dexie (offline), oidc-client-ts
-│   └── desktop/         # Tauri 2 (solo istruzioni, da inizializzare)
+│   └── desktop/         # Tauri 2: app desktop Windows che incapsula la build web
 ├── infra/
 │   ├── docker/          # compose per lo sviluppo locale, Dockerfile web, nginx
 │   └── keycloak/        # realm "gestionale" (configurazione come codice) e utenti demo
@@ -42,13 +42,13 @@ gestionale/
 
 | Cartella                   | Contenuto |
 |----------------------------|-----------|
-| `core/config`              | configurazione a runtime da `config.json` (URL API e Keycloak) |
+| `core/config`              | configurazione a runtime da `config.json` (URL API e Keycloak); nell'app desktop dal server scelto dall'utente |
 | `core/auth`                | login OIDC (Authorization Code + PKCE), `authGuard`, interceptor del token |
 | `core/profile`             | profilo, ruoli e permessi (`GET /api/me`), `*appHasPermission`, `permissionGuard` |
 | `core/entitlements`        | funzionalità del piano, `*appHasFeature`, `featureGuard` |
 | `core/sync`                | outbox: `enqueue`, `flush` (invio al server), `pullChanges` (da fare) |
 | `db/`                      | `LocalDb` (Dexie): `outbox`, `customers`, `syncState` |
-| `features/`                | `auth` (accesso), `home`, `profile`, `customers`, `assistant` |
+| `features/`                | `auth` (accesso), `server` (app desktop), `home`, `profile`, `customers`, `assistant` |
 | `shared/`                  | utilità (UUID v7) |
 
 ## Prerequisiti
@@ -58,7 +58,8 @@ gestionale/
 - Node.js 22 e npm
 - Un motore di container: **Docker** oppure **Podman** (per PostgreSQL e Keycloak in sviluppo,
   e per i test di integrazione con Testcontainers)
-- Facoltativi: GitHub CLI (`gh`); Rust per il desktop (vedi `apps/desktop/README.md`)
+- Per l'app desktop: Rust e Microsoft C++ Build Tools (vedi `apps/desktop/README.md`)
+- Facoltativo: GitHub CLI (`gh`)
 
 ## Avvio locale (sviluppo)
 
@@ -164,9 +165,18 @@ npm run build             # build di produzione in dist/web/browser
 npm test -- --watch=false # test unitari (Vitest)
 ```
 
-### Desktop
+### Desktop (Windows)
 
-Non ancora inizializzato: vedi [apps/desktop/README.md](apps/desktop/README.md).
+```bash
+cd apps/desktop
+npm install
+npm run dev               # finestra desktop collegata a ng serve (sviluppo)
+npm run build             # installer .msi e .exe in src-tauri/target/release/bundle/
+```
+
+L'installer è unico per tutti i clienti: al primo avvio chiede l'indirizzo del server.
+Dettagli, prerequisiti e cose da fare prima della vendita (firma, aggiornamenti):
+[apps/desktop/README.md](apps/desktop/README.md).
 
 ## Utenti, ruoli e permessi
 
@@ -185,5 +195,6 @@ Non ancora inizializzato: vedi [apps/desktop/README.md](apps/desktop/README.md).
 
 - `ci-api.yml`: build e test dell'API; su `main` pubblica l'immagine su GHCR.
 - `ci-web.yml`: build di produzione e test della web app.
+- `ci-desktop.yml`: installer Windows dell'app desktop (artifact `gestionale-desktop-windows`, non ancora firmato).
 - `deploy.yml`: manuale e volutamente bloccato finché non si sceglie il target
   ([ADR 0002](docs/decisioni/0002-deploy-target.md)).
