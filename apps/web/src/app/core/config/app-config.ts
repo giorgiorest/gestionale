@@ -25,6 +25,8 @@ export interface Branding {
   logoUrl?: string;
   /** Colore principale nel formato #RRGGBB. */
   primaryColor?: string;
+  /** Colore di accento nel formato #RRGGBB (linea sotto la barra, contatori). */
+  accentColor?: string;
 }
 
 /** Chiave (localStorage) dell'indirizzo del server scelto nell'app desktop. */

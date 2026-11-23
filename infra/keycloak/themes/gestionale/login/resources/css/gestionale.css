@@ -29,6 +29,8 @@
     /* ---- Marchio (da ridefinire nei temi dei clienti) ---- */
     --gestionale-primary: #0B5C8E;
     --gestionale-primary-hover: color-mix(in srgb, var(--gestionale-primary) 82%, black);
+    /* Accento (giallo del logo): solo come riempimento, mai come colore del testo. */
+    --gestionale-accent: #F2B300;
     --gestionale-logo-url: url('../img/logo.svg');
     --gestionale-background: #f3f6fa;
     --gestionale-surface: #ffffff;
@@ -101,6 +103,14 @@ div.kc-logo-text span {
 
 .pf-v5-c-login__main-header {
     border-top: none;
+}
+
+/* Linea di accento in cima alla scheda, come sotto la barra dell'applicazione. */
+.pf-v5-c-login__main::before {
+    content: '';
+    display: block;
+    height: 4px;
+    background: var(--gestionale-accent);
 }
 
 .pf-v5-c-title.pf-m-3xl {

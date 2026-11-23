@@ -126,7 +126,8 @@ const NAV: NavItem[] = [
       z-index: 2;
       gap: 8px;
       background: var(--mat-sys-surface);
-      border-bottom: 1px solid var(--mat-sys-outline-variant);
+      /* Linea di accento del marchio (giallo). */
+      border-bottom: 3px solid var(--mat-sys-tertiary);
     }
     .brand {
       display: flex;
@@ -175,8 +176,9 @@ const NAV: NavItem[] = [
       padding: 2px 6px;
       box-sizing: border-box;
       text-align: center;
-      background: var(--mat-sys-error);
-      color: var(--mat-sys-on-error);
+      background: var(--mat-sys-tertiary);
+      color: var(--mat-sys-on-tertiary);
+      font-weight: 600;
       border-radius: var(--mat-sys-corner-full);
       font: var(--mat-sys-label-medium);
       line-height: 16px;

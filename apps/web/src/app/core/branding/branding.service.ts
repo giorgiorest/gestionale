@@ -13,7 +13,7 @@ const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 /**
  * Applica il marchio dell'installazione (da config.json): nome, logo e colore principale.
  *
- * Il colore sostituisce le variabili Material `--mat-sys-primary*`; le tinte derivate
+ * Il colore principale sostituisce `--mat-sys-primary*`, l'accento `--mat-sys-tertiary*`; le tinte derivate
  * (container, testo sopra il colore) si calcolano con color-mix e il contrasto.
  * Il resto della palette resta quello di prodotto (src/styles/_theme-colors.scss).
  */
@@ -43,6 +43,15 @@ export class BrandingService {
       // Voce attiva del menu e chip selezionati (Material 3 usa il secondary container).
       style.setProperty('--mat-sys-secondary-container', `color-mix(in srgb, ${color} 14%, white)`);
       style.setProperty('--mat-sys-on-secondary-container', `color-mix(in srgb, ${color} 70%, black)`);
+    }
+
+    const accent = branding?.accentColor;
+    if (accent && HEX_COLOR.test(accent)) {
+      const style = this.document.documentElement.style;
+      style.setProperty('--mat-sys-tertiary', accent);
+      style.setProperty('--mat-sys-on-tertiary', isDark(accent) ? '#ffffff' : '#1d1d1b');
+      style.setProperty('--mat-sys-tertiary-container', `color-mix(in srgb, ${accent} 22%, white)`);
+      style.setProperty('--mat-sys-on-tertiary-container', `color-mix(in srgb, ${accent} 35%, black)`);
     }
   }
 }

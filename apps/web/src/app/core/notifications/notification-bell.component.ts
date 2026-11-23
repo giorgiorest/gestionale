@@ -20,7 +20,6 @@ import { NotificationsService } from './notifications.service';
     >
       <mat-icon
         [matBadge]="service.badge() || null"
-        matBadgeColor="warn"
         matBadgeSize="medium"
         matBadgeOverlap="true"
         aria-hidden="false"
