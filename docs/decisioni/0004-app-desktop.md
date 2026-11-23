@@ -37,6 +37,21 @@ La web app esiste già (Angular; oggi con Angular Material, ADR 0006) e deve res
   sessione viene azzerata.
 - macOS e Linux sono rimandati.
 
+## Aggiornamento — distribuzione dal server (novembre 2026)
+
+- Gli installer si distribuiscono **dal server dell'azienda**: pagina pubblica `/app-desktop`
+  («App per Windows»), con il setup `.exe` per l'utente, l'MSI per il reparto IT, gli SHA-256 e
+  l'indirizzo del server da inserire al primo avvio.
+- *Release immagini* richiama *CI Desktop* (Windows) e include gli installer nell'**immagine web
+  dello stesso commit** (`apps/web/public/downloads/`, con `desktop.json`): versione dell'app e del
+  server restano allineate, anche nei ritorni indietro. CI Desktop su `main` non gira più da solo
+  (niente build doppie: i minuti Windows costano il doppio).
+- Una build desktop fallita non blocca il rilascio del server: l'immagine web esce senza installer
+  e la pagina lo segnala.
+- Scartati: GitHub Releases (repository privato, gli utenti non hanno accesso) e uno storage
+  esterno (un servizio in più da gestire, e un dominio terzo da dichiarare nell'informativa).
+- Resta da fare: firma del codice (SmartScreen) e aggiornamenti automatici dell'app.
+
 ## Alternative scartate
 
 - **Electron**: installer e memoria molto più pesanti, nessun vantaggio per una UI web esistente.

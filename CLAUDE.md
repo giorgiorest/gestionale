@@ -7,7 +7,7 @@ sostituito, perché lo usano configurazioni, token e installazioni esistenti.
 ## Stack
 - Backend: Spring Boot (Java 21, Maven) in apps/api, PostgreSQL, Flyway per le migrazioni.
 - Frontend: Angular con Angular Material (layout per PC), PWA per il web, Capacitor per il mobile, Dexie per il database locale in apps/web.
-- Desktop: Tauri 2 in apps/desktop, che incapsula la build web (Windows). Un solo installer per tutti i clienti: il server si sceglie al primo avvio. Installer generati da ci-desktop.yml.
+- Desktop: Tauri 2 in apps/desktop, che incapsula la build web (Windows). Un solo installer per tutti i clienti: il server si sceglie al primo avvio. Installer generati da ci-desktop.yml (PR) e, su main, da release-images.yml, che li include nell'immagine web: gli utenti li scaricano dalla pagina /app-desktop del server.
 - Identità: Keycloak 26 (OIDC), realm versionato in infra/keycloak/realm; utenti demo solo in infra/keycloak/dev. Frontend con oidc-client-ts (Authorization Code + PKCE).
 - Infrastruttura locale: infra/docker/compose.yml (compatibile con Docker e Podman).
 - Infrastruttura cloud: Terraform in infra/terraform/oracle (ADR 0007), applicato solo dai workflow Infrastruttura; stato su Oracle Object Storage, mai nel repository.

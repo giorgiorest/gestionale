@@ -18,6 +18,12 @@ export const routes: Routes = [
     path: 'privacy',
     loadComponent: () => import('./features/privacy/privacy.page').then((m) => m.PrivacyPage),
   },
+  {
+    // Download dell'app desktop per Windows: pubblico, per chi deve ancora installarla.
+    path: 'app-desktop',
+    loadComponent: () =>
+      import('./features/desktop/desktop-download.page').then((m) => m.DesktopDownloadPage),
+  },
   // Ritorno dal provider di identità: gestito da AuthService prima del routing.
   { path: 'auth/callback', redirectTo: '' },
   {
