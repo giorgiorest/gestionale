@@ -68,13 +68,15 @@ gestionale/
 
 ## Avvio locale
 
-Guida passo passo: **[docs/avvio-locale.md](docs/avvio-locale.md)**. In breve, dalla radice del repository:
+Guida passo passo: **[docs/avvio-locale.md](docs/avvio-locale.md)**. Si usa `podman-compose`
+(nessun componente Docker; vanno bene anche `podman compose` e `docker compose`). In breve, dalla
+radice del repository:
 
 ```bash
 cd infra/docker
 cp .env.example .env
-podman compose up -d                              # modalità A: database, Keycloak, Mailpit
-podman compose --profile app up -d --build        # modalità B: anche API e web in container
+podman-compose up -d                              # modalità A: database, Keycloak, Mailpit
+podman-compose --profile app up -d --build        # modalità B: anche API e web in container
 ```
 
 Nella modalità A si avviano a mano l'API (`apps/api`: `./mvnw spring-boot:run`) e la web app
@@ -195,8 +197,8 @@ Dettagli: [ADR 0005](docs/decisioni/0005-notifiche.md).
 1. Avvia lo stack locale ([docs/avvio-locale.md](docs/avvio-locale.md)): Mailpit è già compreso.
    Dopo aver aggiornato il codice riavvia l'API: le migrazioni creano le tabelle mancanti.
 2. Per avere la comunicazione di benvenuto del tenant demo serve un database nuovo (il seeder la
-   crea solo insieme al tenant): da `infra/docker`, `podman compose --profile app down -v` e poi di
-   nuovo `podman compose up -d` (cancella i dati di prova). In alternativa salta al punto 4 e inviane una tu.
+   crea solo insieme al tenant): da `infra/docker`, `podman-compose --profile app down -v` e poi di
+   nuovo `podman-compose up -d` (cancella i dati di prova). In alternativa salta al punto 4 e inviane una tu.
 3. Accedi come `operatore.demo`: in home compaiono la campanella con il numero e il banner
    «Hai 1 comunicazione da confermare». Aprila e premi *Confermo di aver letto e compreso*.
 4. In una **finestra anonima** (o un altro browser, per non condividere la sessione) accedi come

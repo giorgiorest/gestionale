@@ -1,11 +1,11 @@
-# Stack locale di civil beefy per Podman (podman compose) e Docker Compose.
+# Stack locale di civil beefy per podman-compose (consigliato), podman compose e Docker Compose.
 # Guida: docs/avvio-locale.md
 #
 # Due modalità, dalla cartella infra/docker (dopo aver copiato .env.example in .env):
 #
-#   podman compose up -d                     solo servizi di supporto: database, Keycloak, Mailpit.
+#   podman-compose up -d                     solo servizi di supporto: database, Keycloak, Mailpit.
 #                                            API e web si avviano a mano (mvnw / npm start), per sviluppare.
-#   podman compose --profile app up -d --build
+#   podman-compose --profile app up -d --build
 #                                            tutto in container, anche API e web: per provare l'app
 #                                            senza installare Java e Node.
 #
@@ -30,7 +30,10 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      # Forma "exec" (senza shell): funziona con Docker Compose e con podman-compose, che non
+      # converte bene la forma CMD-SHELL. Via TCP (-h localhost), così il server temporaneo della
+      # prima inizializzazione (solo socket locale) non viene scambiato per pronto.
+      test: ["CMD", "pg_isready", "-h", "localhost"]
       interval: 5s
       timeout: 5s
       retries: 10
