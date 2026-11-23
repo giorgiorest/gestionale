@@ -41,6 +41,13 @@ public class Customer {
         this.email = email;
     }
 
+    /** Aggiorna i dati modificabili. */
+    public void update(String name, String email, Instant at) {
+        this.name = name;
+        this.email = email;
+        this.updatedAt = at;
+    }
+
     public UUID getId() {
         return id;
     }
@@ -55,5 +62,9 @@ public class Customer {
 
     public String getEmail() {
         return email;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
     }
 }

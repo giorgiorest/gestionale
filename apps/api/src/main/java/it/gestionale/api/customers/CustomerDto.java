@@ -1,0 +1,20 @@
+package it.gestionale.api.customers;
+
+import java.time.Instant;
+import java.util.UUID;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+/** Rappresentazione di un cliente nell'API. */
+public record CustomerDto(UUID id, String name, String email, Instant updatedAt) {
+
+    static CustomerDto from(Customer customer) {
+        return new CustomerDto(customer.getId(), customer.getName(), customer.getEmail(), customer.getUpdatedAt());
+    }
+
+    /** Dati in ingresso per creare o aggiornare un cliente. */
+    public record Input(@NotBlank @Size(max = 200) String name, @Email @Size(max = 255) String email) {
+    }
+}

@@ -1,8 +1,8 @@
-import { InjectionToken } from '@angular/core';
-import { environment } from '../../../environments/environment';
+import { InjectionToken, inject } from '@angular/core';
+import { AppConfigService } from '../config/app-config';
 
-/** URL base dell'API, letto dall'environment. Sostituibile nei test. */
+/** URL base dell'API, dalla configurazione a runtime. Sostituibile nei test. */
 export const API_URL = new InjectionToken<string>('API_URL', {
   providedIn: 'root',
-  factory: () => environment.apiUrl,
+  factory: () => inject(AppConfigService).config.apiUrl,
 });

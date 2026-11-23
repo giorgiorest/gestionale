@@ -20,6 +20,7 @@
     "@angular/service-worker": "^22.3.0",
     "@ionic/angular": "^9.0.13",
     "dexie": "^4.4.7",
+    "oidc-client-ts": "^3.5.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

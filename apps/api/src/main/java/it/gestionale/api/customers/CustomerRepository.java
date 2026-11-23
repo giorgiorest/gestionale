@@ -1,5 +1,6 @@
 package it.gestionale.api.customers;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,6 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface CustomerRepository extends JpaRepository<Customer, UUID> {
 
     long countByTenantId(UUID tenantId);
+
+    List<Customer> findByTenantIdOrderByNameAsc(UUID tenantId);
 
     void deleteByTenantId(UUID tenantId);
 }

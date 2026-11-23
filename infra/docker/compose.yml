@@ -1,4 +1,5 @@
-# Stack locale di sviluppo: PostgreSQL + API + web.
+# Stack locale di sviluppo: PostgreSQL + Keycloak + API + web.
+# Funziona con Docker Compose e con Podman (podman compose): le immagini hanno il nome completo.
 # Avvio dalla radice del repository:
 #   cp infra/docker/.env.example infra/docker/.env   # poi impostare le password
 #   docker compose -f infra/docker/compose.yml up --build
@@ -6,7 +7,7 @@ name: gestionale
 
 services:
   db:
-    image: postgres:17
+    image: docker.io/library/postgres:17
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-gestionale}
       # Utente proprietario dello schema, usato solo dalle migrazioni Flyway.
@@ -26,6 +27,25 @@ services:
       timeout: 5s
       retries: 10
 
+  keycloak:
+    # Provider di identità (OIDC). Il realm "gestionale" è configurazione di prodotto versionata
+    # in infra/keycloak/realm; gli utenti demo (infra/keycloak/dev) si caricano solo in sviluppo.
+    image: quay.io/keycloak/keycloak:26.8.2
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?impostare KEYCLOAK_ADMIN_PASSWORD in infra/docker/.env}
+      # URL pubblico di Keycloak: è l'issuer dei token, deve essere lo stesso visto da browser e API.
+      KC_HOSTNAME: ${KEYCLOAK_URL:-http://localhost:8180}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      # Indirizzo della web app, usato nel realm per redirect e CORS.
+      GESTIONALE_WEB_URL: ${GESTIONALE_WEB_URL:-http://localhost:8081}
+    volumes:
+      - ../keycloak/realm/gestionale-realm.json:/opt/keycloak/data/import/gestionale-realm.json:ro
+      - ../keycloak/dev/gestionale-users-0.json:/opt/keycloak/data/import/gestionale-users-0.json:ro
+    ports:
+      - "8180:8080"
+
   api:
     build:
       context: ../../apps/api
@@ -40,7 +60,9 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:?impostare DB_PASSWORD in infra/docker/.env}
       DB_MIGRATION_USER: ${POSTGRES_USER:-gestionale}
       DB_MIGRATION_PASSWORD: ${POSTGRES_PASSWORD:?impostare POSTGRES_PASSWORD in infra/docker/.env}
-      JWT_ISSUER_URI: ${JWT_ISSUER_URI:-http://localhost:8180/realms/gestionale}
+      JWT_ISSUER_URI: ${KEYCLOAK_URL:-http://localhost:8180}/realms/gestionale
+      # Le chiavi di firma si leggono dalla rete interna; l'issuer resta quello pubblico.
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/gestionale/protocol/openid-connect/certs
       LICENSE_PUBLIC_KEY: ${LICENSE_PUBLIC_KEY:-}
       AI_PROVIDER: ${AI_PROVIDER:-none}
       AI_API_KEY: ${AI_API_KEY:-}
@@ -53,6 +75,11 @@ services:
       dockerfile: infra/docker/web.Dockerfile
     depends_on:
       - api
+    environment:
+      # Generano config.json all'avvio del container (infra/docker/web/40-runtime-config.sh).
+      WEB_API_URL: /api
+      OIDC_AUTHORITY: ${KEYCLOAK_URL:-http://localhost:8180}/realms/gestionale
+      OIDC_CLIENT_ID: gestionale-web
     ports:
       - "8081:80"
 

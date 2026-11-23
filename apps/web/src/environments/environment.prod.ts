@@ -1,6 +1,4 @@
-// Ambiente di produzione: l'API è servita dallo stesso dominio (reverse proxy nginx su /api).
+// Ambiente di produzione. La configurazione dell'installazione arriva da config.json (vedi AppConfigService).
 export const environment = {
   production: true,
-  /** URL base dell'API Spring Boot. */
-  apiUrl: '/api',
 };

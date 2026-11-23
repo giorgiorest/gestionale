@@ -1,6 +1,5 @@
 package it.gestionale.api.ai;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -9,6 +8,7 @@ import java.util.UUID;
 
 import it.gestionale.api.AbstractIntegrationTest;
 import it.gestionale.api.TestData;
+import it.gestionale.api.TestJwt;
 import it.gestionale.api.licensing.LicenseRepository;
 import it.gestionale.api.tenancy.TenantRepository;
 import org.junit.jupiter.api.Test;
@@ -35,8 +35,12 @@ class AssistantControllerTest extends AbstractIntegrationTest {
     LicenseRepository licenses;
 
     private ResultActions chatAs(UUID tenant) throws Exception {
+        return chatAs(tenant, "operator");
+    }
+
+    private ResultActions chatAs(UUID tenant, String role) throws Exception {
         return mvc.perform(post("/api/ai/chat")
-                .with(jwt().jwt(j -> j.subject("user-1").claim("tenant_id", tenant.toString())))
+                .with(TestJwt.user(tenant, role))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(BODY));
     }
@@ -45,6 +49,12 @@ class AssistantControllerTest extends AbstractIntegrationTest {
     void forbiddenWhenPlanDoesNotIncludeAssistant() throws Exception {
         UUID tenant = TestData.createTenant(tx, tenants, licenses, "base", Set.of(), 100);
         chatAs(tenant).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void forbiddenForRoleWithoutAssistantPermission() throws Exception {
+        UUID tenant = TestData.createTenant(tx, tenants, licenses, "pro", Set.of("aiAssistant"), 100);
+        chatAs(tenant, "viewer").andExpect(status().isForbidden());
     }
 
     @Test
@@ -63,7 +73,7 @@ class AssistantControllerTest extends AbstractIntegrationTest {
     void rejectsEmptyConversation() throws Exception {
         UUID tenant = TestData.createTenant(tx, tenants, licenses, "pro", Set.of("aiAssistant"), 100);
         mvc.perform(post("/api/ai/chat")
-                        .with(jwt().jwt(j -> j.claim("tenant_id", tenant.toString())))
+                        .with(TestJwt.user(tenant, "operator"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"messages\":[]}"))
                 .andExpect(status().isBadRequest());

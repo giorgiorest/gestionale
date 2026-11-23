@@ -1,0 +1,38 @@
+{
+  "realm": "gestionale",
+  "users": [
+    {
+      "username": "admin.demo",
+      "email": "admin.demo@gestionale.example",
+      "emailVerified": true,
+      "firstName": "Anna",
+      "lastName": "Amministratrice",
+      "enabled": true,
+      "attributes": { "tenant_id": ["00000000-0000-7000-8000-00000000de00"] },
+      "credentials": [{ "type": "password", "value": "demo-password", "temporary": false }],
+      "realmRoles": ["default-roles-gestionale", "admin"]
+    },
+    {
+      "username": "operatore.demo",
+      "email": "operatore.demo@gestionale.example",
+      "emailVerified": true,
+      "firstName": "Oscar",
+      "lastName": "Operatore",
+      "enabled": true,
+      "attributes": { "tenant_id": ["00000000-0000-7000-8000-00000000de00"] },
+      "credentials": [{ "type": "password", "value": "demo-password", "temporary": false }],
+      "realmRoles": ["default-roles-gestionale", "operator"]
+    },
+    {
+      "username": "lettore.demo",
+      "email": "lettore.demo@gestionale.example",
+      "emailVerified": true,
+      "firstName": "Laura",
+      "lastName": "Lettrice",
+      "enabled": true,
+      "attributes": { "tenant_id": ["00000000-0000-7000-8000-00000000de00"] },
+      "credentials": [{ "type": "password", "value": "demo-password", "temporary": false }],
+      "realmRoles": ["default-roles-gestionale", "viewer"]
+    }
+  ]
+}
