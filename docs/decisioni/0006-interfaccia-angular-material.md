@@ -34,9 +34,14 @@ Alternative valutate (versioni compatibili con Angular 22, novembre 2026):
    Google Fonts: funzionano offline e nell'app desktop, e non trasmettono a Google gli
    indirizzi IP degli utenti (tema GDPR già oggetto di provvedimenti in Europa).
 5. **Marchio per installazione** da `config.json` (`branding.name`, `branding.logoUrl`,
-   `branding.primaryColor`), applicato a runtime da `BrandingService`: nome nella barra e nel
-   titolo, logo, colore principale (le tinte derivate si calcolano con `color-mix`). Nell'immagine
-   Docker arriva dalle variabili `BRAND_NAME`, `BRAND_LOGO_URL`, `BRAND_PRIMARY_COLOR`.
+   `branding.primaryColor`, `branding.accentColor`), applicato a runtime da `BrandingService`: nome
+   nella barra e nel titolo, logo, colore principale e di accento (le tinte derivate si calcolano con
+   `color-mix`). Nell'immagine Docker arriva dalle variabili `BRAND_NAME`, `BRAND_LOGO_URL`,
+   `BRAND_PRIMARY_COLOR`, `BRAND_ACCENT_COLOR`.
+6. **Colore di accento** `#F2B300` (giallo del logo) come "tertiary" di Material 3, con testo scuro
+   sopra: linea sotto la barra superiore, contatori delle notifiche, linea in cima alla scheda di
+   login. Solo come riempimento, mai come colore del testo su sfondo chiaro (contrasto insufficiente).
+   Gli stati con un significato (errore, da confermare) mantengono i propri colori.
    Il colore viene validato (`#RRGGBB`) per evitare iniezioni di CSS.
 
 ## Conseguenze

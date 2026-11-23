@@ -28,6 +28,14 @@ describe('BrandingService', () => {
     expect(root().getPropertyValue('--mat-sys-secondary-container')).toContain('#8B1F3A');
   });
 
+  it('applica il colore di accento del cliente con testo leggibile', () => {
+    service.apply({ accentColor: '#F2B300' });
+    expect(root().getPropertyValue('--mat-sys-tertiary')).toBe('#F2B300');
+    expect(root().getPropertyValue('--mat-sys-on-tertiary')).toBe('#1d1d1b');
+    service.apply({ accentColor: 'giallo' });
+    expect(root().getPropertyValue('--mat-sys-tertiary')).toBe('#F2B300');
+  });
+
   it('testo scuro sopra un colore chiaro', () => {
     service.apply({ primaryColor: '#F5D90A' });
     expect(root().getPropertyValue('--mat-sys-on-primary')).toBe('#000000');

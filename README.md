@@ -198,10 +198,11 @@ Interfaccia con **Angular Material** (gratuita, MIT), pensata per il PC: barra s
 e menu laterale. Scelta e alternative: [ADR 0006](docs/decisioni/0006-interfaccia-angular-material.md).
 
 - **Logo e colori del prodotto**: `apps/web/public/branding/logo.svg` e palette generata dal
-  colore principale `#0B5C8E` (procedura in [apps/web/README.md](apps/web/README.md)). Il simbolo a celle
+  colore principale `#0B5C8E` e di accento `#F2B300`, il giallo del logo (procedura in [apps/web/README.md](apps/web/README.md)). Il simbolo a celle
   esagonali è usato anche come icona della scheda del browser, della PWA e dell'app desktop.
 - **Marchio di un cliente** senza ricompilare: `branding` in `config.json` (nome, logo, colore
-  principale) o, con Docker, `BRAND_NAME`, `BRAND_LOGO_URL`, `BRAND_PRIMARY_COLOR`.
+  principale e di accento) o, con Docker, `BRAND_NAME`, `BRAND_LOGO_URL`, `BRAND_PRIMARY_COLOR`,
+  `BRAND_ACCENT_COLOR`.
 - Font (Inter) e icone (Material Symbols) sono inclusi nell'app: niente Google Fonts.
 
 ## Utenti, ruoli e permessi

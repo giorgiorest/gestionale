@@ -98,7 +98,8 @@ Il realm usa il tema di login `gestionale` (`loginTheme` nel file del realm), in
 aggiornamenti di Keycloak continuano ad applicarsi:
 
 - `theme.properties`: tema padre e fogli di stile;
-- `resources/css/gestionale.css`: colori, forme e intestazione, tutto tramite variabili `--gestionale-*`;
+- `resources/css/gestionale.css`: colori (principale `#0B5C8E`, accento giallo `#F2B300` nella linea
+  in cima alla scheda), forme e intestazione, tutto tramite variabili `--gestionale-*`;
 - `resources/img/logo.svg`: logo (stesso simbolo dell'app);
 - `resources/fonts/`: font Inter incluso (licenza OFL), nessuna richiesta a Google.
 
@@ -133,6 +134,7 @@ styles=css/styles.css css/gestionale.css css/cliente.css
 ```css
 :root {
     --gestionale-primary: #8B1F3A;
+    --gestionale-accent: #E0A100;
     --gestionale-logo-url: url("../img/logo-cliente.svg");
 }
 ```

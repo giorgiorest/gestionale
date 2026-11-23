@@ -1,7 +1,7 @@
 // Tema dell'applicazione: Angular Material 3.
 //
 // - Palette di prodotto generata dal colore del marchio (src/styles/_theme-colors.scss,
-//   rigenerabile con: npx ng generate @angular/material:theme-color --primary-color=#0B5C8E
+//   rigenerabile con: npx ng generate @angular/material:theme-color --primary-color=#0B5C8E --tertiary-color=#F2B300
 //   --directory=src/styles/ --is-scss --force).
 // - Font (Inter) e icone (Material Symbols) sono inclusi nell'app, non scaricati da Google:
 //   funzionano offline e non trasmettono a terzi gli indirizzi IP degli utenti.
@@ -14,6 +14,10 @@
 // Colore principale del marchio. La palette in _theme-colors.scss è generata da questo valore;
 // qui lo si impone come colore primario esatto (Material 3 userebbe la tonalità 40 della palette).
 $brand-primary: #0b5c8e;
+// Colore di accento (giallo del logo), sempre con testo scuro sopra: su bianco non è leggibile come testo.
+// Material 3 lo chiama "tertiary"; si usa con var(--mat-sys-tertiary) / var(--mat-sys-on-tertiary).
+$brand-accent: #f2b300;
+$brand-on-accent: #1d1d1b;
 
 html {
   color-scheme: light;
@@ -35,6 +39,16 @@ html {
     (
       primary: $brand-primary,
       surface-tint: $brand-primary,
+      tertiary: $brand-accent,
+      on-tertiary: $brand-on-accent,
+    )
+  );
+
+  // Contatori (notifiche): giallo del marchio con numero scuro, come il "nastro" del logo.
+  @include mat.badge-overrides(
+    (
+      background-color: var(--mat-sys-tertiary),
+      text-color: var(--mat-sys-on-tertiary),
     )
   );
 }

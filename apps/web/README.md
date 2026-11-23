@@ -21,12 +21,16 @@ Interfaccia unica per browser (PWA) e app desktop (Tauri). Avvio, build e test: 
 1. **Logo**: il simbolo è `public/branding/logo.svg` (ridisegnato in SVG dal marchio; sostituirlo
    con l'esportazione originale quando disponibile). Variante per sfondi scuri:
    `public/branding/logo-chiaro.svg`.
-2. **Colori**: il colore principale attuale è `#0B5C8E`. Per cambiarlo, rigenera la palette e
-   aggiorna `$brand-primary` in `src/styles.scss`:
+2. **Colori**: principale `#0B5C8E` (blu) e di accento `#F2B300` (giallo del logo). Per cambiarli,
+   rigenera la palette e aggiorna `$brand-primary` / `$brand-accent` in `src/styles.scss`:
 
    ```bash
-   npx ng generate @angular/material:theme-color --primary-color=#0B5C8E --directory=src/styles/ --is-scss --force --interactive=false
+   npx ng generate @angular/material:theme-color --primary-color=#0B5C8E --tertiary-color=#F2B300 --directory=src/styles/ --is-scss --force --interactive=false
    ```
+
+   L'accento si usa con `var(--mat-sys-tertiary)` e il testo sopra con `var(--mat-sys-on-tertiary)`
+   (scuro): linea sotto la barra superiore, contatori delle notifiche. Mai come colore del testo
+   su sfondo chiaro, perché non sarebbe leggibile.
 
    Si possono indicare anche `--secondary-color`, `--tertiary-color`, `--neutral-color`.
 3. **Icone dell'app** (PWA e desktop), da rigenerare quando cambia il logo:
@@ -44,11 +48,13 @@ In `config.json` dell'installazione:
 "branding": {
   "name": "Rossi Gestionale",
   "logoUrl": "https://www.rossi.example/logo.svg",
-  "primaryColor": "#8B1F3A"
+  "primaryColor": "#8B1F3A",
+  "accentColor": "#E0A100"
 }
 ```
 
-Con Docker le stesse impostazioni arrivano da `BRAND_NAME`, `BRAND_LOGO_URL`, `BRAND_PRIMARY_COLOR`.
+Con Docker le stesse impostazioni arrivano da `BRAND_NAME`, `BRAND_LOGO_URL`, `BRAND_PRIMARY_COLOR`,
+`BRAND_ACCENT_COLOR`.
 
 ## Regole per i componenti
 
