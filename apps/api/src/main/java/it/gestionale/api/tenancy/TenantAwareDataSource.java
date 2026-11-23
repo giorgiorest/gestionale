@@ -9,7 +9,8 @@ import javax.sql.DataSource;
 import org.springframework.jdbc.datasource.DelegatingDataSource;
 
 /**
- * Imposta {@code app.tenant_id} su ogni connessione presa dal pool, in base a {@link TenantContext}.
+ * Imposta {@code app.tenant_id} (da {@link TenantContext}) e {@code app.worker} (da {@link WorkerContext})
+ * su ogni connessione presa dal pool.
  *
  * <p>Il valore viene sempre riscritto (stringa vuota se non c'è tenant), quindi una connessione
  * riutilizzata dal pool non conserva il tenant della richiesta precedente. Senza tenant la
@@ -17,7 +18,8 @@ import org.springframework.jdbc.datasource.DelegatingDataSource;
  */
 public class TenantAwareDataSource extends DelegatingDataSource {
 
-    private static final String SET_TENANT = "SELECT set_config('app.tenant_id', ?, false)";
+    private static final String SET_CONTEXT =
+            "SELECT set_config('app.tenant_id', ?, false), set_config('app.worker', ?, false)";
 
     public TenantAwareDataSource(DataSource target) {
         super(target);
@@ -35,8 +37,10 @@ public class TenantAwareDataSource extends DelegatingDataSource {
 
     private static Connection applyTenant(Connection connection) throws SQLException {
         String tenant = TenantContext.current().map(Object::toString).orElse("");
-        try (PreparedStatement statement = connection.prepareStatement(SET_TENANT)) {
+        String worker = WorkerContext.current().orElse("");
+        try (PreparedStatement statement = connection.prepareStatement(SET_CONTEXT)) {
             statement.setString(1, tenant);
+            statement.setString(2, worker);
             statement.execute();
         } catch (SQLException e) {
             connection.close();

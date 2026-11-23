@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
+import it.gestionale.api.notifications.UserDirectoryService;
 import it.gestionale.api.tenancy.TenantContext;
 import it.gestionale.api.tenancy.TenantRepository;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,14 +21,18 @@ public class MeController {
 
     private final TenantRepository tenants;
     private final RoleAuthoritiesConverter rolesConverter;
+    private final UserDirectoryService directory;
 
-    public MeController(TenantRepository tenants, RoleAuthoritiesConverter rolesConverter) {
+    public MeController(TenantRepository tenants, RoleAuthoritiesConverter rolesConverter,
+                        UserDirectoryService directory) {
         this.tenants = tenants;
         this.rolesConverter = rolesConverter;
+        this.directory = directory;
     }
 
+    /** Profilo dell'utente; registra anche l'accesso nella rubrica del tenant (destinatari delle notifiche). */
     @GetMapping
-    @Transactional(readOnly = true)
+    @Transactional
     public CurrentUser me(@AuthenticationPrincipal Jwt jwt) {
         List<Role> roles = rolesConverter.roles(jwt).stream().sorted().toList();
         List<String> permissions = roles.stream()
@@ -41,6 +46,9 @@ public class MeController {
                 .map(t -> new CurrentUser.TenantInfo(t.getId(), t.getName(),
                         t.getKind().name().toLowerCase(Locale.ROOT), t.getStatus().name().toLowerCase(Locale.ROOT)))
                 .orElse(null);
+        if (tenant != null) {
+            directory.sync(jwt);
+        }
 
         return new CurrentUser(jwt.getSubject(), jwt.getClaimAsString("preferred_username"),
                 jwt.getClaimAsString("name"), jwt.getClaimAsString("email"), tenant,

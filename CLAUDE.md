@@ -31,6 +31,9 @@
 - Le licenze offline sono token firmati. La chiave privata non sta mai nel repository né nell'app distribuita.
 - Assistente AI: i tool esposti al modello sono wrapper sottili sui servizi del dominio, eseguiti con i permessi dell'utente. Le operazioni di scrittura richiedono conferma esplicita dell'utente prima dell'esecuzione. Ogni chiamata registra tenant, utente, modello, token e costo stimato.
 - Dati personali verso provider AI: inviare solo ciò che serve al task, e solo se il tenant ha un contratto di elaborazione dati e la configurazione lo consente.
+- Notifiche: il codice di dominio le crea solo con `NotificationService.send(...)` (mai insert diretti); i destinatari si risolvono dalla rubrica `app_users`. La presa visione è distinta dalla lettura e si registra con l'ora del server.
+- Processi di sistema che lavorano per tutti i tenant: mai disattivare la RLS. Si usa `WorkerContext` (app.worker) con una policy dedicata solo sulla tabella tecnica che serve, documentata in un ADR.
+- Nel codice caricato all'avvio (app.ts, app.config.ts, core/) i componenti Ionic si importano dagli entry point per componente (`@ionic/angular/ion-…`, `@ionic/angular/provide`), non dal barrel `@ionic/angular`, che porterebbe nel bundle iniziale tutti i componenti usati dalle pagine lazy.
 - Gli ID delle entità sono UUID generati dal client (preferibilmente v7).
 - Le scritture offline passano dalla tabella outbox. Non chiamare direttamente le API di scrittura dai componenti.
 - Prima di concludere un task: build e test del modulo toccato devono passare.

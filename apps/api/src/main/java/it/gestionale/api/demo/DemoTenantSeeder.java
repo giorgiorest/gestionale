@@ -11,6 +11,9 @@ import it.gestionale.api.customers.CustomerRepository;
 import it.gestionale.api.licensing.Features;
 import it.gestionale.api.licensing.License;
 import it.gestionale.api.licensing.LicenseRepository;
+import it.gestionale.api.notifications.Audience;
+import it.gestionale.api.notifications.NewNotification;
+import it.gestionale.api.notifications.NotificationService;
 import it.gestionale.api.tenancy.Tenant;
 import it.gestionale.api.tenancy.TenantContext;
 import it.gestionale.api.tenancy.TenantKind;
@@ -20,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -42,14 +46,18 @@ public class DemoTenantSeeder implements ApplicationRunner {
     private final TenantRepository tenants;
     private final LicenseRepository licenses;
     private final CustomerRepository customers;
+    private final NotificationService notifications;
+    private final JdbcTemplate jdbc;
     private final TransactionTemplate tx;
     private final Clock clock;
 
     public DemoTenantSeeder(TenantRepository tenants, LicenseRepository licenses, CustomerRepository customers,
-                            TransactionTemplate tx, Clock clock) {
+                            NotificationService notifications, JdbcTemplate jdbc, TransactionTemplate tx, Clock clock) {
         this.tenants = tenants;
         this.licenses = licenses;
         this.customers = customers;
+        this.notifications = notifications;
+        this.jdbc = jdbc;
         this.tx = tx;
         this.clock = clock;
     }
@@ -73,6 +81,7 @@ public class DemoTenantSeeder implements ApplicationRunner {
             if (!tenants.existsById(DEMO_TENANT_ID)) {
                 tenants.save(new Tenant(DEMO_TENANT_ID, "Azienda Demo", "demo", TenantKind.DEMO));
             }
+            jdbc.update("DELETE FROM notifications WHERE tenant_id = ?", DEMO_TENANT_ID);
             customers.deleteByTenantId(DEMO_TENANT_ID);
             licenses.deleteByTenantId(DEMO_TENANT_ID);
             customers.flush();
@@ -90,5 +99,12 @@ public class DemoTenantSeeder implements ApplicationRunner {
                 new Customer(UUID.randomUUID(), DEMO_TENANT_ID, "Rossi S.r.l.", "info@rossi.example"),
                 new Customer(UUID.randomUUID(), DEMO_TENANT_ID, "Bianchi & Figli", "amministrazione@bianchi.example"),
                 new Customer(UUID.randomUUID(), DEMO_TENANT_ID, "Verdi S.p.A.", null)));
+        // Scrive subito tenant, licenza e clienti: la notifica (JDBC) li referenzia.
+        customers.flush();
+        // Comunicazione con presa visione a tutta l'azienda: chi accede dopo la riceve comunque.
+        notifications.send(new NewNotification(UUID.randomUUID(), NewNotification.ANNOUNCEMENT, "announcement",
+                "Benvenuto nel gestionale",
+                "Questa è una comunicazione di prova dell'ambiente demo. Leggila e conferma la presa visione.",
+                "/clienti", Audience.tenant(), true, true, null, "Amministrazione Demo"));
     }
 }

@@ -50,6 +50,15 @@ gestionale:
   licensing:
     # Chiave pubblica Ed25519 (X.509 SubjectPublicKeyInfo, Base64) per verificare le licenze offline.
     public-key: ${LICENSE_PUBLIC_KEY:}
+  notifications:
+    email:
+      # Email delle notifiche. Server SMTP: SPRING_MAIL_HOST, SPRING_MAIL_PORT, SPRING_MAIL_USERNAME, SPRING_MAIL_PASSWORD.
+      enabled: ${EMAIL_ENABLED:false}
+      from: ${MAIL_FROM:Gestionale <noreply@localhost>}
+      # Indirizzo pubblico della web app, per il link "apri la comunicazione".
+      app-url: ${APP_PUBLIC_URL:}
+      # false = nell'email solo titolo e link (per comunicazioni riservate).
+      include-body: ${EMAIL_INCLUDE_BODY:true}
   demo:
     # Il seeder del tenant demo è disattivato salvo configurazione esplicita.
     enabled: false
@@ -78,9 +87,18 @@ spring:
         jwt:
           issuer-uri: ${JWT_ISSUER_URI:http://localhost:8180/realms/gestionale}
 
+  # Email in sviluppo: Mailpit (SMTP su 1025, caselle su http://localhost:8025).
+  mail:
+    host: ${SPRING_MAIL_HOST:localhost}
+    port: ${SPRING_MAIL_PORT:1025}
+
 gestionale:
   demo:
     enabled: ${DEMO_ENABLED:true}
+  notifications:
+    email:
+      enabled: ${EMAIL_ENABLED:true}
+      app-url: ${APP_PUBLIC_URL:http://localhost:4200}
 
 ---
 spring:

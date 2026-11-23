@@ -28,6 +28,26 @@ export const routes: Routes = [
         loadComponent: () => import('./features/customers/customers.page').then((m) => m.CustomersPage),
       },
       {
+        path: 'notifiche',
+        loadComponent: () => import('./features/notifications/notifications.page').then((m) => m.NotificationsPage),
+      },
+      {
+        path: 'notifiche/:id',
+        loadComponent: () =>
+          import('./features/notifications/notification-detail.page').then((m) => m.NotificationDetailPage),
+      },
+      {
+        path: 'comunicazioni',
+        canActivate: [permissionGuard('notifications:send')],
+        loadComponent: () => import('./features/announcements/announcements.page').then((m) => m.AnnouncementsPage),
+      },
+      {
+        path: 'comunicazioni/:id',
+        canActivate: [permissionGuard('notifications:send')],
+        loadComponent: () =>
+          import('./features/announcements/announcement-report.page').then((m) => m.AnnouncementReportPage),
+      },
+      {
         path: 'assistente',
         canActivate: [permissionGuard('assistant:use'), featureGuard('aiAssistant')],
         loadComponent: () => import('./features/assistant/assistant.component').then((m) => m.AssistantComponent),

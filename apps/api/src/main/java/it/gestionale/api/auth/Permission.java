@@ -8,6 +8,7 @@ public enum Permission {
     CUSTOMERS_READ("customers:read"),
     CUSTOMERS_WRITE("customers:write"),
     ASSISTANT_USE("assistant:use"),
+    NOTIFICATIONS_SEND("notifications:send"),
     USERS_MANAGE("users:manage");
 
     private final String code;
