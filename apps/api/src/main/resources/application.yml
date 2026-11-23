@@ -57,7 +57,7 @@ gestionale:
     email:
       # Email delle notifiche. Server SMTP: SPRING_MAIL_HOST, SPRING_MAIL_PORT, SPRING_MAIL_USERNAME, SPRING_MAIL_PASSWORD.
       enabled: ${EMAIL_ENABLED:false}
-      from: ${MAIL_FROM:Gestionale <noreply@localhost>}
+      from: ${MAIL_FROM:civil beefy <noreply@localhost>}
       # Indirizzo pubblico della web app, per il link "apri la comunicazione".
       app-url: ${APP_PUBLIC_URL:}
       # false = nell'email solo titolo e link (per comunicazioni riservate).

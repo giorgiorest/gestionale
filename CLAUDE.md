@@ -1,4 +1,8 @@
-# CLAUDE.md — gestionale
+# CLAUDE.md — gestionale (prodotto: civil beefy)
+
+Il nome del prodotto mostrato agli utenti è «civil beefy» (minuscolo, come nel logo). `gestionale` è
+il nome tecnico (repository, pacchetti Java, realm e client Keycloak, database, variabili): non va
+sostituito, perché lo usano configurazioni, token e installazioni esistenti.
 
 ## Stack
 - Backend: Spring Boot (Java 21, Maven) in apps/api, PostgreSQL, Flyway per le migrazioni.

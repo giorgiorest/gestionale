@@ -1,9 +1,12 @@
-# gestionale
+# civil beefy
 
-Gestionale multi-piattaforma e multi-tenant: un'unica base di codice per **web** (PWA),
+**civil beefy** è un gestionale multi-piattaforma e multi-tenant: un'unica base di codice per **web** (PWA),
 **mobile** (Capacitor) e **desktop** (Tauri), con funzionamento **offline** e
 sincronizzazione verso un backend **Spring Boot** su **PostgreSQL**. Login e profili utente
 con **Keycloak** (OIDC).
+
+Il nome del prodotto è «civil beefy»; `gestionale` resta il nome tecnico (repository, pacchetti,
+realm e client Keycloak, database), che non va cambiato perché lo usano configurazioni e token.
 
 Visione e scelte tecniche: [docs/architettura.md](docs/architettura.md) e [docs/decisioni/](docs/decisioni/).
 
