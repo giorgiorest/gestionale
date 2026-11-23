@@ -156,7 +156,10 @@ installazione va approvata.
 
 ## 7. Primo accesso e utenti
 
-Il realm di produzione **non ha utenti**: si creano in Keycloak.
+Il realm di produzione **non ha utenti**: si creano in Keycloak. Guida completa (utenti, ruoli,
+nuove aziende e licenze): [gestione-utenti-e-aziende.md](gestione-utenti-e-aziende.md). Prima di
+aprire il servizio ad altri leggi anche [privacy-gdpr.md](privacy-gdpr.md) (contratti e informative;
+link configurabili con `LEGAL_PRIVACY_URL` e `LEGAL_TERMS_URL` nel `.env`).
 
 1. Apri `https://<dominio>/sso/admin` ed entra con `KEYCLOAK_ADMIN` / `KEYCLOAK_ADMIN_PASSWORD` del `.env`.
 2. **Amministratore definitivo**: nel realm *master* → *Users → Add user* (il tuo nome), password,

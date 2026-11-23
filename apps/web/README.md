@@ -56,6 +56,29 @@ In `config.json` dell'installazione:
 Con Docker le stesse impostazioni arrivano da `BRAND_NAME`, `BRAND_LOGO_URL`, `BRAND_PRIMARY_COLOR`,
 `BRAND_ACCENT_COLOR`.
 
+Il logo conviene ospitarlo sullo stesso sito: un logo su un altro dominio fa arrivare a quel dominio
+l'indirizzo IP di chi apre l'app (vedi [docs/privacy-gdpr.md](../../docs/privacy-gdpr.md)).
+
+## Privacy e dati sul dispositivo
+
+- Pagina pubblica **/privacy** («Privacy e cookie»): elenco dei cookie tecnici e dei dati salvati nel
+  browser, con i link ai documenti del titolare da `config.json`:
+
+  ```json
+  "legal": {
+    "privacyUrl": "https://www.rossi.example/privacy",
+    "termsUrl": "https://www.rossi.example/condizioni"
+  }
+  ```
+
+  Con Docker: `LEGAL_PRIVACY_URL` e `LEGAL_TERMS_URL`. Chi aggiunge un cookie o un'archiviazione nel
+  browser aggiorna questa pagina (`features/privacy`) e `docs/privacy-gdpr.md`.
+- **Dati offline legati all'utente**: il database locale (IndexedDB) registra a quale `tenant_id:sub`
+  appartiene (`LocalDataService`). All'avvio, se ha effettuato l'accesso un altro utente, viene
+  svuotato prima di mostrare qualsiasi pagina.
+- **Uscita** (`LogoutService`): invia le modifiche in attesa, chiede conferma se ne restano (offline),
+  poi cancella i dati locali e chiude la sessione. Nell'app desktop anche «Cambia server» li cancella.
+
 ## Regole per i componenti
 
 - Componenti di Angular Material, importati per modulo (`@angular/material/button`, …).

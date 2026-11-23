@@ -5,6 +5,8 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { AuthService } from '../../core/auth/auth.service';
+import { LogoutService } from '../../core/auth/logout.service';
+import { LocalDataService } from '../../core/privacy/local-data.service';
 import { AppConfigService } from '../../core/config/app-config';
 import { PERMISSION_LABELS, ProfileService, ROLE_LABELS } from '../../core/profile/profile.service';
 
@@ -49,7 +51,7 @@ import { PERMISSION_LABELS, ProfileService, ROLE_LABELS } from '../../core/profi
                 <button mat-button (click)="changeServer()">Cambia server</button>
               }
               <a mat-button [href]="auth.accountUrl()" target="_blank" rel="noopener">Account e password</a>
-              <button mat-flat-button (click)="auth.logout()">Esci</button>
+              <button mat-flat-button (click)="logout.logout()">Esci</button>
             </mat-card-actions>
           </mat-card>
 
@@ -94,13 +96,16 @@ export class ProfilePage {
   readonly profile = inject(ProfileService);
   readonly auth = inject(AuthService);
   readonly appConfig = inject(AppConfigService);
+  readonly logout = inject(LogoutService);
+  private readonly localData = inject(LocalDataService);
 
   constructor() {
     void this.profile.load(true);
   }
 
-  /** App desktop: dimentica server e sessione, poi torna alla scelta del server. */
-  changeServer(): void {
+  /** App desktop: dimentica server, sessione e dati locali, poi torna alla scelta del server. */
+  async changeServer(): Promise<void> {
+    await this.localData.clear();
     this.appConfig.disconnect();
     sessionStorage.clear();
     window.location.replace(new URL('server', document.baseURI).href);

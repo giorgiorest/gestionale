@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { User, UserManager, WebStorageStateStore } from 'oidc-client-ts';
 import { AppConfigService } from '../config/app-config';
+import { ownerFromAccessToken } from '../privacy/local-data.service';
 
 /** Percorso (relativo al base href) su cui il provider OIDC rimanda dopo il login. */
 export const AUTH_CALLBACK_PATH = 'auth/callback';
@@ -66,6 +67,12 @@ export class AuthService {
 
   async logout(): Promise<void> {
     await this.requireManager().signoutRedirect();
+  }
+
+  /** Proprietario dei dati locali (`tenant_id:sub`), letto dal token senza chiamare il server. */
+  ownerKey(): string | null {
+    const token = this.accessToken();
+    return token ? ownerFromAccessToken(token) : null;
   }
 
   accessToken(): string | null {

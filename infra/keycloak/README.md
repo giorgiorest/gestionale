@@ -61,6 +61,13 @@ L'attributo `tenant_id` è dichiarato nello *user profile* del realm, visibile e
 
 ## Operazioni comuni
 
+Guida passo passo per chi amministra (utenti, ruoli, aziende, licenze):
+[docs/gestione-utenti-e-aziende.md](../../docs/gestione-utenti-e-aziende.md).
+
+**Eventi**: il realm registra gli accessi (*Events → User events*, conservati 90 giorni) e le
+operazioni degli amministratori (*Admin events*). Nelle installazioni create prima di questa
+impostazione vanno attivati da *Realm settings → Events* (il realm si importa solo al primo avvio).
+
 - **Nuovo utente**: Console → realm `gestionale` → Users → Add user; poi nella scheda
   *Attributes* impostare `tenant_id`, in *Role mapping* assegnare `admin`, `operator` o `viewer`,
   in *Credentials* una password temporanea.

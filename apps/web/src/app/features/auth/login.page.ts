@@ -2,7 +2,7 @@ import { Component, inject, input, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { BrandingService } from '../../core/branding/branding.service';
 import { AppConfigService } from '../../core/config/app-config';
@@ -10,7 +10,7 @@ import { AppConfigService } from '../../core/config/app-config';
 /** Pagina di accesso: rimanda al provider di identità (Keycloak). */
 @Component({
   selector: 'app-login',
-  imports: [MatButtonModule, MatCardModule, MatIconModule],
+  imports: [MatButtonModule, MatCardModule, MatIconModule, RouterLink],
   template: `
     <div class="centered">
       <mat-card appearance="outlined" class="card">
@@ -24,6 +24,7 @@ import { AppConfigService } from '../../core/config/app-config';
           @if (error()) {
             <div class="banner error" role="alert">{{ error() }}</div>
           }
+          <p class="legal"><a routerLink="/privacy">Privacy e cookie</a></p>
         </mat-card-content>
       </mat-card>
     </div>
@@ -44,6 +45,13 @@ import { AppConfigService } from '../../core/config/app-config';
     }
     .banner {
       margin-top: 16px;
+    }
+    .legal {
+      margin: 24px 0 0;
+      font: var(--mat-sys-body-small);
+    }
+    .legal a {
+      color: var(--mat-sys-on-surface-variant);
     }
   `,
 })

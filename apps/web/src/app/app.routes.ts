@@ -13,6 +13,11 @@ export const routes: Routes = [
     path: 'server',
     loadComponent: () => import('./features/server/server.page').then((m) => m.ServerPage),
   },
+  {
+    // Informativa su cookie e dati salvati sul dispositivo: consultabile anche senza accesso.
+    path: 'privacy',
+    loadComponent: () => import('./features/privacy/privacy.page').then((m) => m.PrivacyPage),
+  },
   // Ritorno dal provider di identità: gestito da AuthService prima del routing.
   { path: 'auth/callback', redirectTo: '' },
   {

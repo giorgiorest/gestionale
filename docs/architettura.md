@@ -109,6 +109,17 @@ Dettagli: [ADR 0002](decisioni/0002-deploy-target.md) e [guida Oracle Cloud](dep
   *Infrastruttura* la applicano (a mano, o a tentativi orari finché ci sono macchine A1 libere) e non
   eliminano risorse senza un'opzione esplicita.
 
+## Privacy
+
+Dettagli: [ADR 0008](decisioni/0008-privacy-dati-sul-dispositivo.md) e [privacy-gdpr.md](privacy-gdpr.md).
+
+- Solo cookie tecnici (Keycloak) e archiviazioni del browser necessarie; informativa nella pagina
+  pubblica `/privacy`, link ai documenti del titolare da `config.json` (`legal`).
+- Il database offline (IndexedDB) registra il proprietario `tenant_id:sub` (dal token): all'avvio si
+  svuota se l'utente è cambiato; all'uscita `LogoutService` invia la outbox, chiede conferma se
+  restano modifiche, poi lo svuota.
+- Eventi di accesso di Keycloak conservati 90 giorni.
+
 ## Notifiche
 
 Dettagli: [ADR 0005](decisioni/0005-notifiche.md).
