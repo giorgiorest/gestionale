@@ -225,6 +225,8 @@ Cosa fa il workflow:
 5. attende che `https://<dominio>/api/health` risponda (fino a 5 minuti); se no, mostra i log dell'API.
 
 La prima volta Keycloak e il certificato richiedono 1–2 minuti. Poi apri `https://<dominio>`.
+L'app per Windows si scarica da `https://<dominio>/app-desktop` (link «App per Windows» nella pagina
+di accesso); al primo avvio chiede l'indirizzo del server, mostrato nella stessa pagina.
 
 ## 11. Primo accesso e utenti
 
