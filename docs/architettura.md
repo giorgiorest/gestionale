@@ -104,6 +104,10 @@ Dettagli: [ADR 0002](decisioni/0002-deploy-target.md) e [guida Oracle Cloud](dep
   Caddy (HTTPS automatico) → web, `/api` → API, `/sso` → Keycloak; PostgreSQL per app e Keycloak.
 - Immagini di API e web per amd64 e arm64 pubblicate su GHCR a ogni push su `main`
   (`sha-<commit>`); il workflow Deploy, manuale, installa un commit via SSH e ne verifica la salute.
+- Infrastruttura come codice ([ADR 0007](decisioni/0007-infrastruttura-terraform.md)): Terraform in
+  `infra/terraform/oracle` crea rete, porte, macchina e IP riservato; stato su Object Storage. I workflow
+  *Infrastruttura* la applicano (a mano, o a tentativi orari finché ci sono macchine A1 libere) e non
+  eliminano risorse senza un'opzione esplicita.
 
 ## Notifiche
 

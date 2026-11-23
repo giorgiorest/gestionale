@@ -292,6 +292,11 @@ La campanella si aggiorna ogni minuto: per vedere subito una notifica appena inv
 - `deploy.yml`: **manuale** (Actions → Deploy → Run workflow); installa un commit di `main` sulla
   macchina di produzione via SSH e verifica che risponda. Per tornare indietro si indica un commit precedente.
 
+- `infra.yml` (**manuale**) e `infra-retry.yml` (ogni ora, se `OCI_RETRY_ENABLED=true`): creano con
+  Terraform rete, porte, macchina e IP fisso su Oracle Cloud, riprovando finché c'è capacità
+  ([infra/terraform/oracle](infra/terraform/oracle/README.md), [ADR 0007](docs/decisioni/0007-infrastruttura-terraform.md)).
+- `ci-infra.yml`: formato e validità dei file Terraform.
+
 **Produzione su Oracle Cloud (gratuito)**: guida passo passo in
 [docs/deploy-oracle-cloud.md](docs/deploy-oracle-cloud.md); file in `infra/deploy/oracle/`
 (Caddy con HTTPS automatico, PostgreSQL, Keycloak, API, web). Scelte: [ADR 0002](docs/decisioni/0002-deploy-target.md).
