@@ -284,8 +284,14 @@ La campanella si aggiorna ogni minuto: per vedere subito una notifica appena inv
 
 ## CI e deploy
 
-- `ci-api.yml`: build e test dell'API; su `main` pubblica l'immagine su GHCR.
-- `ci-web.yml`: build di produzione e test della web app.
+- `ci-api.yml`: build e test dell'API.
+- `ci-web.yml`: build di produzione, test e build dell'immagine web (amd64 e arm64).
 - `ci-desktop.yml`: installer Windows dell'app desktop (artifact `gestionale-desktop-windows`, non ancora firmato).
-- `deploy.yml`: manuale e volutamente bloccato finché non si sceglie il target
-  ([ADR 0002](docs/decisioni/0002-deploy-target.md)).
+- `release-images.yml`: a ogni push su `main` pubblica su GHCR le immagini di API e web
+  (amd64 e arm64) con le etichette `sha-<commit>` e `latest`.
+- `deploy.yml`: **manuale** (Actions → Deploy → Run workflow); installa un commit di `main` sulla
+  macchina di produzione via SSH e verifica che risponda. Per tornare indietro si indica un commit precedente.
+
+**Produzione su Oracle Cloud (gratuito)**: guida passo passo in
+[docs/deploy-oracle-cloud.md](docs/deploy-oracle-cloud.md); file in `infra/deploy/oracle/`
+(Caddy con HTTPS automatico, PostgreSQL, Keycloak, API, web). Scelte: [ADR 0002](docs/decisioni/0002-deploy-target.md).

@@ -1,7 +1,9 @@
 # syntax=docker/dockerfile:1
 
 # ---- Build ----
-FROM docker.io/library/eclipse-temurin:21-jdk AS build
+# Il jar è indipendente dall'architettura: si compila una volta sola sulla piattaforma della build
+# (niente emulazione); solo l'immagine finale è per amd64 o arm64 (es. Oracle Cloud Ampere).
+FROM --platform=$BUILDPLATFORM docker.io/library/eclipse-temurin:21-jdk AS build
 WORKDIR /workspace
 # Prima solo wrapper e pom, per sfruttare la cache delle dipendenze.
 COPY mvnw pom.xml ./

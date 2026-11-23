@@ -19,7 +19,8 @@ sostituito, perché lo usano configurazioni, token e installazioni esistenti.
 - Il repository del progetto è `<owner>/gestionale`, privato. Se il repository non esiste ancora, crealo solo quando l'utente lo chiede esplicitamente nel task.
 - Le modifiche si fanno su branch dedicati (`feat/…`, `fix/…`, `chore/…`), non direttamente su `main`.
 - Per integrare il lavoro apri una pull request con `gh pr create`: titolo in stile Conventional Commits, descrizione con cosa cambia, perché, e come è stato testato.
-- La CI deve passare prima di proporre la merge. Il deploy non parte mai automaticamente: resta manuale finché non sarà definito il target.
+- La CI deve passare prima di proporre la merge. Il deploy non parte mai automaticamente: si avvia a mano con il workflow Deploy (produzione su Oracle Cloud, `infra/deploy/oracle`, ADR 0002). Le immagini le pubblica solo `release-images.yml` da `main`, per amd64 e arm64.
+- Ogni modifica che richiede nuove variabili di produzione aggiorna `infra/deploy/oracle/.env.example`, `infra/deploy/oracle/compose.yml` e `docs/deploy-oracle-cloud.md`. I segreti di produzione stanno solo nel `.env` della macchina e negli environment GitHub.
 
 ## Regole
 - Nessun segreto nel repository. Le credenziali arrivano da variabili d'ambiente o da GitHub Secrets.
