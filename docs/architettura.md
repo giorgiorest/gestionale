@@ -48,6 +48,9 @@ principalmente la propria parte** dei dati. Deve funzionare su web, mobile e des
 Dettagli: [ADR 0004](decisioni/0004-app-desktop.md) e `apps/desktop/README.md`.
 
 - Tauri 2 incapsula la build web; l'app riconosce a runtime di girare nell'app installata.
+- **Distribuzione**: gli installer (setup `.exe` e MSI) sono costruiti da *Release immagini* e inclusi
+  nell'immagine web dello stesso commit; ogni server li offre alla pagina pubblica `/app-desktop`,
+  che mostra anche l'indirizzo del server da inserire al primo avvio.
 - **Un installer per tutti i clienti**: al primo avvio l'utente indica l'indirizzo del server,
   l'app scarica `config.json` da lì e conserva l'ultima copia per l'avvio offline.
 - Login con il client Keycloak `gestionale-desktop`; l'API accetta le origini di Tauri via CORS.

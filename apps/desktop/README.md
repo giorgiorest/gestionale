@@ -4,6 +4,7 @@ L'app desktop **incapsula la build web** di `apps/web`: nessun codice duplicato.
 Tauri fornisce la finestra nativa (WebView2) e gli installer: **MSI** e setup **.exe** (NSIS).
 Scelte e motivazioni: [ADR 0004](../../docs/decisioni/0004-app-desktop.md).
 
+- [Distribuire l'app agli utenti (pagina di download)](#distribuire-lapp-agli-utenti-pagina-di-download)
 - [Scaricare l'MSI già pronto dalla CI](#scaricare-lmsi-dalla-ci-senza-installare-nulla)
 - [Creare l'MSI sul proprio PC](#creare-lmsi-sul-proprio-pc)
 - [Installare e provare l'app](#installare-e-provare-lapp)
@@ -32,12 +33,36 @@ apps/desktop/
     └── src/                 # main.rs, lib.rs
 ```
 
+## Distribuire l'app agli utenti (pagina di download)
+
+Gli utenti scaricano l'app dal **server della loro azienda**, alla pagina pubblica
+**`https://<dominio>/app-desktop`** («App per Windows»), collegata dalla pagina di accesso e dal menu
+utente (nascosta dentro l'app desktop). La pagina mostra:
+
+- il pulsante di download del setup `.exe` (installazione per l'utente, senza permessi di amministratore);
+- i passi di installazione, compreso l'avviso di SmartScreen finché l'app non è firmata;
+- l'**indirizzo del server** da inserire al primo avvio, con il pulsante *Copia*;
+- per il reparto IT il pacchetto **MSI** (installazione centralizzata) e gli SHA-256 dei file.
+
+Come ci arrivano gli installer:
+
+1. a ogni merge su `main` il workflow **Release immagini** richiama **CI Desktop** (Windows);
+2. `infra/docker/web/prepare-desktop-downloads.sh` copia gli installer in `apps/web/public/downloads/`
+   come `civilbeefy-setup.exe` e `civilbeefy.msi`, con `desktop.json` (versione, commit, data,
+   dimensioni, SHA-256);
+3. finiscono nell'**immagine web** dello stesso commit: con **Deploy** ogni server offre l'app della
+   propria versione, e un ritorno indietro riporta anche l'installer precedente.
+
+Se la build desktop fallisce le immagini escono comunque, senza installer: la pagina dice che il
+download non è disponibile. Per provarla in locale basta mettere dei file in
+`apps/web/public/downloads/` (cartella ignorata da git) con lo script sopra.
+
 ## Scaricare l'MSI dalla CI (senza installare nulla)
 
-Ogni modifica a `apps/web` o `apps/desktop` fa partire il workflow **CI Desktop**, che crea gli
-installer su Windows.
+Le pull request che toccano `apps/web` o `apps/desktop` fanno partire **CI Desktop**, che crea gli
+installer su Windows; su `main` li crea **Release immagini** (job `desktop`).
 
-1. GitHub → repository → **Actions** → workflow **CI Desktop** → l'esecuzione più recente su `main`.
+1. GitHub → repository → **Actions** → **Release immagini** (per `main`) o **CI Desktop** (per una PR) → l'esecuzione che interessa.
 2. In fondo alla pagina, sezione **Artifacts**: scarica `gestionale-desktop-windows` (zip).
 3. Dentro ci sono `civil beefy_<versione>_x64_it-IT.msi` e `civil beefy_<versione>_x64-setup.exe`.
 

@@ -24,7 +24,12 @@ import { AppConfigService } from '../../core/config/app-config';
           @if (error()) {
             <div class="banner error" role="alert">{{ error() }}</div>
           }
-          <p class="legal"><a routerLink="/privacy">Privacy e cookie</a></p>
+          <p class="legal">
+            @if (!appConfig.desktop) {
+              <a routerLink="/app-desktop">App per Windows</a> ·
+            }
+            <a routerLink="/privacy">Privacy e cookie</a>
+          </p>
         </mat-card-content>
       </mat-card>
     </div>
@@ -61,7 +66,7 @@ export class LoginPage {
 
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly appConfig = inject(AppConfigService);
+  readonly appConfig = inject(AppConfigService);
   readonly branding = inject(BrandingService);
   readonly busy = signal(false);
   readonly error = signal<string | null>(null);

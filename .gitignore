@@ -23,6 +23,9 @@ apply.log
 backend.hcl
 *.pem
 
+# Installer desktop copiati nella web app dalla pipeline di rilascio
+apps/web/public/downloads/
+
 # Log
 *.log
 

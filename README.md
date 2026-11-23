@@ -150,7 +150,8 @@ Senza `--bundles msi` viene creato anche il setup `.exe`.
 All'installazione l'MSI non è ancora firmato: SmartScreen chiede *Ulteriori informazioni* →
 *Esegui comunque*. Al primo avvio indica il server (in locale `http://localhost:4200`). Dettagli,
 modalità sviluppo (`npm run dev`) e problemi frequenti: [apps/desktop/README.md](apps/desktop/README.md).
-In alternativa l'MSI già pronto si scarica da GitHub → Actions → **CI Desktop** → artifact
+In alternativa l'installer già pronto si scarica dalla pagina `/app-desktop` di un server installato,
+oppure da GitHub → Actions → **Release immagini** (o **CI Desktop** per una PR) → artifact
 `gestionale-desktop-windows`.
 
 ### Fermare tutto
@@ -215,6 +216,8 @@ npm run build             # installer .msi e .exe in src-tauri/target/release/bu
 ```
 
 L'installer è unico per tutti i clienti: al primo avvio chiede l'indirizzo del server.
+Gli utenti lo scaricano dalla pagina **`/app-desktop`** del server («App per Windows», link nella
+pagina di accesso e nel menu utente): vedi [apps/desktop/README.md](apps/desktop/README.md#distribuire-lapp-agli-utenti-pagina-di-download).
 Dettagli, prerequisiti e cose da fare prima della vendita (firma, aggiornamenti):
 [apps/desktop/README.md](apps/desktop/README.md).
 
@@ -300,8 +303,10 @@ La campanella si aggiorna ogni minuto: per vedere subito una notifica appena inv
 
 - `ci-api.yml`: build e test dell'API.
 - `ci-web.yml`: build di produzione, test e build dell'immagine web (amd64 e arm64).
-- `ci-desktop.yml`: installer Windows dell'app desktop (artifact `gestionale-desktop-windows`, non ancora firmato).
-- `release-images.yml`: a ogni push su `main` pubblica su GHCR le immagini di API e web
+- `ci-desktop.yml`: installer Windows dell'app desktop sulle pull request (artifact `gestionale-desktop-windows`,
+  non ancora firmato); su `main` lo richiama `release-images.yml`.
+- `release-images.yml`: a ogni push su `main` costruisce gli installer desktop e pubblica su GHCR le
+  immagini di API e web (la web contiene gli installer, scaricabili da `https://<dominio>/app-desktop`)
   (amd64 e arm64) con le etichette `sha-<commit>` e `latest`.
 - `deploy.yml`: **manuale** (Actions → Deploy → Run workflow); installa un commit di `main` sulla
   macchina di produzione via SSH e verifica che risponda. Per tornare indietro si indica un commit precedente.

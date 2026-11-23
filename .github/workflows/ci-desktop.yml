@@ -2,14 +2,15 @@ name: CI Desktop
 
 # Installer Windows dell'app desktop (Tauri 2): .msi e setup .exe come artifact.
 # Gli installer NON sono ancora firmati (vedi apps/desktop/README.md, "Firma e aggiornamenti").
+#
+# Sulle pull request verifica la build. Su main lo richiama "Release immagini", che mette gli
+# installer nell'immagine web (pagina /app-desktop): niente build doppia, i minuti Windows costano doppio.
 
 on:
-  push:
-    branches: [main]
-    paths: ['apps/desktop/**', 'apps/web/**', '.github/workflows/ci-desktop.yml']
   pull_request:
     paths: ['apps/desktop/**', 'apps/web/**', '.github/workflows/ci-desktop.yml']
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read

@@ -13,6 +13,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { map } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
 import { LogoutService } from '../auth/logout.service';
+import { isPackagedDesktopApp } from '../platform';
 import { BrandingService } from '../branding/branding.service';
 import { EntitlementsService } from '../entitlements/entitlements.service';
 import { NotificationBellComponent } from '../notifications/notification-bell.component';
@@ -85,6 +86,9 @@ const NAV: NavItem[] = [
         <a mat-menu-item [href]="auth.accountUrl()" target="_blank" rel="noopener">
           <mat-icon>manage_accounts</mat-icon>Account e password
         </a>
+        @if (!desktop) {
+          <a mat-menu-item routerLink="/app-desktop"><mat-icon>desktop_windows</mat-icon>App per Windows</a>
+        }
         <a mat-menu-item routerLink="/privacy"><mat-icon>policy</mat-icon>Privacy e cookie</a>
         <button mat-menu-item (click)="logout.logout()" data-testid="logout"><mat-icon>logout</mat-icon>Esci</button>
       </mat-menu>
@@ -196,6 +200,8 @@ const NAV: NavItem[] = [
 export class ShellComponent {
   readonly auth = inject(AuthService);
   readonly logout = inject(LogoutService);
+  /** Nell'app desktop non si propone di scaricarla. */
+  readonly desktop = isPackagedDesktopApp();
   readonly branding = inject(BrandingService);
   readonly profile = inject(ProfileService);
   readonly notifications = inject(NotificationsService);
