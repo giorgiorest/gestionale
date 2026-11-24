@@ -61,7 +61,12 @@
     font-family: var(--pf-v5-global--FontFamily--text);
 }
 
-/* Intestazione: logo e nome dell'applicazione (realm.displayNameHtml). */
+/* Intestazione: logo e nome dell'applicazione. Nascosta finché js/branding.js non ha applicato il
+   marchio dell'installazione (al massimo 1,5 s), per non mostrare prima un nome e poi un altro. */
+html:not(.marchio-pronto) #kc-header-wrapper {
+    visibility: hidden;
+}
+
 #kc-header-wrapper {
     color: var(--gestionale-text) !important;
     text-transform: none;

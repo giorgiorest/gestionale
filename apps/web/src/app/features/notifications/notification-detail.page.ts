@@ -18,7 +18,7 @@ import { LocalNotification } from '../../db/local-db';
         <mat-card appearance="outlined">
           <mat-card-header>
             <mat-card-title data-testid="title">{{ n.title }}</mat-card-title>
-            <mat-card-subtitle>{{ n.senderName ?? 'civil beefy' }} · {{ n.createdAt | date: 'd MMMM y, HH:mm' }}</mat-card-subtitle>
+            <mat-card-subtitle>{{ n.senderName ?? 'Civil Beefy' }} · {{ n.createdAt | date: 'd MMMM y, HH:mm' }}</mat-card-subtitle>
           </mat-card-header>
           <mat-card-content>
             <p class="body" data-testid="body">{{ n.body }}</p>

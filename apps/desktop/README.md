@@ -80,7 +80,7 @@ installer su Windows; su `main` li crea **Release immagini** (job `desktop`).
 
 1. GitHub → repository → **Actions** → **Release immagini** (per `main`) o **CI Desktop** (per una PR) → l'esecuzione che interessa.
 2. In fondo alla pagina, sezione **Artifacts**: scarica `gestionale-desktop-windows` (zip).
-3. Dentro ci sono `civil beefy_<versione>_x64_it-IT.msi` e `civil beefy_<versione>_x64-setup.exe`.
+3. Dentro ci sono `Civil Beefy_<versione>_x64_it-IT.msi` e `Civil Beefy_<versione>_x64-setup.exe`.
 
 Con GitHub CLI:
 
@@ -136,7 +136,7 @@ La prima build richiede 10–15 minuti (compilazione Rust); le successive sono m
 Risultato:
 
 ```
-apps/desktop/src-tauri/target/release/bundle/msi/civil beefy_0.1.0_x64_it-IT.msi
+apps/desktop/src-tauri/target/release/bundle/msi/Civil Beefy_0.1.0_x64_it-IT.msi
 ```
 
 La versione nel nome del file è `version` in `src-tauri/tauri.conf.json`: aumentala a ogni
@@ -146,7 +146,7 @@ rilascio, altrimenti Windows non aggiorna un'installazione esistente.
 
 1. Doppio clic sull'MSI. L'installer **non è ancora firmato**: Windows SmartScreen mostra
    «Windows ha protetto il PC» → *Ulteriori informazioni* → *Esegui comunque*.
-2. Avvia **civil beefy** dal menu Start: compare *Collegati alla tua azienda*.
+2. Avvia **Civil Beefy** dal menu Start: compare *Collegati alla tua azienda*.
 3. Inserisci l'indirizzo del server e accedi.
 
 ### Con lo stack locale (sviluppo)
@@ -287,7 +287,7 @@ Tracciati come issue su GitHub.
 - **Versione**: allineare `version` di `tauri.conf.json` ai rilasci (tag Git).
 - **Login nel browser di sistema** (pratica raccomandata per le app native, RFC 8252): da valutare.
 - **Distribuzione aziendale**: l'MSI si presta all'installazione silenziosa
-  (`msiexec /i "civil beefy_x.y.z_x64_it-IT.msi" /qn`) via Intune o criteri di gruppo; in futuro si
+  (`msiexec /i "Civil Beefy_x.y.z_x64_it-IT.msi" /qn`) via Intune o criteri di gruppo; in futuro si
   potrà precompilare l'indirizzo del server con una proprietà dell'MSI.
 - **macOS e Linux**: rimandati. **iOS**: richiede un Mac e un account sviluppatore Apple.
 - **Aggiornamenti dell'app Android** ([#32](https://github.com/giorgiorest/gestionale/issues/32)).

@@ -19,14 +19,31 @@ import { AppConfigService } from '../../core/config/app-config';
       <mat-card appearance="outlined" class="card">
         <mat-card-content>
           <img [src]="branding.logoUrl()" alt="" class="logo" />
-          <h1>Collegati alla tua azienda</h1>
-          <p class="muted">Inserisci l'indirizzo di civil beefy che ti ha comunicato l'amministratore.</p>
+          <h1>Collegati al server</h1>
+          <p class="muted">
+            Inserisci l'indirizzo che apri nel browser per usare {{ branding.name() }} (lo trovi
+            anche nella pagina «App per Windows» del sito). Poi accedi con il tuo utente: l'azienda
+            è quella del tuo account.
+          </p>
           <form (ngSubmit)="connect()">
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Indirizzo del server</mat-label>
-              <input matInput name="url" placeholder="https://civilbeefy.azienda.it" [(ngModel)]="url" />
+              <input
+                matInput
+                name="url"
+                placeholder="es. gestionale.miaazienda.it"
+                [(ngModel)]="url"
+              />
+              <mat-hint>Basta il nome del sito: https:// si aggiunge da solo</mat-hint>
             </mat-form-field>
-            <button mat-flat-button type="submit" class="full-width" [disabled]="!url.trim() || busy()">Connetti</button>
+            <button
+              mat-flat-button
+              type="submit"
+              class="full-width"
+              [disabled]="!url.trim() || busy()"
+            >
+              Connetti
+            </button>
           </form>
           @if (error()) {
             <div class="banner error" role="alert" data-testid="server-error">{{ error() }}</div>

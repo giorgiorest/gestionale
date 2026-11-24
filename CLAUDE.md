@@ -1,6 +1,6 @@
-# CLAUDE.md — gestionale (prodotto: civil beefy)
+# CLAUDE.md — gestionale (prodotto: Civil Beefy)
 
-Il nome del prodotto mostrato agli utenti è «civil beefy» (minuscolo, come nel logo). `gestionale` è
+Il nome del prodotto mostrato agli utenti è «Civil Beefy» (iniziali maiuscole). `gestionale` è
 il nome tecnico (repository, pacchetti Java, realm e client Keycloak, database, variabili): non va
 sostituito, perché lo usano configurazioni, token e installazioni esistenti.
 
@@ -21,7 +21,7 @@ sostituito, perché lo usano configurazioni, token e installazioni esistenti.
 - Il repository del progetto è `<owner>/gestionale`, privato. Se il repository non esiste ancora, crealo solo quando l'utente lo chiede esplicitamente nel task.
 - Le modifiche si fanno su branch dedicati (`feat/…`, `fix/…`, `chore/…`), non direttamente su `main`.
 - Per integrare il lavoro apri una pull request con `gh pr create`: titolo in stile Conventional Commits, descrizione con cosa cambia, perché, e come è stato testato.
-- La CI deve passare prima di proporre la merge. Nessuna installazione in produzione senza approvazione umana: `release-images.yml` (solo da `main`, amd64 e arm64) pubblica le immagini e indica la versione pronta; Deploy si avvia a mano, e l'avvio è l'approvazione (repository privato: i Required reviewers degli environment richiedono GitHub Enterprise). La variabile `AUTO_DEPLOY` (deploy automatico in attesa di approvazione) si attiva solo se l'environment `production` ha i Required reviewers. Produzione su un server Linux via SSH (VPS come Aruba o Oracle Cloud; file in `infra/deploy/oracle`, guide `docs/deploy-vps.md` e `docs/deploy-oracle-cloud.md`, ADR 0002 e 0009). Il server si prepara con il workflow Prepara server (`infra/deploy/oracle/prepare-server.sh`, idempotente).
+- La CI deve passare prima di proporre la merge. Nessuna installazione in produzione senza approvazione umana: `release-images.yml` (solo da `main`, amd64 e arm64) pubblica le immagini, poi il job `approvazione` apre un'issue e aspetta `/deploy` da chi ha accesso in scrittura (`.github/scripts/attendi-approvazione.sh`, al massimo 30 minuti) prima del job `deploy`; Deploy si può sempre avviare a mano (repository privato: i Required reviewers degli environment richiedono GitHub Enterprise). La variabile `AUTO_DEPLOY` (deploy automatico in attesa di approvazione) si attiva solo se l'environment `production` ha i Required reviewers. Produzione su un server Linux via SSH (VPS come Aruba o Oracle Cloud; file in `infra/deploy/oracle`, guide `docs/deploy-vps.md` e `docs/deploy-oracle-cloud.md`, ADR 0002 e 0009). Il server si prepara con il workflow Prepara server (`infra/deploy/oracle/prepare-server.sh`, idempotente).
 - Ogni modifica che richiede nuove variabili di produzione aggiorna `infra/deploy/oracle/.env.example`, `infra/deploy/oracle/compose.yml` e `docs/deploy-oracle-cloud.md`. I segreti di produzione stanno solo nel `.env` della macchina e negli environment GitHub.
 
 ## Regole

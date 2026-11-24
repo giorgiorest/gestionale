@@ -121,11 +121,19 @@ aggiornamenti di Keycloak continuano ad applicarsi:
 - `theme.properties`: tema padre e fogli di stile;
 - `resources/css/gestionale.css`: colori (principale `#0B5C8E`, accento giallo `#F2B300` nella linea
   in cima alla scheda), forme e intestazione, tutto tramite variabili `--gestionale-*`;
-- `resources/img/logo.svg`: logo (stesso simbolo dell'app);
+- `resources/img/logo.svg` e `resources/img/favicon.ico`: logo e icona della scheda (come l'app);
+- `resources/js/branding.js`: applica il **marchio dell'installazione** letto da `/config.json` (lo
+  stesso della web app: `BRAND_NAME`, `BRAND_LOGO_URL`, `BRAND_PRIMARY_COLOR`, `BRAND_ACCENT_COLOR`):
+  nome nell'intestazione e nel titolo, logo, colori. In produzione Keycloak sta sullo stesso dominio
+  (`/sso`), quindi la pagina di accesso ha l'aspetto dell'app del cliente senza un tema per cliente;
+  senza `config.json` (sviluppo) resta il marchio di prodotto;
 - `resources/fonts/`: font Inter incluso (licenza OFL), nessuna richiesta a Google.
 
-Il nome sotto il logo è `displayNameHtml` del realm. Il tema va montato (o copiato) in
-`/opt/keycloak/themes/gestionale`: lo fanno compose e i comandi `podman run` del README.
+Il nome sotto il logo è `displayNameHtml` del realm (sostituito da `branding.js` con il nome
+dell'installazione). Il tema va montato (o copiato) in `/opt/keycloak/themes/gestionale`: lo fanno
+compose e i comandi `podman run` del README. In produzione si monta l'intera cartella `themes`: il
+Deploy sostituisce il tema **sul posto** e riavvia Keycloak quando cambia (Keycloak tiene i temi in
+cache); `keycloak-setup` reimposta `loginTheme` e il nome dei realm anche nelle installazioni esistenti.
 In sviluppo (`start-dev`) le modifiche a CSS e immagini si vedono ricaricando la pagina;
 le modifiche a `theme.properties` o al realm richiedono di ricreare il container.
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Prepara un server Ubuntu (VPS: Aruba, OVH, Hetzner…) per civil beefy. Idempotente: si può rilanciare.
+# Prepara un server Ubuntu (VPS: Aruba, OVH, Hetzner…) per Civil Beefy. Idempotente: si può rilanciare.
 # Non per le immagini Oracle Cloud, che hanno regole iptables proprie (docs/deploy-oracle-cloud.md).
 # Lo esegue il workflow "Prepara server" via SSH, come root (sudo):
 #
@@ -57,7 +57,7 @@ group "4. SSH solo con chiave"
 # 01-: sshd usa il PRIMO valore trovato e legge sshd_config.d in ordine alfabetico; un file
 # 50-cloud-init.conf con "PasswordAuthentication yes" (frequente sui VPS) vincerebbe su un 99-.
 cat > /etc/ssh/sshd_config.d/01-civilbeefy.conf <<'EOF'
-# civil beefy: accesso solo con chiave, niente root (workflow Prepara server)
+# Civil Beefy: accesso solo con chiave, niente root (workflow Prepara server)
 PasswordAuthentication no
 KbdInteractiveAuthentication no
 PermitRootLogin no
@@ -109,7 +109,7 @@ SMTP_HOST=
 SMTP_PORT=587
 SMTP_USERNAME=
 SMTP_PASSWORD=
-MAIL_FROM=civil beefy <noreply@example.com>
+MAIL_FROM=Civil Beefy <noreply@example.com>
 BRAND_NAME=
 BRAND_LOGO_URL=
 BRAND_PRIMARY_COLOR=
@@ -134,7 +134,7 @@ endgroup
 
 group "7. Backup giornaliero del database"
 cat > /etc/cron.d/civilbeefy-backup <<EOF
-# civil beefy: backup del database (applicazione e Keycloak) alle 3, 14 giorni di storico.
+# Civil Beefy: backup del database (applicazione e Keycloak) alle 3, 14 giorni di storico.
 0 3 * * * $app_user cd $app_dir && [ -f compose.yml ] && docker compose exec -T db sh -c 'pg_dumpall -U "\$POSTGRES_USER"' | gzip > backup/db-\$(date +\%F).sql.gz && find backup -name 'db-*.sql.gz' -mtime +14 -delete
 EOF
 chmod 644 /etc/cron.d/civilbeefy-backup

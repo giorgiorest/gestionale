@@ -28,4 +28,4 @@ jobs:
       - name: Script di shell
         run: |
           shellcheck --version | head -2
-          shellcheck -S warning infra/deploy/oracle/prepare-server.sh infra/docker/web/*.sh
+          shellcheck -S warning infra/deploy/oracle/prepare-server.sh infra/docker/web/*.sh .github/scripts/*.sh

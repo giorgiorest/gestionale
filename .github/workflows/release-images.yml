@@ -9,11 +9,11 @@ name: Release immagini
 # comunque: senza installer se manca il desktop, con la sola parte Windows se manca l'APK.
 #
 # Alla fine:
-#   - di norma NON installa: il riepilogo indica la versione pronta e il link a Deploy, che si avvia
-#     a mano (l'avvio manuale è l'approvazione; repository privato senza GitHub Enterprise);
-#   - con la variabile di repository AUTO_DEPLOY = true richiama Deploy per lo stesso commit. Da usare
-#     SOLO se l'environment "production" ha i Required reviewers (repository pubblico o GitHub
-#     Enterprise): altrimenti installerebbe senza conferma.
+#   - job "approvazione": apre l'issue «Rilascio pronto» e aspetta un commento /deploy (o /annulla)
+#     da chi ha accesso in scrittura, al massimo DEPLOY_APPROVAL_MINUTES (default 30); con /deploy
+#     parte il job "deploy" nello stesso run. Script: .github/scripts/attendi-approvazione.sh;
+#   - con la variabile di repository AUTO_DEPLOY = true il deploy parte subito: da usare SOLO se
+#     l'environment "production" ha i Required reviewers (repository pubblico o GitHub Enterprise).
 on:
   push:
     branches: [main]
@@ -106,10 +106,43 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
 
-  # Installazione in produzione dello stesso commit, dopo l'approvazione (environment production).
-  deploy:
+  # Approvazione nello stesso run: un'issue «Rilascio pronto» e l'attesa del commento /deploy.
+  # I Required reviewers degli environment, nei repository privati, richiedono GitHub Enterprise.
+  approvazione:
     needs: image
-    if: vars.AUTO_DEPLOY == 'true'
+    if: vars.AUTO_DEPLOY != 'true'
+    runs-on: ubuntu-latest
+    # L'attesa consuma minuti di Actions: al massimo DEPLOY_APPROVAL_MINUTES (default 30).
+    timeout-minutes: 40
+    # Un rilascio più recente sostituisce quello in attesa.
+    concurrency:
+      group: approvazione-rilascio
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      issues: write
+    outputs:
+      approved: ${{ steps.wait.outputs.approved }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github/scripts
+      - id: wait
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OWNER: ${{ github.repository_owner }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          DEPLOY_URL: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/deploy.yml
+          WAIT_MINUTES: ${{ vars.DEPLOY_APPROVAL_MINUTES || '30' }}
+        run: bash .github/scripts/attendi-approvazione.sh
+
+  # Installazione in produzione dello stesso commit: dopo /deploy sull'issue, oppure subito
+  # (in attesa dei Required reviewers) con AUTO_DEPLOY = true su piani che li offrono.
+  deploy:
+    needs: [image, approvazione]
+    if: >-
+      ${{ !cancelled() && needs.image.result == 'success' &&
+          (vars.AUTO_DEPLOY == 'true' || needs.approvazione.outputs.approved == 'true') }}
     uses: ./.github/workflows/deploy.yml
     with:
       commit: ${{ github.sha }}
@@ -117,22 +150,3 @@ jobs:
     permissions:
       contents: read
       packages: read
-
-  # Senza deploy automatico: versione pronta, da installare avviando Deploy a mano.
-  ready:
-    needs: image
-    if: vars.AUTO_DEPLOY != 'true'
-    runs-on: ubuntu-latest
-    permissions: {}
-    steps:
-      - name: Versione pronta da installare
-        env:
-          URL: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/deploy.yml
-        run: |
-          {
-            echo "## Versione pronta"
-            echo
-            echo "Immagini \`sha-$GITHUB_SHA\` pubblicate. Per installarle in produzione:"
-            echo "**[Deploy → Run workflow]($URL)** (campo *commit* vuoto = questa versione)."
-          } >> "$GITHUB_STEP_SUMMARY"
-          echo "::notice::Versione pronta: per installarla avvia Deploy (Actions → Deploy → Run workflow)."

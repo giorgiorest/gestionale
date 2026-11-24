@@ -1,8 +1,8 @@
 [package]
 name = "gestionale-desktop"
 version = "0.1.0"
-description = "App desktop di civil beefy (Tauri 2)"
-authors = ["civil beefy"]
+description = "App desktop di Civil Beefy (Tauri 2)"
+authors = ["Civil Beefy"]
 license = "UNLICENSED"
 repository = ""
 edition = "2024"

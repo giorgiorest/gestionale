@@ -1,6 +1,6 @@
 # Privacy, cookie e GDPR
 
-Cosa fa civil beefy per la protezione dei dati, cosa resta a carico di chi vende o installa il
+Cosa fa Civil Beefy per la protezione dei dati, cosa resta a carico di chi vende o installa il
 servizio, e cosa manca ancora. **Non è una consulenza legale**: prima di vendere il servizio fai
 verificare contratti e informative da un legale o da un DPO.
 
@@ -13,7 +13,7 @@ verificare contratti e informative da un legale o da un DPO.
 | **Sub-responsabili** | i fornitori usati dal servizio (tabella sotto) | vanno elencati nel DPA e autorizzati dal cliente |
 | **Titolare autonomo** | chi vende, per i dati dei referenti commerciali e della fatturazione | informativa propria sul sito commerciale |
 
-Se il cliente installa civil beefy sui **propri** server e lo gestisce da sé, chi vende non tratta
+Se il cliente installa Civil Beefy sui **propri** server e lo gestisce da sé, chi vende non tratta
 dati personali: fornisce solo il software (resta l'eventuale assistenza con accesso ai dati, che
 richiede comunque un DPA).
 
@@ -28,7 +28,7 @@ richiede comunque un DPA).
 
 ## 2. Cookie e dati sul dispositivo
 
-civil beefy usa **solo cookie tecnici**: secondo le Linee guida del Garante (provvedimento del
+Civil Beefy usa **solo cookie tecnici**: secondo le Linee guida del Garante (provvedimento del
 10 giugno 2021) **non serve il banner di consenso**, serve solo l'informazione. È nella pagina pubblica
 **`/privacy`** («Privacy e cookie»), raggiungibile dalla pagina di accesso e dal menu utente.
 

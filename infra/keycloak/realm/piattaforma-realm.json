@@ -1,7 +1,7 @@
 {
   "realm": "piattaforma",
-  "displayName": "civil beefy · amministrazione",
-  "displayNameHtml": "<div class=\"kc-logo-text\"><span>civil beefy · amministrazione</span></div>",
+  "displayName": "Civil Beefy · amministrazione",
+  "displayNameHtml": "<div class=\"kc-logo-text\"><span>Civil Beefy · amministrazione</span></div>",
   "loginTheme": "gestionale",
   "enabled": true,
   "sslRequired": "external",
@@ -93,7 +93,7 @@
   "clients": [
     {
       "clientId": "gestionale-console",
-      "name": "civil beefy · console di piattaforma",
+      "name": "Civil Beefy · console di piattaforma",
       "description": "Client pubblico con Authorization Code + PKCE della console /console",
       "enabled": true,
       "publicClient": true,

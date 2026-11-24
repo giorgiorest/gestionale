@@ -1,4 +1,4 @@
-# Architettura di civil beefy
+# Architettura di Civil Beefy
 
 ## Obiettivo
 

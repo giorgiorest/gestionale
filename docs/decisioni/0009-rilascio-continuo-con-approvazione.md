@@ -38,13 +38,27 @@ di comandi da copiare. Con il passaggio a un VPS (Aruba) servono:
 ## Aggiornamento — approvazione nel repository privato (2026-11-24)
 
 I *Required reviewers* degli environment sono disponibili nei repository privati solo con GitHub
-Enterprise (con Free, Pro e Team solo nei repository pubblici): nel repository di civil beefy la
+Enterprise (con Free, Pro e Team solo nei repository pubblici): nel repository di Civil Beefy la
 sezione non c'è. Quindi:
 
 - di norma **Release immagini non installa**: chiude con un job che scrive «Versione pronta» e il link
   al Deploy; **l'avvio manuale di Deploy è l'approvazione** (solo chi ha accesso in scrittura può farlo);
 - `AUTO_DEPLOY = true` resta per quando il piano offrirà i revisori, e va attivata solo con loro;
 - il resto (controlli della macchina, concorrenza, ritorno indietro) non cambia.
+
+## Aggiornamento — approvazione con un commento nello stesso run (2026-11-24)
+
+Avviare Deploy a mano dopo ogni rilascio era scomodo. Il job **approvazione** di Release immagini
+apre un'issue «Rilascio pronto» (notifica e email al proprietario), chiude quelle dei rilasci
+precedenti e aspetta un commento `/deploy` o `/annulla` di chi ha accesso in scrittura
+(`author_association` OWNER, MEMBER o COLLABORATOR; i bot sono ignorati). Con `/deploy` il job
+`deploy` parte nello stesso run.
+
+- L'attesa consuma minuti di Actions: al massimo `DEPLOY_APPROVAL_MINUTES` (default 30), poi la
+  richiesta scade e resta il Deploy manuale. Un rilascio più recente annulla l'attesa precedente.
+- Scartate: un'action di terze parti per l'approvazione (dipendenza in più con il token del
+  repository) e un workflow su `issue_comment` (nessuna attesa, ma il deploy finisce in un run
+  separato, meno leggibile).
 
 ## Conseguenze
 

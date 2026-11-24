@@ -39,7 +39,7 @@ else
   echo "APK non fornito: la pagina di download mostrerà solo Windows" >&2
 fi
 
-# Versione dal nome del file generato da Tauri (es. "civil beefy_0.1.0_x64-setup.exe").
+# Versione dal nome del file generato da Tauri (es. "Civil Beefy_0.1.0_x64-setup.exe").
 version=$(basename "$setup" | sed -n 's/^.*_\([0-9][0-9.]*\)_.*$/\1/p')
 
 entry() {

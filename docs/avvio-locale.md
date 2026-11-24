@@ -1,4 +1,4 @@
-# Avvio locale di civil beefy — mini guida
+# Avvio locale di Civil Beefy — mini guida
 
 Tutto si avvia con **podman-compose**, senza alcun componente Docker. Gli stessi comandi funzionano
 anche con `podman compose` e con `docker compose` (basta sostituire il comando).
@@ -70,7 +70,7 @@ Dopo un `git pull` ripeti lo stesso comando per ricostruire le immagini.
 
 | Cosa | Indirizzo |
 |------|-----------|
-| **civil beefy** | <http://localhost:4200> |
+| **Civil Beefy** | <http://localhost:4200> |
 | Email inviate (Mailpit) | <http://localhost:8025> |
 | Keycloak (amministrazione) | <http://localhost:8180/admin> — `admin` / `admin` |
 | API (verifica) | <http://localhost:8080/api/health> |

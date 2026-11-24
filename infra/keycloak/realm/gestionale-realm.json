@@ -1,7 +1,7 @@
 {
   "realm": "gestionale",
-  "displayName": "civil beefy",
-  "displayNameHtml": "<div class=\"kc-logo-text\"><span>civil beefy</span></div>",
+  "displayName": "Civil Beefy",
+  "displayNameHtml": "<div class=\"kc-logo-text\"><span>Civil Beefy</span></div>",
   "loginTheme": "gestionale",
   "enabled": true,
   "sslRequired": "external",
@@ -46,7 +46,7 @@
   "clients": [
     {
       "clientId": "gestionale-web",
-      "name": "civil beefy (web, PWA, desktop)",
+      "name": "Civil Beefy (web, PWA, desktop)",
       "description": "Client pubblico con Authorization Code + PKCE",
       "enabled": true,
       "publicClient": true,
@@ -127,7 +127,7 @@
     },
     {
       "clientId": "gestionale-desktop",
-      "name": "civil beefy (app desktop e Android)",
+      "name": "Civil Beefy (app desktop e Android)",
       "description": "Client pubblico delle app impacchettate con Tauri, desktop e Android (Authorization Code + PKCE). Origini fisse del protocollo interno di Tauri: uguali per ogni installazione e per entrambe le piattaforme.",
       "enabled": true,
       "publicClient": true,
@@ -210,7 +210,7 @@
     },
     {
       "clientId": "gestionale-platform-admin",
-      "name": "civil beefy · servizio della console di piattaforma",
+      "name": "Civil Beefy · servizio della console di piattaforma",
       "description": "Client riservato all'API: crea e gestisce gli utenti delle aziende per la console di piattaforma (client credentials). Il segreto sta solo nel .env del server (PLATFORM_KEYCLOAK_CLIENT_SECRET).",
       "enabled": true,
       "publicClient": false,

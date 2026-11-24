@@ -1,6 +1,6 @@
 name: Deploy
 
-# Installa una versione di civil beefy sulla macchina di produzione, via SSH: qualsiasi server
+# Installa una versione di Civil Beefy sulla macchina di produzione, via SSH: qualsiasi server
 # Linux con Docker (VPS come Aruba o OVH, oppure Oracle Cloud). I nomi OCI_* sono storici.
 #
 # Quando parte:
@@ -118,23 +118,27 @@ jobs:
         working-directory: release
         run: |
           ssh server "mkdir -p '$APP_DIR/keycloak/realm' '$APP_DIR/keycloak/themes' '$APP_DIR/keycloak/setup'"
-          # Impronta dei realm prima della copia: se cambiano, Keycloak va riavviato per importare i nuovi.
-          before=$(ssh server "cat '$APP_DIR'/keycloak/realm/*.json 2> /dev/null | sha256sum")
+          # Impronta di realm e tema prima della copia: se cambiano, Keycloak va riavviato
+          # (importa i realm nuovi e rilegge il tema solo all'avvio).
+          fingerprint="cd '$APP_DIR/keycloak' && find realm themes -type f -print0 2> /dev/null | sort -z | xargs -0 -r sha256sum | sha256sum"
+          before=$(ssh server "$fingerprint")
           scp infra/deploy/oracle/compose.yml infra/deploy/oracle/Caddyfile server:"$APP_DIR/"
           # Solo i realm di prodotto (mai gli utenti demo di infra/keycloak/dev); via i file non più usati.
           ssh server "rm -f '$APP_DIR'/keycloak/realm/*.json"
           scp infra/keycloak/realm/*.json server:"$APP_DIR/keycloak/realm/"
           if [ -d infra/keycloak/setup ]; then scp infra/keycloak/setup/*.sh server:"$APP_DIR/keycloak/setup/"; fi
-          tar -C infra/keycloak/themes -cf - gestionale | ssh server "rm -rf '$APP_DIR/keycloak/themes/gestionale' && tar -C '$APP_DIR/keycloak/themes' -xf -"
-          after=$(ssh server "cat '$APP_DIR'/keycloak/realm/*.json | sha256sum")
-          if [ "$before" != "$after" ]; then echo "realm_changed=true" >> "$GITHUB_OUTPUT"; fi
+          # Tema sostituito SUL POSTO (stessa cartella): una cartella cancellata e ricreata non
+          # sarebbe più quella montata nel container in esecuzione.
+          tar -C infra/keycloak/themes -cf - gestionale | ssh server "mkdir -p '$APP_DIR/keycloak/themes/gestionale' && find '$APP_DIR/keycloak/themes/gestionale' -mindepth 1 -delete && tar -C '$APP_DIR/keycloak/themes' -xf -"
+          after=$(ssh server "$fingerprint")
+          if [ "$before" != "$after" ]; then echo "keycloak_changed=true" >> "$GITHUB_OUTPUT"; fi
 
       - name: Aggiorna i servizi
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.version.outputs.tag }}
           ACTOR: ${{ github.actor }}
-          REALM_CHANGED: ${{ steps.config.outputs.realm_changed }}
+          KEYCLOAK_CHANGED: ${{ steps.config.outputs.keycloak_changed }}
         run: |
           # La configurazione (compose + .env) deve essere completa prima di scaricare qualcosa.
           ssh server "cd '$APP_DIR' && docker compose config -q"
@@ -146,8 +150,8 @@ jobs:
             docker compose pull --quiet || { docker logout ghcr.io; exit 1; }
             docker logout ghcr.io
             docker compose up -d --remove-orphans
-            # Keycloak importa i realm nuovi solo all'avvio; poi l'allineamento della configurazione.
-            if [ '$REALM_CHANGED' = 'true' ]; then docker compose restart keycloak keycloak-setup; fi
+            # Realm o tema cambiati: Keycloak li rilegge all'avvio; poi l'allineamento della configurazione.
+            if [ '$KEYCLOAK_CHANGED' = 'true' ]; then docker compose restart keycloak keycloak-setup; fi
             docker image prune -f > /dev/null
             docker compose ps"
           # Esito dell'allineamento di Keycloak (keycloak-setup): solo informativo.
