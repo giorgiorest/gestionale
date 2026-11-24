@@ -6,6 +6,7 @@
 # Indirizzi da cui si raggiungono le parti amministrative (console di piattaforma, login degli
 # amministratori, console di Keycloak). ADMIN_ALLOWED_IPS nel .env, separati da spazi
 # (es. "203.0.113.10 198.51.100.0/24"); vuoto = da qualsiasi rete (protette comunque da password + OTP).
+# Il compose passa "0.0.0.0/0 ::/0" quando la voce è vuota: un elenco vuoto qui bloccherebbe tutti.
 (solo_reti_amministrative) {
 	@amministrazione_negata {
 		path {args[:]}
