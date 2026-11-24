@@ -26,7 +26,7 @@ import { AppConfigService } from '../../core/config/app-config';
           }
           <p class="legal">
             @if (!appConfig.desktop) {
-              <a routerLink="/app-desktop">App per Windows</a> ·
+              <a routerLink="/app-desktop">App per Windows e Android</a> ·
             }
             <a routerLink="/privacy">Privacy e cookie</a>
           </p>

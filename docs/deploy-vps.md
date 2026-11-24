@@ -184,8 +184,9 @@ versione). **Deploy**:
 Per **tornare indietro**: **Deploy** con un commit precedente (40 caratteri, da *Commits* su GitHub).
 
 La prima volta Keycloak e il certificato richiedono 1–2 minuti. Poi apri `https://<dominio>`.
-L'app per Windows si scarica da `https://<dominio>/app-desktop` (link «App per Windows» nella pagina
-di accesso); al primo avvio chiede l'indirizzo del server, mostrato nella stessa pagina.
+Le app per Windows e Android si scaricano da `https://<dominio>/app-desktop` (link «App per Windows
+e Android» nella pagina di accesso); al primo avvio chiedono l'indirizzo del server, mostrato nella
+stessa pagina.
 
 ## 8. Primo accesso: console di piattaforma
 

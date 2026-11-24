@@ -218,12 +218,14 @@ npm run tauri -- android build --apk # APK firmato (serve key.properties, vedi s
 ```
 
 I comandi Android richiedono l'SDK Android con un NDK (`ANDROID_HOME`, `NDK_HOME`) e i target
-Rust `aarch64-linux-android` e simili; l'APK già pronto si scarica da GitHub → Actions →
-**CI Android** → artifact `gestionale-android-apk`.
+Rust `aarch64-linux-android` e simili; l'APK già pronto si scarica dalla pagina `/app-desktop`
+di un server installato, oppure da GitHub → Actions → **Release immagini** (o **CI Android** per
+una PR) → artifact `gestionale-android-apk`.
 
 L'installer è unico per tutti i clienti: al primo avvio chiede l'indirizzo del server.
-Gli utenti lo scaricano dalla pagina **`/app-desktop`** del server («App per Windows», link nella
-pagina di accesso e nel menu utente): vedi [apps/desktop/README.md](apps/desktop/README.md#distribuire-lapp-agli-utenti-pagina-di-download).
+Gli utenti scaricano installer e APK dalla pagina **`/app-desktop`** del server («App per Windows
+e Android», link nella pagina di accesso e nel menu utente):
+vedi [apps/desktop/README.md](apps/desktop/README.md#distribuire-lapp-agli-utenti-pagina-di-download).
 Dettagli, prerequisiti e cose da fare prima della vendita (firma, aggiornamenti):
 [apps/desktop/README.md](apps/desktop/README.md).
 
@@ -321,12 +323,14 @@ La campanella si aggiorna ogni minuto: per vedere subito una notifica appena inv
 - `ci-web.yml`: build di produzione, test e build dell'immagine web (amd64 e arm64).
 - `ci-desktop.yml`: installer Windows dell'app desktop sulle pull request (artifact `gestionale-desktop-windows`,
   non ancora firmato); su `main` lo richiama `release-images.yml`.
-- `android.yml`: APK Android firmato su `main` e a mano (artifact `gestionale-android-apk`).
+- `android.yml`: APK Android firmato sulle pull request (artifact `gestionale-android-apk`);
+  su `main` lo richiama `release-images.yml`, che lo mette nell'immagine web.
 Il flusso di un rilascio:
 
 ```
 merge su main ─▶ Release immagini ─┬─ desktop (installer Windows)
-                                   ├─ immagini API e web (amd64, arm64; la web contiene gli installer)
+                                   ├─ android (APK firmato)
+                                   ├─ immagini API e web (amd64, arm64; la web contiene i pacchetti)
                                    └─ riepilogo: «versione pronta» ─▶ ⏸ tu avvii Deploy ─▶ installazione e verifica
 ```
 
@@ -339,7 +343,7 @@ automatico in attesa di approvazione (`AUTO_DEPLOY=true`, [ADR 0009](docs/decisi
 | `ci-api.yml` | PR e `main` (API) | build e test dell'API |
 | `ci-web.yml` | PR e `main` (web) | build, test, immagine web (amd64 e arm64) |
 | `ci-desktop.yml` | PR (web, desktop); richiamato dal rilascio | installer Windows (artifact `gestionale-desktop-windows`, non ancora firmato) |
-| `android.yml` | `main` (web, desktop) e a mano | APK Android firmato (artifact `gestionale-android-apk`); non ancora distribuito dal server |
+| `android.yml` | PR (web, desktop); richiamato dal rilascio | APK Android firmato (artifact `gestionale-android-apk`) |
 | `ci-workflows.yml` | PR (workflow, script) | actionlint e shellcheck |
 | `release-images.yml` | ogni push su `main` | installer desktop, immagini su GHCR (`sha-<commit>`, `latest`); nel riepilogo il link per installare |
 | `deploy.yml` | **a mano** dopo il rilascio (è l'approvazione) | controlla la macchina, installa un commit via SSH, verifica `/api/health`; a mano anche per tornare a un commit precedente |

@@ -42,9 +42,13 @@ stessi permessi (`capabilities/`), stesso punto di ingresso Rust.
    dai GitHub Secrets; senza chiave la build di rilascio **si ferma con un errore**, invece di
    produrre un APK non firmato. Identificatore dell'app invariato (`it.gestionale.desktop`):
    cambiarlo creerebbe un'app diversa agli occhi di Android e del desktop.
-7. **CI**: `.github/workflows/android.yml` (runner Linux) produce l'APK come artifact, su `main`
-   e a mano. Non è ancora collegato a *Release immagini*: l'APK non si distribuisce dalla pagina
-   `/app-desktop`.
+7. **CI e distribuzione**: `.github/workflows/android.yml` (runner Linux) produce l'APK come
+   artifact sulle pull request; su `main` lo richiama *Release immagini*, che lo include
+   nell'**immagine web dello stesso commit** insieme agli installer Windows. Gli utenti lo
+   scaricano dalla pagina `/app-desktop` del server della loro azienda, come il setup Windows:
+   versione dell'app e del server restano allineate, anche nei ritorni indietro.
+   L'APK è **facoltativo** in `desktop.json`: se la build Android fallisce la pagina mostra solo
+   Windows, invece di sparire del tutto.
 
 ## Conseguenze
 
@@ -58,6 +62,12 @@ stessi permessi (`capabilities/`), stesso punto di ingresso Rust.
 - L'app Android eredita i limiti dell'app desktop: il login avviene nella finestra dell'app, non
   nel browser di sistema (RFC 8252). Su Android la pratica raccomandata sono le Custom Tabs:
   da valutare insieme al punto già aperto per il desktop.
+- **Niente aggiornamenti automatici**: l'APK si distribuisce fuori dal Play Store, quindi
+  l'utente torna sulla pagina `/app-desktop` e riscarica. Perché Android riconosca un
+  aggiornamento serve un `versionCode` più alto, che Tauri ricava da `version` di
+  `tauri.conf.json`: va aumentato a ogni rilascio.
+- nginx deve servire l'APK come `application/vnd.android.package-archive`: con il tipo generico
+  Android scarica il file ma non propone di installarlo.
 - `minSdk` 24 (Android 7): sotto, la WebView di sistema è troppo vecchia.
 - iOS resta fuori: richiede un Mac e un account sviluppatore Apple.
 

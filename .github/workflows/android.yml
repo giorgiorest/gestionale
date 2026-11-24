@@ -12,10 +12,14 @@ name: CI Android
 #   ANDROID_KEY_ALIAS         alias della chiave
 #   ANDROID_KEY_PASSWORD      password della chiave
 # Come generarli: apps/desktop/README.md, "APK Android".
+#
+# Sulle pull request verifica la build, come CI Desktop. Su main lo richiama "Release immagini",
+# che mette l'APK nell'immagine web (pagina /app-desktop): niente build doppia.
+# I secret non arrivano alle pull request dai fork: il repository è privato e non ne ha, ma se un
+# giorno ne avesse, questo job andrebbe limitato alle PR interne.
 
 on:
-  push:
-    branches: [main]
+  pull_request:
     paths:
       - 'apps/desktop/**'
       - 'apps/web/**'

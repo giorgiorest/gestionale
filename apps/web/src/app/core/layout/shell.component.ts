@@ -87,7 +87,7 @@ const NAV: NavItem[] = [
           <mat-icon>manage_accounts</mat-icon>Account e password
         </a>
         @if (!desktop) {
-          <a mat-menu-item routerLink="/app-desktop"><mat-icon>desktop_windows</mat-icon>App per Windows</a>
+          <a mat-menu-item routerLink="/app-desktop"><mat-icon>devices</mat-icon>App per Windows e Android</a>
         }
         <a mat-menu-item routerLink="/privacy"><mat-icon>policy</mat-icon>Privacy e cookie</a>
         <button mat-menu-item (click)="logout.logout()" data-testid="logout"><mat-icon>logout</mat-icon>Esci</button>
@@ -217,7 +217,7 @@ const NAV: NavItem[] = [
 export class ShellComponent {
   readonly auth = inject(AuthService);
   readonly logout = inject(LogoutService);
-  /** Nell'app installata (desktop o Android) non si propone di scaricare quella per Windows. */
+  /** Nell'app installata (desktop o Android) non si propone di scaricarla. */
   readonly desktop = isPackagedDesktopApp();
   readonly branding = inject(BrandingService);
   readonly profile = inject(ProfileService);

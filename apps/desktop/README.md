@@ -43,26 +43,35 @@ apps/desktop/
 ## Distribuire l'app agli utenti (pagina di download)
 
 Gli utenti scaricano l'app dal **server della loro azienda**, alla pagina pubblica
-**`https://<dominio>/app-desktop`** («App per Windows»), collegata dalla pagina di accesso e dal menu
-utente (nascosta dentro l'app desktop). La pagina mostra:
+**`https://<dominio>/app-desktop`** («App per Windows e Android»), collegata dalla pagina di accesso
+e dal menu utente (nascosta dentro l'app già installata). La pagina mostra:
 
-- il pulsante di download del setup `.exe` (installazione per l'utente, senza permessi di amministratore);
-- i passi di installazione, compreso l'avviso di SmartScreen finché l'app non è firmata;
-- l'**indirizzo del server** da inserire al primo avvio, con il pulsante *Copia*;
-- per il reparto IT il pacchetto **MSI** (installazione centralizzata) e gli SHA-256 dei file.
+- l'**indirizzo del server** da inserire al primo avvio, con il pulsante *Copia*: è lo stesso per
+  entrambe le piattaforme;
+- **Windows**: il setup `.exe` (installazione per l'utente, senza permessi di amministratore), i
+  passi di installazione compreso l'avviso di SmartScreen finché l'app non è firmata, e per il
+  reparto IT il pacchetto **MSI** (installazione centralizzata);
+- **Android**: l'**APK** firmato, con il passaggio del consenso a installare «da questa origine»
+  (l'app non passa dal Play Store);
+- gli SHA-256 di tutti i file.
 
-Come ci arrivano gli installer:
+Come ci arrivano i pacchetti:
 
-1. a ogni merge su `main` il workflow **Release immagini** richiama **CI Desktop** (Windows);
-2. `infra/docker/web/prepare-desktop-downloads.sh` copia gli installer in `apps/web/public/downloads/`
-   come `civilbeefy-setup.exe` e `civilbeefy.msi`, con `desktop.json` (versione, commit, data,
-   dimensioni, SHA-256);
+1. a ogni merge su `main` il workflow **Release immagini** richiama **CI Desktop** (Windows) e
+   **CI Android** (Linux);
+2. `infra/docker/web/prepare-desktop-downloads.sh` copia i pacchetti in `apps/web/public/downloads/`
+   come `civilbeefy-setup.exe`, `civilbeefy.msi` e `civilbeefy.apk`, con `desktop.json` (versione,
+   commit, data, dimensioni, SHA-256);
 3. finiscono nell'**immagine web** dello stesso commit: con **Deploy** ogni server offre l'app della
-   propria versione, e un ritorno indietro riporta anche l'installer precedente.
+   propria versione, e un ritorno indietro riporta anche i pacchetti precedenti.
 
-Se la build desktop fallisce le immagini escono comunque, senza installer: la pagina dice che il
-download non è disponibile. Per provarla in locale basta mettere dei file in
-`apps/web/public/downloads/` (cartella ignorata da git) con lo script sopra.
+Se la build desktop fallisce le immagini escono comunque, senza pacchetti: la pagina dice che il
+download non è disponibile. Se fallisce la sola build Android la pagina esce con il solo Windows.
+Per provarla in locale basta mettere dei file in `apps/web/public/downloads/` (cartella ignorata
+da git) con lo script sopra, che accetta la cartella dell'APK come quarto argomento (facoltativo).
+
+> L'APK è servito da nginx con il tipo `application/vnd.android.package-archive`: senza quello
+> Android non riconosce il file scaricato come app da installare.
 
 ## Scaricare l'MSI dalla CI (senza installare nulla)
 
@@ -172,14 +181,16 @@ non va rigenerato con `tauri android init` senza rimettere quelle modifiche.
 
 ### Scaricare l'APK dalla CI
 
-Il workflow **CI Android** (`.github/workflows/android.yml`) gira a ogni push su `main` e a mano
-(*Actions → CI Android → Run workflow*), e pubblica l'artifact `gestionale-android-apk`.
+Il workflow **CI Android** (`.github/workflows/android.yml`) gira sulle pull request che toccano
+`apps/web` o `apps/desktop` e a mano (*Actions → CI Android → Run workflow*); su `main` lo richiama
+**Release immagini**. Pubblica l'artifact `gestionale-android-apk`.
 
 ```bash
 gh run download --repo giorgiorest/gestionale --name gestionale-android-apk
 ```
 
-L'APK non è ancora distribuito dalla pagina `/app-desktop` del server: per ora si prende da qui.
+Gli utenti però non passano da qui: scaricano l'APK dalla pagina `/app-desktop` del loro server,
+come gli installer Windows (sezione «Distribuire l'app agli utenti»).
 
 ### Chiave di firma (una volta sola)
 
@@ -279,5 +290,6 @@ Tracciati come issue su GitHub.
   (`msiexec /i "civil beefy_x.y.z_x64_it-IT.msi" /qn`) via Intune o criteri di gruppo; in futuro si
   potrà precompilare l'indirizzo del server con una proprietà dell'MSI.
 - **macOS e Linux**: rimandati. **iOS**: richiede un Mac e un account sviluppatore Apple.
-- **Android**: distribuire l'APK dal server (pagina `/app-desktop`) come gli installer Windows,
-  e valutare il login in una Custom Tab invece che nella WebView dell'app (RFC 8252).
+- **Android**: aggiornamenti in-app (oggi si riscarica l'APK dalla pagina del server), e login in
+  una Custom Tab invece che nella WebView dell'app (RFC 8252). Il `versionCode` segue `version` di
+  `tauri.conf.json`: va aumentato a ogni rilascio, altrimenti Android non vede un aggiornamento.

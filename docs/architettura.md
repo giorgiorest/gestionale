@@ -35,9 +35,10 @@ principalmente la propria parte** dei dati. Deve funzionare su web, mobile e des
   - **Web**: PWA con service worker (`@angular/pwa`), installabile e utilizzabile offline.
   - **Desktop**: la stessa build incapsulata da **Tauri 2** (`apps/desktop`), installer Windows.
   - **Android**: la stessa build e lo stesso progetto Tauri, pacchettizzati come APK firmato
-    ([ADR 0011](decisioni/0011-app-android.md)). Desktop e Android condividono il modo di
-    riconoscersi (`isPackagedDesktopApp()`), la scelta del server al primo avvio e il client
-    OIDC `gestionale-desktop`. iOS non è previsto.
+    ([ADR 0011](decisioni/0011-app-android.md)) e distribuito dalla pagina `/app-desktop` del
+    server, come gli installer Windows. Desktop e Android condividono il modo di riconoscersi
+    (`isPackagedDesktopApp()`), la scelta del server al primo avvio e il client OIDC
+    `gestionale-desktop`. iOS non è previsto.
 - Il frontend nasconde la UI non inclusa nel piano (`*appHasFeature`, `featureGuard`) o non
   consentita dal ruolo (`*appHasPermission`, `permissionGuard`), ma **non è una protezione**:
   ogni controllo vale solo se ripetuto nel backend.
