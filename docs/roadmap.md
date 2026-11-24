@@ -39,7 +39,7 @@ Si ripaga entro la seconda PR: serve a non ri-scoprire il progetto a ogni sessio
 | 0.3 | ESLint e Prettier nella CI web, budget sulla dimensione del bundle | — | ⬜ |
 | 0.4 | Osservabilità: log strutturati JSON con `tenant_id` e id della richiesta, metriche Actuator/Prometheus, avviso quando la salute cade | — | ⬜ |
 | 0.5 | **Backup fuori sito** (l'archivio oggi resta sulla stessa macchina) e **prova di ripristino** documentata | — | ⬜ |
-| 0.6 | Hook `SessionStart`: branch, PR aperta, prossima voce di roadmap, primo numero Flyway libero | — | ⬜ |
+| 0.6 | Hook `SessionStart`: branch, PR aperta, prossima voce di roadmap, primo numero Flyway libero | — | ✅ |
 
 > La 0.5 è il rischio singolo più grande del progetto: un backup mai ripristinato non è un backup.
 

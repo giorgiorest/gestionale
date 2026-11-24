@@ -7,12 +7,14 @@ on:
   pull_request:
     paths:
       - .github/**
+      - .claude/hooks/**
       - infra/deploy/**
       - infra/docker/web/**
   push:
     branches: [main]
     paths:
       - .github/**
+      - .claude/hooks/**
 
 permissions:
   contents: read
@@ -28,4 +30,4 @@ jobs:
       - name: Script di shell
         run: |
           shellcheck --version | head -2
-          shellcheck -S warning infra/deploy/oracle/prepare-server.sh infra/docker/web/*.sh .github/scripts/*.sh
+          shellcheck -S warning infra/deploy/oracle/prepare-server.sh infra/docker/web/*.sh .github/scripts/*.sh .claude/hooks/*.sh
