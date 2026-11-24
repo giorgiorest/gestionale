@@ -78,7 +78,16 @@ Dettagli: [ADR 0004](decisioni/0004-app-desktop.md) e `apps/desktop/README.md`.
   vengono rimosse. Errori di rete, 5xx, 401, 408 e 429 fermano l'invio (si riprova al ritorno
   della connessione o al successivo caricamento); gli altri 4xx sono errori definitivi: la voce
   resta in coda con `lastError` e l'invio prosegue. Le API di scrittura sono **idempotenti**
-  (stesso id = stessa operazione), così un reinvio non crea duplicati.
+  (stesso id = stessa operazione), così un reinvio non crea duplicati: anche il `DELETE` risponde
+  `204` se il record non esiste o era già cancellato, così una voce non resta bloccata in coda.
+- **Cancellazione logica** ([ADR 0018](decisioni/0018-cancellazione-logica.md)): `DELETE` valorizza
+  `deleted_at` e lascia la riga in tabella come **tombstone**; le letture escludono i record
+  cancellati. È l'unico modo di dire a un dispositivo rimasto offline che un record non esiste più:
+  con una cancellazione fisica non resterebbe niente da sincronizzare. Un `PUT` successivo riattiva
+  il record (last-write-wins), senza toccare `created_at`/`created_by`.
+- **Chi ha scritto**: ogni tabella di dominio ha `created_by`/`updated_by` (claim `sub`; NULL per i
+  processi di sistema) e `version` per il blocco ottimistico (`@Version`); un conflitto diventa
+  `409`.
 - **Lettura**: per ora ogni pagina scarica l'elenco completo e lo salva in IndexedDB; se il
   server non risponde mostra la copia locale (esempio: `features/customers`).
 - **Ricezione (`pullChanges`, da implementare)**: sincronizzazione incrementale con **cursore** per entità
@@ -86,8 +95,9 @@ Dettagli: [ADR 0004](decisioni/0004-app-desktop.md) e `apps/desktop/README.md`.
   (es. `updated_at` + id, o una sequenza di modifica) e le applica localmente.
 - **Conflitti**: con 50 utenti che modificano soprattutto la propria parte, i conflitti sono
   rari. Strategia iniziale: *last-write-wins* per record, con `updated_at` lato server;
-  i casi critici (es. giacenze) andranno gestiti con operazioni di dominio invece che con
-  sovrascritture di campi.
+  la colonna `version` c'è già, il controllo con `If-Match` e la risoluzione nell'interfaccia sono
+  la voce 1.5 della roadmap. I casi critici (es. giacenze) andranno gestiti con operazioni di
+  dominio invece che con sovrascritture di campi.
 
 ## Backend
 

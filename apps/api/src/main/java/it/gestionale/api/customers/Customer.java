@@ -7,8 +7,15 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
-/** Cliente del tenant. L'id è generato dal client (UUID). */
+/**
+ * Cliente del tenant. L'id è generato dal client (UUID v7).
+ *
+ * <p>La cancellazione è <strong>logica</strong>: {@code deletedAt} valorizzato marca il record come
+ * cancellato e lo lascia in tabella come tombstone, così la cancellazione può essere propagata ai
+ * dispositivi che erano offline. {@code version} serve al blocco ottimistico.
+ */
 @Entity
 @Table(name = "customers")
 public class Customer {
@@ -25,6 +32,23 @@ public class Customer {
     @Column
     private String email;
 
+    /** Blocco ottimistico: incrementata da Hibernate a ogni modifica. */
+    @Version
+    @Column(nullable = false)
+    private long version;
+
+    /** Valorizzata = record cancellato (tombstone per la sincronizzazione). */
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
+    /** Claim {@code sub} di chi ha creato il record; null se scritto da un processo di sistema. */
+    @Column(name = "created_by")
+    private String createdBy;
+
+    /** Claim {@code sub} di chi ha modificato o cancellato il record per ultimo. */
+    @Column(name = "updated_by")
+    private String updatedBy;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
@@ -34,18 +58,44 @@ public class Customer {
     protected Customer() {
     }
 
-    public Customer(UUID id, UUID tenantId, String name, String email) {
+    public Customer(UUID id, UUID tenantId, String name, String email, String userId) {
         this.id = id;
         this.tenantId = tenantId;
         this.name = name;
         this.email = email;
+        this.createdBy = userId;
+        this.updatedBy = userId;
     }
 
-    /** Aggiorna i dati modificabili. */
-    public void update(String name, String email, Instant at) {
+    /**
+     * Aggiorna i dati modificabili. Un record cancellato torna attivo: l'id è scelto dal client, e
+     * un {@code PUT} successivo alla cancellazione è l'ultima volontà del client (last-write-wins).
+     * Data e autore della creazione non cambiano.
+     */
+    public void update(String name, String email, String userId, Instant at) {
         this.name = name;
         this.email = email;
+        this.deletedAt = null;
+        this.updatedBy = userId;
         this.updatedAt = at;
+    }
+
+    /**
+     * Marca il record come cancellato. Non fa nulla se lo è già: la cancellazione è idempotente e
+     * un reinvio dalla outbox non deve cambiare l'ora della cancellazione né quella di modifica
+     * (altrimenti il tombstone tornerebbe a tutti i dispositivi a ogni reinvio).
+     */
+    public void markDeleted(String userId, Instant at) {
+        if (deletedAt != null) {
+            return;
+        }
+        this.deletedAt = at;
+        this.updatedBy = userId;
+        this.updatedAt = at;
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
     }
 
     public UUID getId() {
@@ -62,6 +112,22 @@ public class Customer {
 
     public String getEmail() {
         return email;
+    }
+
+    public long getVersion() {
+        return version;
+    }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public String getUpdatedBy() {
+        return updatedBy;
     }
 
     public Instant getUpdatedAt() {

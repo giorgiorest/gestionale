@@ -33,7 +33,8 @@ import {
   endOfDayIso,
   roleLabel,
 } from './console-labels';
-import { ConfirmDialog, NewUserDialog, PasswordDialog } from './dialogs';
+import { openConfirm } from '../../shared/confirm-dialog';
+import { NewUserDialog, PasswordDialog } from './dialogs';
 
 /** Dettaglio di un'azienda: dati, licenza, utenti e registro delle operazioni. */
 @Component({
@@ -370,11 +371,11 @@ export class TenantDetailPage {
   async setStatus(status: 'active' | 'suspended'): Promise<void> {
     const t = this.tenant()!;
     if (status === 'suspended') {
-      const ok = await this.confirm(
-        'Sospendere l’azienda?',
-        `Gli utenti di ${t.name} non potranno più usare l'applicazione finché non la riattivi. I dati restano.`,
-        'Sospendi',
-      );
+      const ok = await openConfirm(this.dialog, {
+        title: 'Sospendere l’azienda?',
+        message: `Gli utenti di ${t.name} non potranno più usare l'applicazione finché non la riattivi. I dati restano.`,
+        confirm: 'Sospendi',
+      });
       if (!ok) {
         return;
       }
@@ -444,11 +445,11 @@ export class TenantDetailPage {
   }
 
   async resetPassword(user: ConsoleUser): Promise<void> {
-    const ok = await this.confirm(
-      'Nuova password provvisoria?',
-      `La password attuale di ${user.username} smette di valere e le sue sessioni vengono chiuse.`,
-      'Genera',
-    );
+    const ok = await openConfirm(this.dialog, {
+      title: 'Nuova password provvisoria?',
+      message: `La password attuale di ${user.username} smette di valere e le sue sessioni vengono chiuse.`,
+      confirm: 'Genera',
+    });
     if (!ok) {
       return;
     }
@@ -532,11 +533,6 @@ export class TenantDetailPage {
     } catch {
       // Il registro è informativo: un errore qui non blocca la pagina.
     }
-  }
-
-  private async confirm(title: string, message: string, confirm: string): Promise<boolean> {
-    const ref = this.dialog.open(ConfirmDialog, { data: { title, message, confirm } });
-    return (await firstValueFrom(ref.afterClosed())) === true;
   }
 
   private async run(action: () => Promise<unknown>, done: string): Promise<void> {

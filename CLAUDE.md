@@ -57,12 +57,20 @@ in `docs/roadmap.md`: è la fonte di verità, va aggiornata nella stessa PR che 
        updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
    );
    CREATE INDEX commesse_tenant_id_idx ON commesse (tenant_id);
+   CALL add_sync_columns('commesse');   -- deleted_at, version, created_by, updated_by (ADR 0018)
    CALL enable_tenant_rls('commesse');
    ```
+   `add_sync_columns` ci va **subito**: aggiungere quelle colonne dopo, su una tabella piena, costa
+   di più. L'indice dell'elenco e i vincoli di unicità applicativi (es. la P.IVA) sono **parziali**,
+   `WHERE deleted_at IS NULL`: altrimenti l'elenco riordina anche i tombstone e un record cancellato
+   impedisce di reinserire lo stesso dato.
 2. **Backend**: copia la struttura di `customers/` → `Entity`, `Repository`, `Dto` (con `Input`
    validato), `Service` (`@Transactional`, filtra per `TenantContext.require()` anche se la RLS già
    protegge: difesa in profondità), `Controller` (`@PreAuthorize("hasAuthority('…')")`, upsert
-   idempotente con `PUT /{id}`).
+   idempotente con `PUT /{id}`, cancellazione logica idempotente con `DELETE /{id}` → `204`).
+   Le letture filtrano `deleted_at IS NULL` (portalo nel nome del metodo del repository, come
+   `findByTenantIdAndDeletedAtIsNullOrderByNameAsc`); l'utente arriva al servizio come
+   `jwt.getSubject()` passato dal controller, per `created_by`/`updated_by`.
 3. **Permesso nuovo**: `auth/Permission.java` + realm in `infra/keycloak/realm` + etichette nel
    frontend + `docs/gestione-utenti-e-aziende.md`.
 4. **Funzionalità di piano nuova**: `licensing/Features.java` + console di piattaforma.
@@ -71,9 +79,13 @@ in `docs/roadmap.md`: è la fonte di verità, va aggiornata nella stessa PR che 
 6. **Offline**: tabella in `db/local-db.ts` con una **nuova** `version()` (mai modificare quelle
    esistenti), e aggiungila a `LocalDataService.clear()` (regola di privacy, ADR 0008).
 7. **Scritture dal client**: solo `SyncService.enqueue()`, mai chiamate dirette alle API di
-   scrittura (eccezione: la console di piattaforma, `ConsoleApiService`).
+   scrittura (eccezione: la console di piattaforma, `ConsoleApiService`). La cancellazione toglie il
+   record dalla copia locale e accoda `delete`; il caricamento successivo chiede a
+   `SyncService.pendingByEntity()` cosa è ancora in coda, per non rimettere in locale un record già
+   cancellato né buttarne uno non ancora creato (vedi `CustomersService.load()`).
 8. **Test**: un test di integrazione che estende `AbstractIntegrationTest`, incluso il caso
-   «un tenant non vede i dati di un altro» (vedi `TenantIsolationTest`).
+   «un tenant non vede i dati di un altro» (vedi `TenantIsolationTest`) e il `DELETE` ripetuto
+   (idempotenza, vedi `CustomerControllerTest`).
 9. **Documentazione**: tabella dei moduli nel README, `docs/architettura.md`, e un ADR se la scelta
    è nuova.
 

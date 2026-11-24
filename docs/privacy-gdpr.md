@@ -106,9 +106,9 @@ impostazioni (es. eventi) vanno attivate anche dalla console: *Realm settings �
 
 | Richiesta | Come |
 |-----------|------|
-| **Accesso / copia dei dati** di un dipendente | profilo in Keycloak (console) e, nel database, `app_users` e le notifiche ricevute |
+| **Accesso / copia dei dati** di un dipendente | profilo in Keycloak (console) e, nel database, `app_users`, le notifiche ricevute e i record che ha creato o modificato (colonne `created_by`/`updated_by` delle tabelle di dominio) |
 | **Rettifica** | nome ed email in Keycloak (l'app li aggiorna al successivo accesso) |
-| **Cancellazione** di un dipendente | in Keycloak: disattivare o eliminare l'utente; nel database: `DELETE FROM email_deliveries WHERE tenant_id = '…' AND user_id = '…'` e `DELETE FROM app_users WHERE tenant_id = '…' AND user_id = '…'` (cancella anche le sue ricevute di lettura). `user_id` è l'ID dell'utente in Keycloak |
+| **Cancellazione** di un dipendente | in Keycloak: disattivare o eliminare l'utente; nel database: `DELETE FROM email_deliveries WHERE tenant_id = '…' AND user_id = '…'` e `DELETE FROM app_users WHERE tenant_id = '…' AND user_id = '…'` (cancella anche le sue ricevute di lettura); poi azzerare le tracce di chi ha scritto, una tabella di dominio per volta: `UPDATE customers SET created_by = NULL WHERE created_by = '…'` e lo stesso per `updated_by`. `user_id` è l'ID dell'utente in Keycloak |
 | **Fine contratto di un cliente** | `DELETE FROM tenants WHERE id = '…'`: cancella a cascata tutti i dati dell'azienda; poi eliminare i suoi utenti in Keycloak. I backup scadono secondo la conservazione |
 
 Le operazioni sul database si fanno sulla macchina, con l'utente amministratore del database
@@ -120,7 +120,13 @@ Le operazioni sul database si fanno sulla macchina, con l'utente amministratore 
   un dipendente, chiusura di un'azienda con esportazione finale.
 - **Conservazione** automatica: cancellazione delle notifiche e della coda email più vecchie di un
   periodo definito nel DPA.
-- **Registro delle operazioni** nell'applicazione (chi ha modificato cosa), oltre agli eventi di Keycloak.
+- **Registro delle operazioni** nell'applicazione (chi ha modificato cosa), oltre agli eventi di Keycloak:
+  oggi le tabelle di dominio dicono solo chi ha scritto per **ultimo** (`created_by`/`updated_by`,
+  [ADR 0018](decisioni/0018-cancellazione-logica.md)), non lo storico.
+- **Conservazione dei record cancellati**: la cancellazione dall'applicazione è logica (`deleted_at`),
+  quindi la riga resta per poter propagare la cancellazione ai dispositivi offline. Serve una regola che
+  stabilisca dopo quanto tempo il record viene cancellato per davvero; la cancellazione su richiesta
+  dell'interessato (art. 17) resta una cancellazione fisica, da fare con SQL come sopra.
 - **Autenticazione a due fattori** obbligatoria per il ruolo `admin` (Keycloak la supporta già:
   *Authentication → Required actions → Configure OTP*).
 - **Backup fuori dalla macchina** (oggi la guida li salva sulla stessa macchina).

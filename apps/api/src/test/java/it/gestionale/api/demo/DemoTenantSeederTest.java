@@ -33,17 +33,17 @@ class DemoTenantSeederTest extends AbstractIntegrationTest {
     void seedsDemoTenantAndResetRestoresInitialData() {
         TenantContext.runAs(DEMO_TENANT_ID, () -> {
             assertThat(tenants.findById(DEMO_TENANT_ID)).map(Tenant::getKind).contains(TenantKind.DEMO);
-            assertThat(customers.countByTenantId(DEMO_TENANT_ID)).isEqualTo(3);
+            assertThat(customers.countByTenantIdAndDeletedAtIsNull(DEMO_TENANT_ID)).isEqualTo(3);
             assertThat(entitlements.current().plan()).isEqualTo("demo");
 
-            customers.save(new Customer(UUID.randomUUID(), DEMO_TENANT_ID, "Modifica dell'utente demo", null));
-            assertThat(customers.countByTenantId(DEMO_TENANT_ID)).isEqualTo(4);
+            customers.save(new Customer(UUID.randomUUID(), DEMO_TENANT_ID, "Modifica dell'utente demo", null, "demo"));
+            assertThat(customers.countByTenantIdAndDeletedAtIsNull(DEMO_TENANT_ID)).isEqualTo(4);
         });
 
         seeder.reset();
 
         TenantContext.runAs(DEMO_TENANT_ID, () -> {
-            assertThat(customers.countByTenantId(DEMO_TENANT_ID)).isEqualTo(3);
+            assertThat(customers.countByTenantIdAndDeletedAtIsNull(DEMO_TENANT_ID)).isEqualTo(3);
             assertThat(entitlements.current().plan()).isEqualTo("demo");
         });
     }

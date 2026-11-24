@@ -7,6 +7,9 @@ import { SyncService } from '../../core/sync/sync.service';
 import { LOCAL_DB, LocalCustomer } from '../../db/local-db';
 import { uuidv7 } from '../../shared/uuid';
 
+/** Nome dell'entità nelle API e nella outbox. */
+const ENTITY = 'customers';
+
 /** Cliente come restituito dall'API. */
 interface CustomerDto {
   id: string;
@@ -36,15 +39,19 @@ export class CustomersService {
     const tenantId = (await this.profile.load())?.tenant?.id ?? null;
     await this.sync.flush();
     try {
-      const remote = await firstValueFrom(this.http.get<CustomerDto[]>(`${this.apiUrl}/customers`));
-      const pendingIds = await this.pendingIds();
-      const local = await this.db.customers.toArray();
+      const remote = await firstValueFrom(this.http.get<CustomerDto[]>(`${this.apiUrl}/${ENTITY}`));
+      const [pending, local] = await Promise.all([
+        this.sync.pendingByEntity(ENTITY),
+        this.db.customers.toArray(),
+      ]);
+      // Un record cancellato in locale ma non ancora inviato non deve tornare dal server.
+      const arrived = remote.filter((c) => pending.get(c.id) !== 'delete');
       await this.db.customers.bulkPut(
-        remote.map((c) => ({ id: c.id, tenantId: tenantId ?? '', name: c.name, email: c.email, updatedAt: c.updatedAt })),
+        arrived.map((c) => ({ id: c.id, tenantId: tenantId ?? '', name: c.name, email: c.email, updatedAt: c.updatedAt })),
       );
       // Toglie dalla copia locale i record spariti dal server, salvo quelli ancora da inviare.
       const remoteIds = new Set(remote.map((c) => c.id));
-      const stale = local.filter((c) => !remoteIds.has(c.id) && !pendingIds.has(c.id)).map((c) => c.id);
+      const stale = local.filter((c) => !remoteIds.has(c.id) && !pending.has(c.id)).map((c) => c.id);
       await this.db.customers.bulkDelete(stale);
       this.offline.set(false);
     } catch {
@@ -64,15 +71,22 @@ export class CustomersService {
       updatedAt: new Date().toISOString(),
     };
     await this.db.customers.put(customer);
-    await this.sync.enqueue('customers', 'create', { id: customer.id, name: customer.name, email: customer.email });
+    await this.sync.enqueue(ENTITY, 'create', { id: customer.id, name: customer.name, email: customer.email });
     await this.refresh(tenantId);
     void this.sync.flush();
     return customer;
   }
 
-  private async pendingIds(): Promise<Set<string>> {
-    const entries = await this.db.outbox.toArray();
-    return new Set(entries.map((e) => (e.payload as { id: string }).id));
+  /**
+   * Cancella un cliente: scompare subito dalla copia locale e la cancellazione viene accodata
+   * (`DELETE /api/customers/{id}`, idempotente). Sul server è una cancellazione logica.
+   */
+  async remove(id: string): Promise<void> {
+    const tenantId = (await this.profile.load())?.tenant?.id ?? '';
+    await this.db.customers.delete(id);
+    await this.sync.enqueue(ENTITY, 'delete', { id });
+    await this.refresh(tenantId);
+    void this.sync.flush();
   }
 
   private async refresh(tenantId: string | null): Promise<void> {

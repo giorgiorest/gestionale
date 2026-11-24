@@ -2,12 +2,17 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { HasPermissionDirective } from '../../core/profile/has-permission.directive';
+import { ProfileService } from '../../core/profile/profile.service';
 import { SyncService } from '../../core/sync/sync.service';
+import { LocalCustomer } from '../../db/local-db';
+import { openConfirm } from '../../shared/confirm-dialog';
 import { CustomersService } from './customers.service';
 
 /** Anagrafica clienti: elenco con ricerca e inserimento rapido (funziona anche offline). */
@@ -22,6 +27,7 @@ import { CustomersService } from './customers.service';
     MatIconModule,
     MatInputModule,
     MatTableModule,
+    MatTooltipModule,
   ],
   template: `
     <div class="page">
@@ -78,10 +84,25 @@ import { CustomersService } from './customers.service';
                 }
               </td>
             </ng-container>
-            <tr mat-header-row *matHeaderRowDef="columns"></tr>
-            <tr mat-row *matRowDef="let row; columns: columns"></tr>
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef aria-label="Azioni"></th>
+              <td mat-cell *matCellDef="let c" class="actions">
+                <button
+                  mat-icon-button
+                  type="button"
+                  aria-label="Cancella il cliente"
+                  matTooltip="Cancella"
+                  [disabled]="removing() === c.id"
+                  (click)="remove(c)"
+                >
+                  <mat-icon>delete_outline</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columns()"></tr>
+            <tr mat-row *matRowDef="let row; columns: columns()"></tr>
             <tr class="mat-row" *matNoDataRow>
-              <td class="mat-cell empty" [attr.colspan]="columns.length">
+              <td class="mat-cell empty" [attr.colspan]="columns().length">
                 {{ filter() ? 'Nessun cliente corrisponde alla ricerca.' : 'Nessun cliente.' }}
               </td>
             </tr>
@@ -115,14 +136,24 @@ import { CustomersService } from './customers.service';
       padding: 16px;
       color: var(--mat-sys-on-surface-variant);
     }
+    .actions {
+      text-align: right;
+      width: 1%;
+      white-space: nowrap;
+    }
   `,
 })
 export class CustomersPage {
   readonly service = inject(CustomersService);
   readonly sync = inject(SyncService);
+  private readonly profile = inject(ProfileService);
+  private readonly dialog = inject(MatDialog);
   readonly saving = signal(false);
+  readonly removing = signal<string | null>(null);
   readonly filter = signal('');
-  readonly columns = ['name', 'email'];
+  readonly columns = computed(() =>
+    this.profile.hasPermission('customers:write') ? ['name', 'email', 'actions'] : ['name', 'email'],
+  );
   readonly rows = computed(() => {
     const q = this.filter().trim().toLowerCase();
     const all = this.service.customers();
@@ -146,6 +177,24 @@ export class CustomersPage {
       this.email = '';
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  /** Cancella il cliente, previa conferma: funziona anche offline (la modifica resta in coda). */
+  async remove(customer: LocalCustomer): Promise<void> {
+    const ok = await openConfirm(this.dialog, {
+      title: 'Cancellare il cliente?',
+      message: `${customer.name} non comparirà più in anagrafica. La cancellazione viene inviata al server appena è raggiungibile.`,
+      confirm: 'Cancella',
+    });
+    if (!ok) {
+      return;
+    }
+    this.removing.set(customer.id);
+    try {
+      await this.service.remove(customer.id);
+    } finally {
+      this.removing.set(null);
     }
   }
 }

@@ -42,7 +42,7 @@ gestionale/
 | `auth/`      | ruoli (`admin`, `operator`, `viewer`) → permessi, `GET /api/me` (profilo utente) |
 | `tenancy/`   | `TenantContext`, `TenantFilter` (tenant dal JWT), `TenantAwareDataSource` (imposta `app.tenant_id` sulla connessione) |
 | `licensing/` | `Entitlements`, `EntitlementService`, `LicenseVerifier` (licenze offline Ed25519), `GET /api/entitlements` |
-| `customers/` | anagrafica clienti: `GET /api/customers`, `PUT /api/customers/{id}` (idempotente) |
+| `customers/` | anagrafica clienti: `GET /api/customers`, `PUT /api/customers/{id}` e `DELETE /api/customers/{id}` (idempotenti; la cancellazione è logica, [ADR 0018](docs/decisioni/0018-cancellazione-logica.md)) |
 | `notifications/` | notifiche e comunicazioni ai dipendenti, presa visione, rubrica, invio email (`EmailDispatcher`) |
 | `ai/`        | `AiProvider`, `AiTool`, `NoopAiProvider` (503), quota mensile, `POST /api/ai/chat` |
 | `demo/`      | `DemoTenantSeeder` con `reset()` |
@@ -262,7 +262,7 @@ e menu laterale. Scelta e alternative: [ADR 0006](docs/decisioni/0006-interfacci
 | Permesso | admin | operator | viewer |
 |----------|:-----:|:--------:|:------:|
 | `customers:read` — consultare i clienti | ✓ | ✓ | ✓ |
-| `customers:write` — creare e modificare i clienti | ✓ | ✓ | |
+| `customers:write` — creare, modificare e cancellare i clienti | ✓ | ✓ | |
 | `assistant:use` — usare l'assistente (se incluso nel piano) | ✓ | ✓ | |
 | `notifications:send` — inviare comunicazioni ai dipendenti e vederne la presa visione | ✓ | | |
 | `users:manage` — gestire gli utenti (area da realizzare) | ✓ | | |

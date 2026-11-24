@@ -8,6 +8,7 @@ import it.gestionale.api.notifications.NotificationNotFoundException;
 import it.gestionale.api.notifications.UnknownRecipientException;
 import it.gestionale.api.tenancy.MissingTenantException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -41,6 +42,13 @@ public class ApiExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     ProblemDetail conflict(DataIntegrityViolationException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Operazione in conflitto con i dati esistenti");
+    }
+
+    /** Blocco ottimistico (@Version): un altro utente ha modificato il record nel frattempo. */
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    ProblemDetail optimisticLock(OptimisticLockingFailureException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+                "Il record è stato modificato da un altro utente: ricarica i dati e riprova");
     }
 
     @ExceptionHandler(UnknownRecipientException.class)
