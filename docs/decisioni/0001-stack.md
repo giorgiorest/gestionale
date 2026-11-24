@@ -19,7 +19,7 @@ Il team è ridotto: una sola base di codice client e un backend convenzionale ri
 | Autenticazione | OAuth2/OIDC con Keycloak 26; API come resource server JWT; `oidc-client-ts` nel frontend | Standard, open source e rivendibile, provider sostituibile; il tenant viaggia nel token (vedi [ADR 0003](0003-identita-keycloak.md)) |
 | Frontend | Angular 22 + Angular Material (in origine Ionic 9, sostituito: [ADR 0006](0006-interfaccia-angular-material.md)) | Un solo codice per web, desktop e mobile, TypeScript strict |
 | Web | PWA (`@angular/pwa`) | Installabile e utilizzabile offline senza store |
-| Mobile | Capacitor | Riusa la build web, accesso alle API native |
+| Mobile | Android con Tauri 2 (in origine Capacitor, sostituito: [ADR 0011](0011-app-android.md)) | Riusa la build web e lo stesso progetto del desktop: una toolchain sola |
 | Desktop | Tauri 2 | Binari leggeri rispetto a Electron, riusa la build web |
 | Dati offline | Dexie (IndexedDB) + outbox | API semplice, transazioni, funziona in tutti i contenitori |
 | ID | UUID v7 generati dal client | Creazioni offline senza collisioni, ordinabili nel tempo |

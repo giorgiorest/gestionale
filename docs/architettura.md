@@ -10,7 +10,7 @@ principalmente la propria parte** dei dati. Deve funzionare su web, mobile e des
 
 ```
 ┌────────────── Client (stesso codice Angular) ──────────────┐
-│  Web/PWA     Mobile (Capacitor)     Desktop (Tauri)        │
+│  Web/PWA      Desktop (Tauri)      Android (Tauri)         │
 │        IndexedDB (Dexie): dati locali + outbox             │
 └───────────────┬───────────────────────────────┬────────────┘
                 │ login OIDC (code + PKCE)      │ HTTPS + JWT
@@ -33,8 +33,11 @@ principalmente la propria parte** dei dati. Deve funzionare su web, mobile e des
 - **Marchio**: tema Material 3 di prodotto; nome, logo e colore principale personalizzabili per
   installazione da `config.json` (`BrandingService`). Font e icone inclusi nell'app.
   - **Web**: PWA con service worker (`@angular/pwa`), installabile e utilizzabile offline.
-  - **Mobile**: la stessa build impacchettata con **Capacitor** (iOS, Android).
-  - **Desktop**: la stessa build incapsulata da **Tauri 2** (`apps/desktop`).
+  - **Desktop**: la stessa build incapsulata da **Tauri 2** (`apps/desktop`), installer Windows.
+  - **Android**: la stessa build e lo stesso progetto Tauri, pacchettizzati come APK firmato
+    ([ADR 0011](decisioni/0011-app-android.md)). Desktop e Android condividono il modo di
+    riconoscersi (`isPackagedDesktopApp()`), la scelta del server al primo avvio e il client
+    OIDC `gestionale-desktop`. iOS non è previsto.
 - Il frontend nasconde la UI non inclusa nel piano (`*appHasFeature`, `featureGuard`) o non
   consentita dal ruolo (`*appHasPermission`, `permissionGuard`), ma **non è una protezione**:
   ogni controllo vale solo se ripetuto nel backend.

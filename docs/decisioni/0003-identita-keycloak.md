@@ -58,8 +58,11 @@ Nel frontend si usa `oidc-client-ts` (libreria OIDC generica), non l'adapter di 
 ### Client
 
 - `gestionale-web`: client **pubblico** con Authorization Code + **PKCE** (S256), nessun segreto
-  nell'app distribuita. Vale per web/PWA e desktop (Tauri). Per le app mobile (Capacitor) si
-  aggiungerà un client con redirect URI nativi (`it.gestionale.app://…`).
+  nell'app distribuita. Vale per web e PWA.
+- `gestionale-desktop`: stesso tipo di client, con le origini fisse del protocollo interno di
+  Tauri (`http://tauri.localhost`). Vale sia per il desktop sia per l'**app Android**, che usa
+  la stessa origine: il client con redirect URI nativi (`it.gestionale.app://…`) previsto per
+  Capacitor non serve più ([ADR 0011](0011-app-android.md)).
 - Flusso password diretto disattivato; registrazione libera disattivata (gli utenti li crea l'amministratore).
 
 ### Modelli di installazione

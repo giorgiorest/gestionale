@@ -1,0 +1,145 @@
+name: CI Android
+
+# APK Android dell'app (Tauri 2): stessa build di apps/web impacchettata per il telefono.
+#
+# L'APK è firmato con la chiave di rilascio presa dai secret del repository. Senza quei secret
+# la build si ferma con un errore (apps/desktop/src-tauri/gen/android/app/build.gradle.kts):
+# un APK non firmato non si installa e non va pubblicato per sbaglio.
+#
+# Secret richiesti (nomi, mai i valori):
+#   ANDROID_KEYSTORE_BASE64   keystore .jks codificata in base64
+#   ANDROID_KEYSTORE_PASSWORD password della keystore
+#   ANDROID_KEY_ALIAS         alias della chiave
+#   ANDROID_KEY_PASSWORD      password della chiave
+# Come generarli: apps/desktop/README.md, "APK Android".
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/desktop/**'
+      - 'apps/web/**'
+      - '.github/workflows/android.yml'
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Java 21 come apps/api (ci-api.yml): è la versione con cui girano Gradle 9 e il
+      # plugin Android generato da Tauri.
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            apps/web/package-lock.json
+            apps/desktop/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri -> target
+
+      # Android SDK: sul runner c'è già (ANDROID_HOME). L'azione accetta le licenze e lascia
+      # che Gradle scarichi da sé platform e build-tools che servono (compileSdk in build.gradle.kts).
+      - uses: android-actions/setup-android@v3
+
+      # Tauri compila la libreria Rust con il NDK: gli serve NDK_HOME.
+      - name: NDK
+        env:
+          # Usato solo se il runner non ha un NDK preinstallato.
+          NDK_FALLBACK_VERSION: '27.2.12479018'
+        run: |
+          set -euo pipefail
+          ndk="${ANDROID_NDK_LATEST_HOME:-}"
+          if [ -z "$ndk" ] || [ ! -d "$ndk" ]; then
+            echo "NDK non preinstallato sul runner: installo ndk;$NDK_FALLBACK_VERSION"
+            sdkmanager --install "ndk;$NDK_FALLBACK_VERSION"
+            ndk="$ANDROID_HOME/ndk/$NDK_FALLBACK_VERSION"
+          fi
+          echo "NDK_HOME=$ndk" >> "$GITHUB_ENV"
+          echo "NDK: $ndk"
+
+      - name: Dipendenze web
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Dipendenze desktop
+        working-directory: apps/desktop
+        run: npm ci
+
+      # key.properties e keystore vivono solo nella macchina della build e non finiscono
+      # negli artifact: stanno sotto src-tauri/gen/android/, che .gitignore esclude.
+      - name: Chiave di firma
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ANDROID_KEYSTORE_BASE64:-}" ]; then
+            echo "::error::Manca il secret ANDROID_KEYSTORE_BASE64: senza chiave l'APK di rilascio non si firma."
+            exit 1
+          fi
+          dir="apps/desktop/src-tauri/gen/android"
+          umask 077
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$dir/release.keystore"
+          {
+            echo "storeFile=release.keystore"
+            echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
+            echo "keyAlias=$ANDROID_KEY_ALIAS"
+            echo "keyPassword=$ANDROID_KEY_PASSWORD"
+          } > "$dir/key.properties"
+
+      # beforeBuildCommand (tauri.conf.json) esegue prima la build di produzione di apps/web.
+      - name: Build APK
+        working-directory: apps/desktop
+        run: npm run tauri -- android build --apk
+
+      - name: Verifica che l'APK sia firmato
+        run: |
+          set -euo pipefail
+          # -print -quit invece di "| head -1": con pipefail la pipe chiusa farebbe fallire find.
+          apk=$(find apps/desktop/src-tauri/gen/android/app/build/outputs/apk \
+            -name '*-release.apk' ! -name '*-unsigned.apk' -print -quit)
+          if [ -z "$apk" ]; then
+            echo "::error::Nessun APK di rilascio firmato prodotto dalla build."
+            exit 1
+          fi
+          echo "APK: $apk"
+          apksigner=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort | tail -1)
+          if [ -z "$apksigner" ]; then
+            echo "::error::apksigner non trovato in $ANDROID_HOME/build-tools: impossibile verificare la firma."
+            exit 1
+          fi
+          "$apksigner" verify "$apk"
+          echo "APK firmato."
+
+      - name: Pubblica l'APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: gestionale-android-apk
+          path: apps/desktop/src-tauri/gen/android/app/build/outputs/apk/**/release/*.apk
+          if-no-files-found: error
+
+      # La chiave non deve sopravvivere al job nemmeno sui runner self-hosted.
+      - name: Rimuovi la chiave di firma
+        if: always()
+        run: rm -f apps/desktop/src-tauri/gen/android/release.keystore apps/desktop/src-tauri/gen/android/key.properties

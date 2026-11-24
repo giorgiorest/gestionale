@@ -127,8 +127,8 @@
     },
     {
       "clientId": "gestionale-desktop",
-      "name": "civil beefy (app desktop)",
-      "description": "Client pubblico dell'app desktop Tauri (Authorization Code + PKCE). Origini fisse del protocollo interno di Tauri: uguali per ogni installazione.",
+      "name": "civil beefy (app desktop e Android)",
+      "description": "Client pubblico delle app impacchettate con Tauri, desktop e Android (Authorization Code + PKCE). Origini fisse del protocollo interno di Tauri: uguali per ogni installazione e per entrambe le piattaforme.",
       "enabled": true,
       "publicClient": true,
       "protocol": "openid-connect",

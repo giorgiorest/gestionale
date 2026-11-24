@@ -1,7 +1,7 @@
 # civil beefy
 
 **civil beefy** è un gestionale multi-piattaforma e multi-tenant: un'unica base di codice per **web** (PWA),
-**mobile** (Capacitor) e **desktop** (Tauri), con funzionamento **offline** e
+**desktop** (Tauri, Windows) e **Android** (Tauri, APK), con funzionamento **offline** e
 sincronizzazione verso un backend **Spring Boot** su **PostgreSQL**. Login e profili utente
 con **Keycloak** (OIDC).
 
@@ -18,7 +18,7 @@ gestionale/
 ├── apps/
 │   ├── api/             # Spring Boot 3.5, Java 21, Maven
 │   ├── web/             # Angular 22 + Angular Material, PWA, Dexie (offline), oidc-client-ts
-│   └── desktop/         # Tauri 2: app desktop Windows che incapsula la build web
+│   └── desktop/         # Tauri 2: app Windows e Android che incapsulano la build web
 ├── infra/
 │   ├── docker/          # compose per lo sviluppo locale, Dockerfile web, nginx
 │   └── keycloak/        # realm "gestionale" (configurazione come codice) e utenti demo
@@ -206,14 +206,20 @@ npm run build             # build di produzione in dist/web/browser
 npm test -- --watch=false # test unitari (Vitest)
 ```
 
-### Desktop (Windows)
+### Desktop (Windows) e Android
 
 ```bash
 cd apps/desktop
 npm install
-npm run dev               # finestra desktop collegata a ng serve (sviluppo)
-npm run build             # installer .msi e .exe in src-tauri/target/release/bundle/
+npm run dev                          # finestra desktop collegata a ng serve (sviluppo)
+npm run build                        # installer .msi e .exe in src-tauri/target/release/bundle/
+npm run tauri -- android dev         # app Android su emulatore o telefono (sviluppo)
+npm run tauri -- android build --apk # APK firmato (serve key.properties, vedi sotto)
 ```
+
+I comandi Android richiedono l'SDK Android con un NDK (`ANDROID_HOME`, `NDK_HOME`) e i target
+Rust `aarch64-linux-android` e simili; l'APK già pronto si scarica da GitHub → Actions →
+**CI Android** → artifact `gestionale-android-apk`.
 
 L'installer è unico per tutti i clienti: al primo avvio chiede l'indirizzo del server.
 Gli utenti lo scaricano dalla pagina **`/app-desktop`** del server («App per Windows», link nella
@@ -315,6 +321,7 @@ La campanella si aggiorna ogni minuto: per vedere subito una notifica appena inv
 - `ci-web.yml`: build di produzione, test e build dell'immagine web (amd64 e arm64).
 - `ci-desktop.yml`: installer Windows dell'app desktop sulle pull request (artifact `gestionale-desktop-windows`,
   non ancora firmato); su `main` lo richiama `release-images.yml`.
+- `android.yml`: APK Android firmato su `main` e a mano (artifact `gestionale-android-apk`).
 Il flusso di un rilascio:
 
 ```
@@ -332,6 +339,7 @@ automatico in attesa di approvazione (`AUTO_DEPLOY=true`, [ADR 0009](docs/decisi
 | `ci-api.yml` | PR e `main` (API) | build e test dell'API |
 | `ci-web.yml` | PR e `main` (web) | build, test, immagine web (amd64 e arm64) |
 | `ci-desktop.yml` | PR (web, desktop); richiamato dal rilascio | installer Windows (artifact `gestionale-desktop-windows`, non ancora firmato) |
+| `android.yml` | `main` (web, desktop) e a mano | APK Android firmato (artifact `gestionale-android-apk`); non ancora distribuito dal server |
 | `ci-workflows.yml` | PR (workflow, script) | actionlint e shellcheck |
 | `release-images.yml` | ogni push su `main` | installer desktop, immagini su GHCR (`sha-<commit>`, `latest`); nel riepilogo il link per installare |
 | `deploy.yml` | **a mano** dopo il rilascio (è l'approvazione) | controlla la macchina, installa un commit via SSH, verifica `/api/health`; a mano anche per tornare a un commit precedente |

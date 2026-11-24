@@ -13,6 +13,14 @@ apps/desktop/src-tauri/target/
 # Chiavi private (SSH, API)
 *.pem
 
+# Chiavi di firma Android e credenziali di build: stanno solo sulla macchina di chi compila
+# e nei GitHub Secrets (vedi apps/desktop/README.md, "APK Android").
+*.keystore
+*.jks
+key.properties
+keystore.properties
+local.properties
+
 # Installer desktop copiati nella web app dalla pipeline di rilascio
 apps/web/public/downloads/
 

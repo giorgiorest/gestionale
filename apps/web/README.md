@@ -36,7 +36,11 @@ Interfaccia unica per browser (PWA) e app desktop (Tauri). Avvio, build e test: 
 3. **Icone dell'app** (PWA e desktop), da rigenerare quando cambia il logo:
    - si parte da un PNG 1024×1024 del simbolo con sfondo trasparente e un piccolo margine;
    - desktop: da `apps/desktop`, `npx tauri icon <png-1024> -o src-tauri/icons`
-     (poi eliminare le cartelle `android` e `ios` generate, il mobile usa Capacitor);
+     (poi eliminare la cartella `ios` generata, non usata);
+   - Android: copiare le `mipmap-*` generate in
+     `src-tauri/gen/android/app/src/main/res/`, insieme a `mipmap-anydpi-v26/ic_launcher.xml` e
+     `values/ic_launcher_background.xml`. Il `ic_launcher_foreground.png` di ogni densità va
+     rimpicciolito al 66% su sfondo trasparente: fuori da quella zona il launcher lo ritaglia;
    - favicon: copiare `apps/desktop/src-tauri/icons/icon.ico` in `public/favicon.ico`;
    - PWA: `public/icons/icon-NNxNN.png` nelle dimensioni del manifest.
 
