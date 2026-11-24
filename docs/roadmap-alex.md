@@ -30,11 +30,16 @@ questa tabella (vedi [ADR 0013](decisioni/0013-numerazione-migrazioni.md)).
 
 ---
 
+> **Nota su A.1**: non esiste un ruolo `MANAGER` a parte — il ruolo `admin` già esistente (tutte le
+> funzioni) corrisponde al "manager o proprietà" del collega. Dove le voci sotto dicono "manager" o
+> "amministrativo" si intende: `admin` per il primo, il nuovo ruolo `amministrativo` per il secondo
+> (accesso limitato, mai a rapportini/contabilità/pianificazione).
+
 ## Fase A — Personale di cantiere: ruoli, ore, assenze e scadenze
 
 | PR | Contenuto | Migr. | Stato |
 |----|-----------|-------|-------|
-| A.1 | Ruoli di cantiere (capocantiere, caposquadra, operaio) oltre ai ruoli già esistenti: permessi e viste associate | da assegnare | ⬜ |
+| A.1 | Ruoli di cantiere (capocantiere, caposquadra, operaio, amministrativo) oltre ai ruoli già esistenti: nessun permesso proprio ancora (lo aggiunge ogni PR successiva che introduce la relativa funzione) | — | ✅ |
 | A.2 | Rapportino ore: inserimento giornaliero dell'operaio (ore + lavorazione svolta), invio al capocantiere | da assegnare | ⬜ |
 | A.3 | Verifica e conferma ore da parte del capocantiere, con evidenza delle differenze operaio↔capocantiere (vince il capocantiere) | — | ⬜ |
 | A.4 | Caposquadra: gestione ore e lavorazioni di tutta la squadra, con applicazione collettiva | — | ⬜ |

@@ -10,12 +10,20 @@ import java.util.Set;
  * così cambiare cosa può fare un ruolo non richiede di toccare Keycloak.
  */
 public enum Role {
-    /** Amministratore del tenant: tutte le funzioni. */
+    /** Amministratore del tenant: tutte le funzioni. È anche il ruolo di manager/proprietà dell'azienda. */
     ADMIN("admin", EnumSet.allOf(Permission.class)),
     /** Operatore: lavora sui dati e usa l'assistente. */
     OPERATOR("operator", EnumSet.of(Permission.CUSTOMERS_READ, Permission.CUSTOMERS_WRITE, Permission.ASSISTANT_USE)),
     /** Consultazione: sola lettura. */
-    VIEWER("viewer", EnumSet.of(Permission.CUSTOMERS_READ));
+    VIEWER("viewer", EnumSet.of(Permission.CUSTOMERS_READ)),
+    /** Capocantiere: verifica e conferma il lavoro delle squadre sul cantiere. Permessi aggiunti dalle PR che introducono le relative funzioni. */
+    CAPOCANTIERE("capocantiere", EnumSet.noneOf(Permission.class)),
+    /** Caposquadra: coordina la propria squadra sul cantiere. Permessi aggiunti dalle PR che introducono le relative funzioni. */
+    CAPOSQUADRA("caposquadra", EnumSet.noneOf(Permission.class)),
+    /** Operaio: lavora sul cantiere (ore, rapportini). Permessi aggiunti dalle PR che introducono le relative funzioni. */
+    OPERAIO("operaio", EnumSet.noneOf(Permission.class)),
+    /** Amministrativo: personale d'ufficio con accesso limitato (materiali, personale, attrezzature, fornitori, archivio), mai a rapportini, contabilità o pianificazione. Permessi aggiunti dalle PR che introducono le relative funzioni. */
+    AMMINISTRATIVO("amministrativo", EnumSet.noneOf(Permission.class));
 
     private final String code;
     private final Set<Permission> permissions;

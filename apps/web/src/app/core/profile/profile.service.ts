@@ -19,6 +19,10 @@ export const ROLE_LABELS: Record<string, string> = {
   admin: 'Amministratore',
   operator: 'Operatore',
   viewer: 'Consultazione',
+  capocantiere: 'Capocantiere',
+  caposquadra: 'Caposquadra',
+  operaio: 'Operaio',
+  amministrativo: 'Amministrativo',
 };
 
 /** Etichette dei permessi. */
