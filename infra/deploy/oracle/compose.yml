@@ -30,7 +30,8 @@ services:
       APP_DOMAIN: ${APP_DOMAIN:?impostare APP_DOMAIN nel .env}
       ACME_EMAIL: ${ACME_EMAIL:?impostare ACME_EMAIL nel .env}
       # Reti da cui raggiungere console di piattaforma e login degli amministratori (vuoto = tutte).
-      ADMIN_ALLOWED_IPS: ${ADMIN_ALLOWED_IPS:-}
+      # ":-" sostituisce anche il valore VUOTO: a Caddy un elenco vuoto bloccherebbe tutti.
+      ADMIN_ALLOWED_IPS: ${ADMIN_ALLOWED_IPS:-0.0.0.0/0 ::/0}
     ports:
       - "80:80"
       - "443:443"
