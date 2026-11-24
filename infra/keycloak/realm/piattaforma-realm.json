@@ -1,0 +1,146 @@
+{
+  "realm": "piattaforma",
+  "displayName": "civil beefy · amministrazione",
+  "displayNameHtml": "<div class=\"kc-logo-text\"><span>civil beefy · amministrazione</span></div>",
+  "loginTheme": "gestionale",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "rememberMe": false,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "failureFactor": 5,
+  "waitIncrementSeconds": 60,
+  "maxFailureWaitSeconds": 900,
+  "maxDeltaTimeSeconds": 43200,
+  "passwordPolicy": "length(14) and notUsername and notEmail and passwordHistory(5)",
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyDigits": 6,
+  "otpPolicyPeriod": 30,
+  "otpPolicyLookAheadWindow": 1,
+  "internationalizationEnabled": true,
+  "supportedLocales": ["it", "en"],
+  "defaultLocale": "it",
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 900,
+  "ssoSessionMaxLifespan": 28800,
+  "eventsEnabled": true,
+  "eventsExpiration": 31536000,
+  "adminEventsEnabled": true,
+  "adminEventsDetailsEnabled": false,
+  "browserFlow": "browser-otp-obbligatoria",
+  "authenticationFlows": [
+    {
+      "alias": "browser-otp-obbligatoria",
+      "description": "Accesso degli amministratori: password e codice OTP sempre obbligatori",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-cookie",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorFlow": true,
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "flowAlias": "browser-otp-obbligatoria moduli",
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "browser-otp-obbligatoria moduli",
+      "description": "Nome utente e password, poi codice OTP (da configurare al primo accesso)",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-username-password-form",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "auth-otp-form",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "platform-admin",
+        "description": "Amministratore della piattaforma: gestisce aziende, licenze e utenti di tutte le aziende"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "gestionale-console",
+      "name": "civil beefy · console di piattaforma",
+      "description": "Client pubblico con Authorization Code + PKCE della console /console",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": true,
+      "fullScopeAllowed": true,
+      "redirectUris": ["${GESTIONALE_WEB_URL:http://localhost:4200}/console/*"],
+      "webOrigins": ["${GESTIONALE_WEB_URL:http://localhost:4200}"],
+      "rootUrl": "${GESTIONALE_WEB_URL:http://localhost:4200}",
+      "baseUrl": "/console/",
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "${GESTIONALE_WEB_URL:http://localhost:4200}/console/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "audience gestionale-platform",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "gestionale-platform",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ]
+}

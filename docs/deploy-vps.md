@@ -145,7 +145,8 @@ via `sudo`, il workflow:
 4. SSH **solo con chiave**, niente accesso di root;
 5. installa Docker e Compose, mette `ubuntu` nel gruppo `docker`;
 6. crea `/opt/civilbeefy` e il **`.env` con password casuali**, solo se non esiste già (le password
-   nascono sulla macchina e non passano mai da GitHub);
+   nascono sulla macchina e non passano mai da GitHub); in un `.env` esistente aggiunge solo le voci
+   introdotte dopo (es. il segreto della console di piattaforma);
 7. backup del database ogni notte alle 3 in `/opt/civilbeefy/backup`, 14 giorni di storico.
 
 È idempotente: si può rilanciare (es. dopo aver cambiato fornitore o per rimettere in ordine la
@@ -187,11 +188,15 @@ La prima volta Keycloak e il certificato richiedono 1–2 minuti. Poi apri `http
 L'app per Windows si scarica da `https://<dominio>/app-desktop` (link «App per Windows» nella pagina
 di accesso); al primo avvio chiede l'indirizzo del server, mostrato nella stessa pagina.
 
-## 8. Primo accesso e utenti
+## 8. Primo accesso: console di piattaforma
 
-Console su `https://<dominio>/sso/admin` con `admin` e la password del passo 6; crea un
-amministratore nominativo, poi gli utenti del realm `gestionale` con l'attributo `tenant_id`:
-[gestione-utenti-e-aziende.md](gestione-utenti-e-aziende.md).
+Aziende, licenze e utenti si gestiscono dalla **console di piattaforma** su `https://<dominio>/console`
+(password + codice OTP; i dipendenti non possono entrarci). La prima volta crea il tuo account di
+amministratore della piattaforma nella console di Keycloak (realm `piattaforma`), poi lavori solo
+nella console: [console-piattaforma.md](console-piattaforma.md).
+
+Per un'installazione già avviata prima della console: lancia **Prepara server** (aggiunge al `.env`
+il segreto della console) e poi **Deploy**.
 
 ## 9. Dopo
 
@@ -244,4 +249,6 @@ Dopo `usermod` esci e ricollegati. Per il `.env` copia
 | Deploy: *APP_DOMAIN … non è* / *ACME_EMAIL … non valido* | Correggi `/opt/civilbeefy/.env` o la variabile dell'environment |
 | Il deploy non parte dopo un merge | Manca `AUTO_DEPLOY = true` tra le variabili del repository, oppure *Release immagini* è fallito |
 | Il deploy è partito senza chiedere approvazione | Mancano i *Required reviewers* nell'environment `production`: aggiungili subito |
+| Console: *Accesso amministrativo non consentito da questa rete* | `ADMIN_ALLOWED_IPS` nel `.env` non comprende la tua rete ([console-piattaforma.md](console-piattaforma.md)) |
+| Deploy: *Manca PLATFORM_KEYCLOAK_CLIENT_SECRET* | Lancia **Prepara server**, che lo aggiunge al `.env` |
 | Il sito non ha il certificato | Porte 80/443 chiuse (firewall del fornitore) o DNS non aggiornato; log: `docker compose logs caddy` |

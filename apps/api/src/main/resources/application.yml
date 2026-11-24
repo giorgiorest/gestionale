@@ -68,6 +68,17 @@ gestionale:
   demo:
     # Il seeder del tenant demo è disattivato salvo configurazione esplicita.
     enabled: false
+  platform:
+    # Console di amministrazione della piattaforma (ADR 0010): realm separato degli amministratori.
+    jwt:
+      # Issuer pubblico del realm "piattaforma"; vuoto = console disattivata (ogni richiesta 401).
+      issuer-uri: ${PLATFORM_JWT_ISSUER_URI:}
+      # Chiavi di firma dalla rete interna (facoltativo).
+      jwk-set-uri: ${PLATFORM_JWK_SET_URI:}
+    keycloak:
+      # Gestione degli utenti delle aziende: indirizzo interno di Keycloak e client di servizio.
+      base-url: ${PLATFORM_KEYCLOAK_URL:}
+      client-secret: ${PLATFORM_KEYCLOAK_CLIENT_SECRET:}
   ai:
     # Provider AI: "none" usa NoopAiProvider (risponde 503).
     provider: ${AI_PROVIDER:none}
@@ -101,6 +112,13 @@ spring:
 gestionale:
   demo:
     enabled: ${DEMO_ENABLED:true}
+  platform:
+    jwt:
+      issuer-uri: ${PLATFORM_JWT_ISSUER_URI:http://localhost:8180/realms/piattaforma}
+    keycloak:
+      base-url: ${PLATFORM_KEYCLOAK_URL:http://localhost:8180}
+      # Solo sviluppo locale (stesso valore di infra/docker/compose.yml); in produzione dal .env.
+      client-secret: ${PLATFORM_KEYCLOAK_CLIENT_SECRET:sviluppo-locale-non-usare-in-produzione}
   notifications:
     email:
       enabled: ${EMAIL_ENABLED:true}

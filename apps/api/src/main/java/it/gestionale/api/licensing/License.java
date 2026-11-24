@@ -60,6 +60,39 @@ public class License {
         this.validUntil = validUntil;
     }
 
+    /** Modifica dalla console di piattaforma (solo licenze online, non firmate). */
+    public void update(String plan, int maxUsers, Set<String> features, int aiQuotaMonthly, Instant validUntil) {
+        this.plan = plan;
+        this.maxUsers = maxUsers;
+        this.features = new HashSet<>(features);
+        this.aiQuotaMonthly = aiQuotaMonthly;
+        this.validUntil = validUntil;
+    }
+
+    public String getPlan() {
+        return plan;
+    }
+
+    public int getMaxUsers() {
+        return maxUsers;
+    }
+
+    public Set<String> getFeatures() {
+        return Set.copyOf(features);
+    }
+
+    public int getAiQuotaMonthly() {
+        return aiQuotaMonthly;
+    }
+
+    public Instant getValidFrom() {
+        return validFrom;
+    }
+
+    public Instant getValidUntil() {
+        return validUntil;
+    }
+
     public Entitlements toEntitlements() {
         return new Entitlements(plan, maxUsers, features, aiQuotaMonthly, validUntil);
     }

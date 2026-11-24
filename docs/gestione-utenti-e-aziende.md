@@ -1,8 +1,11 @@
 # Gestire utenti, ruoli e aziende
 
-Come si amministra un'installazione di civil beefy: utenti e ruoli in **Keycloak**, aziende clienti
-(tenant) e licenze nel **database**. Un'area di amministrazione nell'app è prevista ma non ancora
-disponibile: per ora le aziende si creano con un comando SQL.
+Come si amministra un'installazione di civil beefy: aziende clienti (tenant), licenze e utenti.
+
+> **Il modo normale è la [console di piattaforma](console-piattaforma.md)** (`https://<dominio>/console`):
+> crei l'azienda, la sua licenza e i suoi utenti senza SQL né console di Keycloak. Questa guida spiega
+> come è organizzato il sistema e le procedure manuali, utili in emergenza o per operazioni che la
+> console non fa (es. chiusura definitiva di un'azienda).
 
 ## Come è organizzato
 
@@ -23,10 +26,14 @@ Keycloak (realm "gestionale")                 Database (PostgreSQL)
 - In alto a sinistra scegli il realm **gestionale** (non *master*, che serve solo agli amministratori
   di Keycloak).
 
-Al primo accesso in produzione crea un amministratore nominativo ed elimina quello temporaneo
-(guida di deploy, passo 7).
+L'utente `admin` del realm *master* (password nel `.env`) resta: lo usa il servizio `keycloak-setup`
+per allineare la configurazione. Gli amministratori della piattaforma stanno nel realm **piattaforma**
+([console-piattaforma.md](console-piattaforma.md#primo-accesso-una-volta-sul-server-di-produzione)).
 
 ## Utenti
+
+Dalla console di piattaforma: pagina dell'azienda → *Utenti → Nuovo utente* (il `tenant_id` si
+assegna da solo). A mano, nella console di Keycloak:
 
 ### Aggiungere un utente
 
@@ -79,6 +86,10 @@ sostituibile).
 Lo stesso vale per un nuovo **permesso** su un ruolo esistente (solo passi 2–4).
 
 ## Aziende (tenant)
+
+Dalla console di piattaforma: *Aziende → Nuova azienda*, poi licenza, sospensione e riattivazione
+nella pagina dell'azienda. Le procedure SQL qui sotto restano per emergenze e per la chiusura
+definitiva.
 
 Ogni azienda cliente è una riga in `tenants` con una licenza in `licenses`. L'azienda demo
 (`00000000-0000-7000-8000-00000000de00`) la crea l'API da sola se `DEMO_ENABLED=true`.
@@ -140,7 +151,6 @@ vedrebbe anche gli utenti delle altre aziende.
 
 ### In futuro
 
-- **Area di amministrazione** nell'app per creare aziende, licenze e utenti senza SQL né console.
-- In alternativa per i clienti più grandi: un **realm** o un'**installazione dedicata** per cliente,
+- Per i clienti più grandi: un **realm** o un'**installazione dedicata** per cliente,
   con il loro amministratore e, se serve, l'accesso con l'account aziendale (Microsoft Entra ID,
   Google Workspace) tramite *Identity providers* di Keycloak.

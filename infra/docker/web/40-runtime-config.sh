@@ -6,7 +6,9 @@
 # Obbligatoria: OIDC_AUTHORITY
 # Facoltative:  WEB_API_URL, OIDC_CLIENT_ID, OIDC_DESKTOP_CLIENT_ID,
 #               BRAND_NAME, BRAND_LOGO_URL, BRAND_PRIMARY_COLOR e BRAND_ACCENT_COLOR (#RRGGBB),
-#               LEGAL_PRIVACY_URL e LEGAL_TERMS_URL (informativa privacy e condizioni d'uso)
+#               LEGAL_PRIVACY_URL e LEGAL_TERMS_URL (informativa privacy e condizioni d'uso),
+#               CONSOLE_OIDC_AUTHORITY e CONSOLE_CLIENT_ID (console di piattaforma su /console;
+#               default: stesso Keycloak, realm "piattaforma", client "gestionale-console")
 set -eu
 
 : "${OIDC_AUTHORITY:?impostare OIDC_AUTHORITY (es. https://login.example.com/realms/gestionale)}"
@@ -56,6 +58,9 @@ add_legal() {
 add_legal privacyUrl "${LEGAL_PRIVACY_URL:-}"
 add_legal termsUrl "${LEGAL_TERMS_URL:-}"
 
+# Console di piattaforma: realm degli amministratori, per default accanto a quello delle aziende.
+console_authority="${CONSOLE_OIDC_AUTHORITY:-$(echo "$OIDC_AUTHORITY" | sed 's#/realms/[^/]*$#/realms/piattaforma#')}"
+
 cat > /usr/share/nginx/html/config.json <<EOF
 {
   "apiUrl": "${WEB_API_URL:-/api}",
@@ -67,6 +72,10 @@ cat > /usr/share/nginx/html/config.json <<EOF
   "branding": {${branding}
   },
   "legal": {${legal}
+  },
+  "console": {
+    "authority": "${console_authority}",
+    "clientId": "${CONSOLE_CLIENT_ID:-gestionale-console}"
   }
 }
 EOF

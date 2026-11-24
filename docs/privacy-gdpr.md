@@ -74,6 +74,8 @@ Il database locale contiene dati personali. Per non lasciarli a chi usa lo stess
 | **Password** di almeno 10 caratteri, diverse da nome utente ed email; **blocco** dopo 10 tentativi falliti | realm `gestionale` |
 | Sessione: scade dopo **30 minuti** di inattività, al massimo **10 ore** | realm `gestionale` |
 | **Registro degli accessi** (login riusciti e falliti, IP) conservato **90 giorni**; registro delle operazioni degli amministratori | realm `gestionale` (eventi) |
+| Amministrazione della piattaforma con account separati, **OTP obbligatoria**, nessun accesso ai dati di dominio delle aziende, **registro delle operazioni** (`platform_audit`) | console di piattaforma, ADR 0010 |
+| Sospensione immediata di un'azienda; disattivazione di un utente con chiusura delle sessioni | console di piattaforma |
 | Dischi della macchina **cifrati** dal fornitore cloud (Oracle: sempre) | infrastruttura |
 | Nessun segreto nel codice; segreti di produzione solo sulla macchina e nei GitHub Secrets | `CLAUDE.md` |
 | Dati personali verso l'AI solo se necessari e con DPA del tenant | modulo `ai/` |
@@ -122,4 +124,4 @@ Le operazioni sul database si fanno sulla macchina, con l'utente amministratore 
 - **Autenticazione a due fattori** obbligatoria per il ruolo `admin` (Keycloak la supporta già:
   *Authentication → Required actions → Configure OTP*).
 - **Backup fuori dalla macchina** (oggi la guida li salva sulla stessa macchina).
-- Limite di utenti della licenza (`max_users`) non ancora applicato.
+- Esportazione dei dati di un'azienda dalla console (oggi: backup o SQL).

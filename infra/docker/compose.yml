@@ -75,9 +75,15 @@ services:
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       # Indirizzo della web app, usato nel realm per redirect e CORS.
       GESTIONALE_WEB_URL: ${GESTIONALE_WEB_URL:-http://localhost:4200}
+      # Segreto del client di servizio della console: SOLO per lo sviluppo locale (stesso valore
+      # del profilo dev dell'API). In produzione arriva dal .env del server.
+      PLATFORM_KEYCLOAK_CLIENT_SECRET: sviluppo-locale-non-usare-in-produzione
     volumes:
       - ../keycloak/realm/gestionale-realm.json:/opt/keycloak/data/import/gestionale-realm.json:ro,z
       - ../keycloak/dev/gestionale-users-0.json:/opt/keycloak/data/import/gestionale-users-0.json:ro,z
+      # Console di piattaforma: realm degli amministratori (OTP obbligatoria) e amministratore demo.
+      - ../keycloak/realm/piattaforma-realm.json:/opt/keycloak/data/import/piattaforma-realm.json:ro,z
+      - ../keycloak/dev/piattaforma-users-0.json:/opt/keycloak/data/import/piattaforma-users-0.json:ro,z
       # Tema della pagina di login (logo, colori e font dell'applicazione).
       - ../keycloak/themes/gestionale:/opt/keycloak/themes/gestionale:ro,z
     ports:
@@ -110,6 +116,11 @@ services:
       JWT_ISSUER_URI: ${KEYCLOAK_URL:-http://localhost:8180}/realms/gestionale
       # Le chiavi di firma si leggono dalla rete interna; l'issuer resta quello pubblico.
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/gestionale/protocol/openid-connect/certs
+      # Console di piattaforma.
+      PLATFORM_JWT_ISSUER_URI: ${KEYCLOAK_URL:-http://localhost:8180}/realms/piattaforma
+      PLATFORM_JWK_SET_URI: http://keycloak:8080/realms/piattaforma/protocol/openid-connect/certs
+      PLATFORM_KEYCLOAK_URL: http://keycloak:8080
+      PLATFORM_KEYCLOAK_CLIENT_SECRET: sviluppo-locale-non-usare-in-produzione
       LICENSE_PUBLIC_KEY: ${LICENSE_PUBLIC_KEY:-}
       # Email delle notifiche (in produzione: SMTP reale e mittente dell'azienda).
       EMAIL_ENABLED: ${EMAIL_ENABLED:-true}

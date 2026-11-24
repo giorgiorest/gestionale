@@ -106,24 +106,34 @@ jobs:
           [ -f "$dir/.env" ] || { echo "::error::Manca $dir/.env sulla macchina: lancia il workflow Prepara server (docs/deploy-vps.md)."; exit 1; }
           grep -qx "APP_DOMAIN=$domain" "$dir/.env" || { echo "::error::APP_DOMAIN nel .env della macchina non è $domain (variabile APP_DOMAIN dell'environment)."; exit 1; }
           grep -Eq '^ACME_EMAIL=[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$' "$dir/.env" || { echo "::error::ACME_EMAIL nel .env non è un indirizzo email valido: serve a Let's Encrypt per il certificato."; exit 1; }
+          grep -Eq '^PLATFORM_KEYCLOAK_CLIENT_SECRET=.{32,}$' "$dir/.env" || { echo "::error::Manca PLATFORM_KEYCLOAK_CLIENT_SECRET nel .env (console di piattaforma): lancia il workflow Prepara server, che lo aggiunge."; exit 1; }
           free=$(df -Pk "$dir" | awk 'NR==2 {print int($4 / 1048576)}')
           [ "$free" -ge 5 ] || echo "::warning::Sulla macchina restano solo $free GB liberi."
           echo "Macchina pronta: $(docker --version), $free GB liberi."
           EOF
 
       - name: Copia la configurazione sulla macchina
+        id: config
         working-directory: release
         run: |
-          ssh server "mkdir -p '$APP_DIR/keycloak/realm' '$APP_DIR/keycloak/themes'"
+          ssh server "mkdir -p '$APP_DIR/keycloak/realm' '$APP_DIR/keycloak/themes' '$APP_DIR/keycloak/setup'"
+          # Impronta dei realm prima della copia: se cambiano, Keycloak va riavviato per importare i nuovi.
+          before=$(ssh server "cat '$APP_DIR'/keycloak/realm/*.json 2> /dev/null | sha256sum")
           scp infra/deploy/oracle/compose.yml infra/deploy/oracle/Caddyfile server:"$APP_DIR/"
-          scp infra/keycloak/realm/gestionale-realm.json server:"$APP_DIR/keycloak/realm/"
+          # Solo i realm di prodotto (mai gli utenti demo di infra/keycloak/dev); via i file non più usati.
+          ssh server "rm -f '$APP_DIR'/keycloak/realm/*.json"
+          scp infra/keycloak/realm/*.json server:"$APP_DIR/keycloak/realm/"
+          if [ -d infra/keycloak/setup ]; then scp infra/keycloak/setup/*.sh server:"$APP_DIR/keycloak/setup/"; fi
           tar -C infra/keycloak/themes -cf - gestionale | ssh server "rm -rf '$APP_DIR/keycloak/themes/gestionale' && tar -C '$APP_DIR/keycloak/themes' -xf -"
+          after=$(ssh server "cat '$APP_DIR'/keycloak/realm/*.json | sha256sum")
+          if [ "$before" != "$after" ]; then echo "realm_changed=true" >> "$GITHUB_OUTPUT"; fi
 
       - name: Aggiorna i servizi
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.version.outputs.tag }}
           ACTOR: ${{ github.actor }}
+          REALM_CHANGED: ${{ steps.config.outputs.realm_changed }}
         run: |
           # La configurazione (compose + .env) deve essere completa prima di scaricare qualcosa.
           ssh server "cd '$APP_DIR' && docker compose config -q"
@@ -135,8 +145,19 @@ jobs:
             docker compose pull --quiet || { docker logout ghcr.io; exit 1; }
             docker logout ghcr.io
             docker compose up -d --remove-orphans
+            # Keycloak importa i realm nuovi solo all'avvio; poi l'allineamento della configurazione.
+            if [ '$REALM_CHANGED' = 'true' ]; then docker compose restart keycloak keycloak-setup; fi
             docker image prune -f > /dev/null
             docker compose ps"
+          # Esito dell'allineamento di Keycloak (keycloak-setup): solo informativo.
+          ssh server bash -s "$APP_DIR" <<'EOF' || true
+          cd "$1"
+          for _ in $(seq 1 72); do
+            [ "$(docker compose ps -a --format '{{.State}}' keycloak-setup)" = running ] || break
+            sleep 5
+          done
+          docker compose logs --no-log-prefix keycloak-setup | tail -n 8
+          EOF
 
       - name: Verifica
         env:

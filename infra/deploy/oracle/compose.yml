@@ -29,6 +29,8 @@ services:
     environment:
       APP_DOMAIN: ${APP_DOMAIN:?impostare APP_DOMAIN nel .env}
       ACME_EMAIL: ${ACME_EMAIL:?impostare ACME_EMAIL nel .env}
+      # Reti da cui raggiungere console di piattaforma e login degli amministratori (vuoto = tutte).
+      ADMIN_ALLOWED_IPS: ${ADMIN_ALLOWED_IPS:-}
     ports:
       - "80:80"
       - "443:443"
@@ -109,14 +111,33 @@ services:
       KC_HTTP_ENABLED: "true"
       KC_PROXY_HEADERS: xforwarded
       KC_HEALTH_ENABLED: "true"
-      # Amministratore temporaneo, usato solo al primo avvio: poi crearne uno nominativo e rimuoverlo.
+      # Amministratore di Keycloak (realm master): creato al primo avvio, usato anche da keycloak-setup.
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?impostare KEYCLOAK_ADMIN_PASSWORD nel .env}
       # Indirizzo della web app nel realm (redirect e CORS).
       GESTIONALE_WEB_URL: https://${APP_DOMAIN}
+      # Segreto del client di servizio della console (realm gestionale), sostituito all'import.
+      PLATFORM_KEYCLOAK_CLIENT_SECRET: ${PLATFORM_KEYCLOAK_CLIENT_SECRET:?impostare PLATFORM_KEYCLOAK_CLIENT_SECRET nel .env (workflow Prepara server)}
     volumes:
-      - ./keycloak/realm/gestionale-realm.json:/opt/keycloak/data/import/gestionale-realm.json:ro
+      # Realm di prodotto: gestionale (aziende) e piattaforma (amministratori, OTP obbligatoria).
+      - ./keycloak/realm:/opt/keycloak/data/import:ro
       - ./keycloak/themes/gestionale:/opt/keycloak/themes/gestionale:ro
+
+  # Allinea Keycloak nelle installazioni esistenti (client di servizio della console): idempotente.
+  keycloak-setup:
+    image: quay.io/keycloak/keycloak:26.8.2
+    restart: "no"
+    logging: *logging
+    depends_on:
+      - keycloak
+    entrypoint: ["/bin/bash", "/setup/keycloak-setup.sh"]
+    environment:
+      KC_SERVER: http://keycloak:8080/sso
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?impostare KEYCLOAK_ADMIN_PASSWORD nel .env}
+      PLATFORM_KEYCLOAK_CLIENT_SECRET: ${PLATFORM_KEYCLOAK_CLIENT_SECRET:?impostare PLATFORM_KEYCLOAK_CLIENT_SECRET nel .env}
+    volumes:
+      - ./keycloak/setup:/setup:ro
 
   api:
     image: ${IMAGE_REGISTRY:?impostare IMAGE_REGISTRY nel .env}/gestionale-api:${IMAGE_TAG:-latest}
@@ -149,6 +170,11 @@ services:
       LICENSE_PUBLIC_KEY: ${LICENSE_PUBLIC_KEY:-}
       AI_PROVIDER: ${AI_PROVIDER:-none}
       AI_API_KEY: ${AI_API_KEY:-}
+      # Console di piattaforma (ADR 0010): token del realm degli amministratori e gestione utenti.
+      PLATFORM_JWT_ISSUER_URI: https://${APP_DOMAIN}/sso/realms/piattaforma
+      PLATFORM_JWK_SET_URI: http://keycloak:8080/sso/realms/piattaforma/protocol/openid-connect/certs
+      PLATFORM_KEYCLOAK_URL: http://keycloak:8080/sso
+      PLATFORM_KEYCLOAK_CLIENT_SECRET: ${PLATFORM_KEYCLOAK_CLIENT_SECRET:?impostare PLATFORM_KEYCLOAK_CLIENT_SECRET nel .env}
 
   web:
     image: ${IMAGE_REGISTRY:?impostare IMAGE_REGISTRY nel .env}/gestionale-web:${IMAGE_TAG:-latest}
@@ -164,6 +190,8 @@ services:
       BRAND_ACCENT_COLOR: ${BRAND_ACCENT_COLOR:-}
       LEGAL_PRIVACY_URL: ${LEGAL_PRIVACY_URL:-}
       LEGAL_TERMS_URL: ${LEGAL_TERMS_URL:-}
+      # Console di piattaforma su /console: login nel realm degli amministratori.
+      CONSOLE_OIDC_AUTHORITY: https://${APP_DOMAIN}/sso/realms/piattaforma
 
 volumes:
   db-data:
