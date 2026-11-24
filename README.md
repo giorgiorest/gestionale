@@ -31,6 +31,9 @@ gestionale/
 │   ├── architettura.md
 │   ├── roadmap.md       # lavoro da fare, una voce = una pull request
 │   └── decisioni/       # ADR
+├── .claude/
+│   ├── hooks/           # hook SessionStart: contesto della sessione (branch, PR, roadmap, Flyway)
+│   └── settings.json    # permessi di progetto e registrazione degli hook
 ├── CLAUDE.md            # regole per le sessioni di Claude Code
 └── README.md
 ```
@@ -324,6 +327,23 @@ Dettagli: [ADR 0005](docs/decisioni/0005-notifiche.md).
 
 La campanella si aggiorna ogni minuto: per vedere subito una notifica appena inviata ricarica la pagina.
 
+## Sessioni di lavoro (Claude Code)
+
+L'hook `SessionStart` in `.claude/hooks/session-start.sh`, registrato in `.claude/settings.json`,
+stampa all'avvio di ogni sessione il contesto minimo per cominciare: branch e scostamento da
+`origin/main`, pull request aperta su quel branch (REST di GitHub via `gh`), prima voce non
+completata di [docs/roadmap.md](docs/roadmap.md) e primo numero Flyway libero
+([ADR 0013](docs/decisioni/0013-numerazione-migrazioni.md)).
+
+Sta sotto le dieci righe di proposito: quello che stampa occupa contesto a ogni sessione. Non
+installa niente, non scrive niente e non fa `fetch`; se GitHub non è raggiungibile o manca `gh`, la
+riga della PR dice solo che non è stata verificata. Su `source: resume` non stampa nulla, perché la
+sessione riprende con il suo contesto.
+
+```bash
+echo '{"source":"startup"}' | .claude/hooks/session-start.sh   # prova a mano
+```
+
 ## CI e deploy
 
 - `ci-api.yml`: build e test dell'API.
@@ -353,7 +373,7 @@ la richiesta scade e si può sempre lanciare **Deploy** a mano ([ADR 0009](docs/
 | `ci-web.yml` | PR e `main` (web) | build, test, immagine web (amd64 e arm64) |
 | `ci-desktop.yml` | PR (web, desktop); richiamato dal rilascio | installer Windows (artifact `gestionale-desktop-windows`, non ancora firmato) |
 | `android.yml` | PR (web, desktop); richiamato dal rilascio | APK Android firmato (artifact `gestionale-android-apk`) |
-| `ci-workflows.yml` | PR (workflow, script) | actionlint e shellcheck |
+| `ci-workflows.yml` | PR (workflow, script, hook) | actionlint e shellcheck |
 | `release-images.yml` | ogni push su `main` | installer desktop, immagini su GHCR (`sha-<commit>`, `latest`), approvazione con `/deploy` su un'issue, poi deploy |
 | `deploy.yml` | dal rilascio dopo `/deploy`, o a mano | controlla la macchina, installa un commit via SSH, verifica `/api/health`; a mano anche per tornare a un commit precedente |
 | `prepare-server.yml` | a mano | prepara o rimette in ordine il server: aggiornamenti, firewall, SSH, Docker, `.env`, backup |

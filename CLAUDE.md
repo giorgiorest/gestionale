@@ -18,6 +18,9 @@ sostituito, perché lo usano configurazioni, token e installazioni esistenti.
 ## Ambiente di lavoro
 
 - Il progetto gira in Claude Code sul web, con GitHub collegato. `gh` è preconfigurato per la rete della sessione: preferiscilo a `curl` per le operazioni GitHub.
+- A ogni avvio di sessione l'hook `SessionStart` (`.claude/hooks/session-start.sh`) stampa branch,
+  pull request aperta, prima voce di roadmap non completata e primo numero Flyway libero: parti da
+  quelle righe invece di ricostruire lo stato con `git log` e letture di file.
 - Il repository del progetto è `<owner>/gestionale`, privato. Se il repository non esiste ancora, crealo solo quando l'utente lo chiede esplicitamente nel task.
 - Le modifiche si fanno su branch dedicati (`feat/…`, `fix/…`, `chore/…`), non direttamente su `main`.
 - Per integrare il lavoro apri una pull request con `gh pr create`: titolo in stile Conventional Commits, descrizione con cosa cambia, perché, e come è stato testato.
