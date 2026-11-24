@@ -108,41 +108,42 @@ jobs:
 
   # Approvazione nello stesso run: un'issue «Rilascio pronto» e l'attesa del commento /deploy.
   # I Required reviewers degli environment, nei repository privati, richiedono GitHub Enterprise.
-  approvazione:
-    needs: image
-    if: vars.AUTO_DEPLOY != 'true'
-    runs-on: ubuntu-latest
-    # L'attesa consuma minuti di Actions: al massimo DEPLOY_APPROVAL_MINUTES (default 30).
-    timeout-minutes: 40
-    # Un rilascio più recente sostituisce quello in attesa.
-    concurrency:
-      group: approvazione-rilascio
-      cancel-in-progress: true
-    permissions:
-      contents: read
-      issues: write
-    outputs:
-      approved: ${{ steps.wait.outputs.approved }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          sparse-checkout: .github/scripts
-      - id: wait
-        env:
-          GH_TOKEN: ${{ github.token }}
-          OWNER: ${{ github.repository_owner }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          DEPLOY_URL: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/deploy.yml
-          WAIT_MINUTES: ${{ vars.DEPLOY_APPROVAL_MINUTES || '30' }}
-        run: bash .github/scripts/attendi-approvazione.sh
+  #approvazione:
+  #  needs: image
+  #  if: vars.AUTO_DEPLOY != 'true'
+  #  runs-on: ubuntu-latest
+  #  # L'attesa consuma minuti di Actions: al massimo DEPLOY_APPROVAL_MINUTES (default 30).
+  #  timeout-minutes: 40
+  #  # Un rilascio più recente sostituisce quello in attesa.
+  #  concurrency:
+  #    group: approvazione-rilascio
+  #    cancel-in-progress: true
+  #  permissions:
+  #    contents: read
+  #    issues: write
+  #  outputs:
+  #    approved: ${{ steps.wait.outputs.approved }}
+  #  steps:
+  #    - uses: actions/checkout@v7
+  #      with:
+  #        sparse-checkout: .github/scripts
+  #    - id: wait
+  #      env:
+  #        GH_TOKEN: ${{ github.token }}
+  #        OWNER: ${{ github.repository_owner }}
+  #        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+  #        DEPLOY_URL: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/deploy.yml
+  #        WAIT_MINUTES: ${{ vars.DEPLOY_APPROVAL_MINUTES || '30' }}
+  #      run: bash .github/scripts/attendi-approvazione.sh
 
   # Installazione in produzione dello stesso commit: dopo /deploy sull'issue, oppure subito
   # (in attesa dei Required reviewers) con AUTO_DEPLOY = true su piani che li offrono.
   deploy:
-    needs: [image, approvazione]
+    #needs: [image, approvazione]
+    needs: [image]
     if: >-
       ${{ !cancelled() && needs.image.result == 'success' &&
-          (vars.AUTO_DEPLOY == 'true' || needs.approvazione.outputs.approved == 'true') }}
+          (vars.AUTO_DEPLOY == 'true') }}
     uses: ./.github/workflows/deploy.yml
     with:
       commit: ${{ github.sha }}
