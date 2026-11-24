@@ -127,6 +127,12 @@ questa tabella (vedi [ADR 0013](decisioni/0013-numerazione-migrazioni.md)).
 
 ---
 
+## Decisioni ancora da prendere
+
+| Cosa | Perché conta | Blocca |
+|------|---------------|--------|
+| Ruolo d'account (`admin`/`operator`/`viewer`) e ruolo di cantiere (`capocantiere`/`caposquadra`/`operaio`/`amministrativo`) sono oggi entrambi **a scelta singola** per utente (un solo `role` in Keycloak, un solo campo nella console di piattaforma), ma nella realtà il titolare di un'impresa piccola è spesso anche il capocantiere sul campo. Da decidere: accumulare i permessi di cantiere dentro `admin` quando serve, oppure passare a ruoli multipli per utente (cambio più grande: doc Keycloak, selettore multiplo in console, `PlatformDtos.role` da stringa a lista). | Prima si decide, meno codice delle fasi A–H si scrive sull'assunzione sbagliata | dalla PR che per prima richiede a un utente due ruoli insieme (probabile già in A.2/A.3) |
+
 ## Note di sequenza
 
 - La Fase A dipende da "Risorse e squadre" (`docs/roadmap.md` 2.3): va fatta prima, se non già fatta.

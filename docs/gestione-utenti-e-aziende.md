@@ -69,10 +69,10 @@ assegna da solo). A mano, nella console di Keycloak:
 | `admin` | Amministratore | tutto: clienti, comunicazioni ai dipendenti, assistente, gestione utenti. È anche il manager/proprietà dell'azienda |
 | `operator` | Operatore | consultare e modificare i clienti, usare l'assistente |
 | `viewer` | Consultazione | consultare i clienti |
-| `capocantiere` | Capocantiere | ruolo di cantiere: verifica e conferma il lavoro delle squadre (permessi aggiunti via via che le funzioni di cantiere vengono costruite, vedi `docs/roadmap-alex.md`) |
-| `caposquadra` | Caposquadra | ruolo di cantiere: coordina la propria squadra (idem) |
-| `operaio` | Operaio | ruolo di cantiere: lavora sul cantiere, inserisce ore e rapportini (idem) |
-| `amministrativo` | Amministrativo | ruolo di cantiere, accesso limitato: materiali, personale, attrezzature, fornitori, archivio — mai rapportini, contabilità o pianificazione (idem) |
+| `capocantiere` | Capocantiere | ruolo di cantiere: verifica e conferma il lavoro delle squadre |
+| `caposquadra` | Caposquadra | ruolo di cantiere: coordina la propria squadra |
+| `operaio` | Operaio | ruolo di cantiere: lavora sul cantiere, inserisce ore e rapportini |
+| `amministrativo` | Amministrativo | ruolo di cantiere, accesso limitato: materiali, personale, attrezzature, fornitori, archivio — mai rapportini, contabilità o pianificazione |
 
 I permessi esatti di ogni ruolo sono in `Role` (backend, `apps/api/.../auth/Role.java`): Keycloak
 assegna solo il ruolo, il significato lo decide l'applicazione (così il provider di identità resta
