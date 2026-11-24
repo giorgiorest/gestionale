@@ -40,8 +40,9 @@ La web app esiste già (Angular; oggi con Angular Material, ADR 0006) e deve res
 ## Aggiornamento — distribuzione dal server (novembre 2026)
 
 - Gli installer si distribuiscono **dal server dell'azienda**: pagina pubblica `/app-desktop`
-  («App per Windows»), con il setup `.exe` per l'utente, l'MSI per il reparto IT, gli SHA-256 e
-  l'indirizzo del server da inserire al primo avvio.
+  («App per Windows e Android»), con il setup `.exe` per l'utente, l'MSI per il reparto IT, gli
+  SHA-256 e l'indirizzo del server da inserire al primo avvio. Dalla stessa pagina si scarica
+  anche l'**APK Android** ([ADR 0011](0011-app-android.md)), con lo stesso meccanismo.
 - *Release immagini* richiama *CI Desktop* (Windows) e include gli installer nell'**immagine web
   dello stesso commit** (`apps/web/public/downloads/`, con `desktop.json`): versione dell'app e del
   server restano allineate, anche nei ritorni indietro. CI Desktop su `main` non gira più da solo

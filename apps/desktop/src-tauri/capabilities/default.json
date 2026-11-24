@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "enables the default permissions",
+  "description": "Permessi predefiniti della finestra principale. Valgono su tutte le piattaforme (Windows e Android): core:default non contiene permessi solo desktop. Un permesso che esiste solo sul desktop va in una capability a parte con \"platforms\": [\"windows\", \"macOS\", \"linux\"], uno solo mobile con \"platforms\": [\"android\", \"iOS\"].",
   "windows": [
     "main"
   ],

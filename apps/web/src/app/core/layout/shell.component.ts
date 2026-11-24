@@ -87,7 +87,7 @@ const NAV: NavItem[] = [
           <mat-icon>manage_accounts</mat-icon>Account e password
         </a>
         @if (!desktop) {
-          <a mat-menu-item routerLink="/app-desktop"><mat-icon>desktop_windows</mat-icon>App per Windows</a>
+          <a mat-menu-item routerLink="/app-desktop"><mat-icon>devices</mat-icon>App per Windows e Android</a>
         }
         <a mat-menu-item routerLink="/privacy"><mat-icon>policy</mat-icon>Privacy e cookie</a>
         <button mat-menu-item (click)="logout.logout()" data-testid="logout"><mat-icon>logout</mat-icon>Esci</button>
@@ -126,6 +126,14 @@ const NAV: NavItem[] = [
       display: flex;
       flex-direction: column;
       height: 100vh;
+      /*
+       * Nell'app Android la finestra arriva sotto la barra di stato: lo spazio si aggiunge qui,
+       * sopra la barra superiore, così la barra conserva l'altezza prevista da Material.
+       * Nel browser e nell'app desktop l'inset è 0 e non cambia nulla.
+       */
+      box-sizing: border-box;
+      padding-top: var(--app-safe-top);
+      background: var(--mat-sys-surface);
     }
     .topbar {
       position: relative;
@@ -134,6 +142,13 @@ const NAV: NavItem[] = [
       background: var(--mat-sys-surface);
       /* Linea di accento del marchio (giallo). */
       border-bottom: 3px solid var(--mat-sys-tertiary);
+      /*
+       * Aree sicure in orizzontale (notch sul lato). L'altezza resta quella di Material
+       * (64px, 56px sotto i 600px): lo spazio della barra di stato lo aggiunge :host.
+       * Nel browser e nell'app desktop gli inset sono 0 e il margine resta 16px.
+       */
+      padding-left: calc(16px + var(--app-safe-left));
+      padding-right: calc(16px + var(--app-safe-right));
     }
     .brand {
       display: flex;
@@ -175,6 +190,8 @@ const NAV: NavItem[] = [
     }
     .sidenav mat-nav-list {
       padding: 8px;
+      padding-left: calc(8px + var(--app-safe-left));
+      padding-bottom: calc(8px + var(--app-safe-bottom));
     }
     .count {
       display: inline-block;
@@ -200,7 +217,7 @@ const NAV: NavItem[] = [
 export class ShellComponent {
   readonly auth = inject(AuthService);
   readonly logout = inject(LogoutService);
-  /** Nell'app desktop non si propone di scaricarla. */
+  /** Nell'app installata (desktop o Android) non si propone di scaricarla. */
   readonly desktop = isPackagedDesktopApp();
   readonly branding = inject(BrandingService);
   readonly profile = inject(ProfileService);

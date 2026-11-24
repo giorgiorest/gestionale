@@ -6,8 +6,9 @@ sostituito, perché lo usano configurazioni, token e installazioni esistenti.
 
 ## Stack
 - Backend: Spring Boot (Java 21, Maven) in apps/api, PostgreSQL, Flyway per le migrazioni.
-- Frontend: Angular con Angular Material (layout per PC), PWA per il web, Capacitor per il mobile, Dexie per il database locale in apps/web.
+- Frontend: Angular con Angular Material (layout per PC), PWA per il web, Dexie per il database locale in apps/web.
 - Desktop: Tauri 2 in apps/desktop, che incapsula la build web (Windows). Un solo installer per tutti i clienti: il server si sceglie al primo avvio. Installer generati da ci-desktop.yml (PR) e, su main, da release-images.yml, che li include nell'immagine web: gli utenti li scaricano dalla pagina /app-desktop del server.
+- Android: stesso progetto Tauri (src-tauri/gen/android, versionato perché contiene la firma), APK firmato prodotto da android.yml (ADR 0011). Niente Capacitor. Le differenze di piattaforma stanno in tauri.android.conf.json e in CSS (env(safe-area-inset-*)), mai in una build Angular separata. Come per il desktop, su main release-images.yml mette l'APK nell'immagine web: gli utenti lo scaricano dalla pagina /app-desktop. L'APK è facoltativo in desktop.json, così una build Android fallita non toglie il download di Windows.
 - Identità: Keycloak 26 (OIDC), realm versionato in infra/keycloak/realm; utenti demo solo in infra/keycloak/dev. Frontend con oidc-client-ts (Authorization Code + PKCE).
 - Infrastruttura locale: infra/docker/compose.yml (compatibile con Docker e Podman).
 - Infrastruttura cloud: un server Linux (VPS) creato dal pannello del fornitore e configurato dal workflow Prepara server. Terraform per Oracle Cloud è stato rimosso (ADR 0007, superata).

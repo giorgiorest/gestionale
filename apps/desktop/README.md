@@ -1,13 +1,16 @@
-# App desktop (Tauri 2) — Windows
+# App impacchettata (Tauri 2) — Windows e Android
 
-L'app desktop **incapsula la build web** di `apps/web`: nessun codice duplicato.
-Tauri fornisce la finestra nativa (WebView2) e gli installer: **MSI** e setup **.exe** (NSIS).
-Scelte e motivazioni: [ADR 0004](../../docs/decisioni/0004-app-desktop.md).
+L'app **incapsula la build web** di `apps/web`: nessun codice duplicato.
+Tauri fornisce la finestra nativa e i pacchetti: su Windows **MSI** e setup **.exe** (NSIS,
+WebView2), su Android un **APK** firmato (WebView di sistema).
+Scelte e motivazioni: [ADR 0004](../../docs/decisioni/0004-app-desktop.md) (desktop) e
+[ADR 0011](../../docs/decisioni/0011-app-android.md) (Android).
 
 - [Distribuire l'app agli utenti (pagina di download)](#distribuire-lapp-agli-utenti-pagina-di-download)
 - [Scaricare l'MSI già pronto dalla CI](#scaricare-lmsi-dalla-ci-senza-installare-nulla)
 - [Creare l'MSI sul proprio PC](#creare-lmsi-sul-proprio-pc)
 - [Installare e provare l'app](#installare-e-provare-lapp)
+- [APK Android](#apk-android)
 - [Problemi frequenti](#problemi-frequenti)
 - [Da fare prima della vendita](#da-fare-prima-della-vendita)
 
@@ -19,43 +22,56 @@ Scelte e motivazioni: [ADR 0004](../../docs/decisioni/0004-app-desktop.md).
 - **Login**: stesso Keycloak della web, client pubblico `gestionale-desktop`. La pagina di login
   si apre nella finestra dell'app e al termine torna nell'app.
 - **API**: l'app gira sull'origine `http://tauri.localhost`; l'API la accetta (CORS).
-- La modalità desktop si riconosce da sola (`apps/web/src/app/core/platform.ts`): la stessa build
-  web vale per browser e desktop.
+- La modalità «app impacchettata» si riconosce da sola (`apps/web/src/app/core/platform.ts`):
+  la stessa build web vale per browser, desktop e Android. Su Android valgono quindi le stesse
+  regole del desktop: scelta del server al primo avvio, client `gestionale-desktop`, niente
+  service worker.
 
 ```
 apps/desktop/
-├── package.json             # CLI di Tauri: npm run dev / npm run build
+├── package.json                 # CLI di Tauri: npm run dev / npm run build
 └── src-tauri/
-    ├── tauri.conf.json      # finestra, installer (lingua italiana), comandi di build della web
+    ├── tauri.conf.json          # finestra, installer (lingua italiana), comandi di build della web
+    ├── tauri.android.conf.json  # solo Android: finestra a tutto schermo (unito al file sopra)
     ├── Cargo.toml, Cargo.lock
-    ├── capabilities/        # permessi delle API native (per ora solo core:default)
-    ├── icons/               # generate da apps/web/public/icons/icon-512x512.png
-    └── src/                 # main.rs, lib.rs
+    ├── capabilities/            # permessi delle API native (per ora solo core:default)
+    ├── icons/                   # generate da apps/web/public/icons/icon-512x512.png
+    ├── gen/android/             # progetto Android generato da Tauri (versionato: contiene la firma)
+    └── src/                     # main.rs (solo desktop), lib.rs (comune, con mobile_entry_point)
 ```
 
 ## Distribuire l'app agli utenti (pagina di download)
 
 Gli utenti scaricano l'app dal **server della loro azienda**, alla pagina pubblica
-**`https://<dominio>/app-desktop`** («App per Windows»), collegata dalla pagina di accesso e dal menu
-utente (nascosta dentro l'app desktop). La pagina mostra:
+**`https://<dominio>/app-desktop`** («App per Windows e Android»), collegata dalla pagina di accesso
+e dal menu utente (nascosta dentro l'app già installata). La pagina mostra:
 
-- il pulsante di download del setup `.exe` (installazione per l'utente, senza permessi di amministratore);
-- i passi di installazione, compreso l'avviso di SmartScreen finché l'app non è firmata;
-- l'**indirizzo del server** da inserire al primo avvio, con il pulsante *Copia*;
-- per il reparto IT il pacchetto **MSI** (installazione centralizzata) e gli SHA-256 dei file.
+- l'**indirizzo del server** da inserire al primo avvio, con il pulsante *Copia*: è lo stesso per
+  entrambe le piattaforme;
+- **Windows**: il setup `.exe` (installazione per l'utente, senza permessi di amministratore), i
+  passi di installazione compreso l'avviso di SmartScreen finché l'app non è firmata, e per il
+  reparto IT il pacchetto **MSI** (installazione centralizzata);
+- **Android**: l'**APK** firmato, con il passaggio del consenso a installare «da questa origine»
+  (l'app non passa dal Play Store);
+- gli SHA-256 di tutti i file.
 
-Come ci arrivano gli installer:
+Come ci arrivano i pacchetti:
 
-1. a ogni merge su `main` il workflow **Release immagini** richiama **CI Desktop** (Windows);
-2. `infra/docker/web/prepare-desktop-downloads.sh` copia gli installer in `apps/web/public/downloads/`
-   come `civilbeefy-setup.exe` e `civilbeefy.msi`, con `desktop.json` (versione, commit, data,
-   dimensioni, SHA-256);
+1. a ogni merge su `main` il workflow **Release immagini** richiama **CI Desktop** (Windows) e
+   **CI Android** (Linux);
+2. `infra/docker/web/prepare-desktop-downloads.sh` copia i pacchetti in `apps/web/public/downloads/`
+   come `civilbeefy-setup.exe`, `civilbeefy.msi` e `civilbeefy.apk`, con `desktop.json` (versione,
+   commit, data, dimensioni, SHA-256);
 3. finiscono nell'**immagine web** dello stesso commit: con **Deploy** ogni server offre l'app della
-   propria versione, e un ritorno indietro riporta anche l'installer precedente.
+   propria versione, e un ritorno indietro riporta anche i pacchetti precedenti.
 
-Se la build desktop fallisce le immagini escono comunque, senza installer: la pagina dice che il
-download non è disponibile. Per provarla in locale basta mettere dei file in
-`apps/web/public/downloads/` (cartella ignorata da git) con lo script sopra.
+Se la build desktop fallisce le immagini escono comunque, senza pacchetti: la pagina dice che il
+download non è disponibile. Se fallisce la sola build Android la pagina esce con il solo Windows.
+Per provarla in locale basta mettere dei file in `apps/web/public/downloads/` (cartella ignorata
+da git) con lo script sopra, che accetta la cartella dell'APK come quarto argomento (facoltativo).
+
+> L'APK è servito da nginx con il tipo `application/vnd.android.package-archive`: senza quello
+> Android non riconosce il file scaricato come app da installare.
 
 ## Scaricare l'MSI dalla CI (senza installare nulla)
 
@@ -157,6 +173,123 @@ Avvia anche `ng serve` di apps/web e apre la finestra su `http://localhost:4200`
 automatica. In questa modalità l'app si comporta come la web: niente scelta del server, client
 `gestionale-web`, proxy `/api`.
 
+## APK Android
+
+L'APK contiene la stessa build di `apps/web`. Il progetto Android generato da Tauri sta in
+`src-tauri/gen/android/`: è **versionato** perché contiene la configurazione di firma, quindi
+non va rigenerato con `tauri android init` senza rimettere quelle modifiche.
+
+### Scaricare l'APK dalla CI
+
+Il workflow **CI Android** (`.github/workflows/android.yml`) gira sulle pull request che toccano
+`apps/web` o `apps/desktop` e a mano (*Actions → CI Android → Run workflow*); su `main` lo richiama
+**Release immagini**. Pubblica l'artifact `gestionale-android-apk`.
+
+```bash
+gh run download --repo giorgiorest/gestionale --name gestionale-android-apk
+```
+
+Gli utenti però non passano da qui: scaricano l'APK dalla pagina `/app-desktop` del loro server,
+come gli installer Windows (sezione «Distribuire l'app agli utenti»).
+
+### Chiave di firma (una volta sola)
+
+Android installa solo APK firmati, e **la chiave non si può cambiare**: un APK firmato con
+un'altra chiave è un'app diversa e non aggiorna quella installata. La chiave va conservata
+(gestore di password o cassaforte aziendale), **fuori dal repository**.
+
+`keytool` arriva con qualsiasi JDK (anche quello di Android Studio). Da una cartella **fuori dal
+repository**:
+
+```bash
+keytool -genkeypair -v -keystore release.keystore -alias app-release -keyalg RSA -keysize 2048 -validity 10000
+```
+
+Chiede una password e i dati del certificato (nome, organizzazione, paese: valgono solo come
+etichetta, non li verifica nessuno).
+
+> **Una sola password.** Il formato predefinito dei JDK recenti è PKCS12, che non ammette una
+> password diversa per la chiave: `keytool` avvisa «Different store and key passwords not supported
+> for PKCS12 KeyStores» e ignora `-keypass`. Quindi `ANDROID_KEY_PASSWORD` e
+> `ANDROID_KEYSTORE_PASSWORD` vanno impostati con **lo stesso valore**, altrimenti la build fallisce
+> con un errore poco chiaro sulla lettura della chiave.
+
+Poi si caricano i quattro valori nei **GitHub Secrets** del repository
+(*Settings → Secrets and variables → Actions → New repository secret*), mai nel codice:
+
+| Secret | Valore |
+|--------|--------|
+| `ANDROID_KEYSTORE_BASE64` | la keystore codificata in base64 (comandi qui sotto) |
+| `ANDROID_KEYSTORE_PASSWORD` | la password scelta sopra |
+| `ANDROID_KEY_ALIAS` | alias della chiave: `app-release` |
+| `ANDROID_KEY_PASSWORD` | di nuovo la stessa password |
+
+La codifica deve essere **su una riga sola**, senza a capo:
+
+```bash
+base64 -w0 release.keystore > release.keystore.b64   # Linux
+```
+
+```bash
+base64 -i release.keystore -o release.keystore.b64   # macOS
+```
+
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("release.keystore")) | Set-Clipboard   # Windows
+```
+
+Si incollano dall'interfaccia di GitHub, oppure con `gh secret set ANDROID_KEYSTORE_BASE64 < release.keystore.b64`
+e `gh secret set ANDROID_KEYSTORE_PASSWORD` (per le password il valore si digita quando richiesto,
+non si scrive nel comando: finirebbe nella cronologia della shell). Dopo l'invio, cancella il file
+`.b64`: è la chiave in chiaro.
+
+Finché i secret mancano, **CI Android** si ferma con «Manca il secret ANDROID_KEYSTORE_BASE64»: è
+voluto, un APK non firmato non si installa.
+
+### Compilare l'APK sul proprio PC
+
+Serve l'SDK Android (Android Studio o i *command line tools*) con un NDK, e i target Rust:
+
+```bash
+rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+```
+
+Variabili d'ambiente richieste da Tauri: `ANDROID_HOME` (cartella dell'SDK), `NDK_HOME`
+(cartella della versione di NDK, es. `$ANDROID_HOME/ndk/27.2.12479018`) e un JDK 21.
+
+Per la build di rilascio serve `src-tauri/gen/android/key.properties`, che **non sta nel
+repository** (lo esclude `.gitignore`):
+
+```properties
+storeFile=/percorso/assoluto/release.keystore
+storePassword=…
+keyAlias=app-release
+keyPassword=…
+```
+
+`storeFile` è assoluto oppure relativo a `src-tauri/gen/android/`. Senza questo file la build di
+rilascio si ferma con un errore: è voluto, un APK non firmato non si installa.
+
+Da `apps/desktop`:
+
+```bash
+npm run tauri -- android build --apk
+```
+
+Risultato: `src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk`.
+
+### Provare l'app durante lo sviluppo
+
+Con un emulatore acceso o un telefono collegato in debug USB, sempre da `apps/desktop`:
+
+```bash
+npm run tauri -- android dev
+```
+
+Come `npm run dev` sul desktop, carica `http://localhost:4200` con ricarica automatica: l'app si
+comporta come la web (client `gestionale-web`, proxy `/api`). Le build di debug usano la chiave di
+debug di Android, quindi `key.properties` non serve.
+
 ## Problemi frequenti
 
 | Messaggio | Soluzione |
@@ -167,6 +300,9 @@ automatica. In questa modalità l'app si comporta come la web: niente scelta del
 | Download di WiX o NSIS non riuscito | Serve Internet alla prima build; dietro proxy aziendale imposta `HTTPS_PROXY`. |
 | L'MSI non sostituisce la versione installata | Aumenta `version` in `src-tauri/tauri.conf.json` prima della build. |
 | Dopo il login Keycloak mostra «Invalid parameter: redirect_uri» | Il realm non contiene il client `gestionale-desktop`: ricrea il container di Keycloak. |
+| Android: `Android SDK not found` o `NDK not found` | Mancano `ANDROID_HOME` o `NDK_HOME`. `NDK_HOME` indica la cartella di **una versione** del NDK, non `$ANDROID_HOME/ndk`. |
+| Android: `Firma Android non configurata: manca …/key.properties` | Build di rilascio senza chiave: crea `key.properties` (sezione «APK Android») o usa `android dev` per provare. |
+| Android: l'APK si compila ma non si installa («app non installata») | Un APK firmato con una chiave diversa non aggiorna quello già sul telefono: disinstalla prima la versione precedente. |
 
 ## Da fare prima della vendita
 
@@ -184,4 +320,12 @@ Tracciati come issue su GitHub.
 - **Distribuzione aziendale**: l'MSI si presta all'installazione silenziosa
   (`msiexec /i "Civil Beefy_x.y.z_x64_it-IT.msi" /qn`) via Intune o criteri di gruppo; in futuro si
   potrà precompilare l'indirizzo del server con una proprietà dell'MSI.
-- **macOS e Linux**: rimandati.
+- **macOS e Linux**: rimandati. **iOS**: richiede un Mac e un account sviluppatore Apple.
+- **Aggiornamenti dell'app Android** ([#32](https://github.com/giorgiorest/gestionale/issues/32)).
+  L'APK sta fuori dal Play Store, quindi oggi l'utente lo riscarica a mano dalla pagina del server.
+  Nella stessa issue il `versionCode`, che segue `version` di `tauri.conf.json`: va aumentato a ogni
+  rilascio, altrimenti Android non vede un aggiornamento. `tauri-plugin-updater` (issue
+  [#4](https://github.com/giorgiorest/gestionale/issues/4)) non copre Android: serve un altro
+  meccanismo.
+- **Android, login nel browser di sistema**: Custom Tab invece della WebView dell'app (RFC 8252),
+  come il punto già aperto per il desktop.
