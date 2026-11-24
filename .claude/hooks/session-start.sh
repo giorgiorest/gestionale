@@ -57,19 +57,16 @@ repo="$(git remote get-url origin 2> /dev/null | sed -e 's#^git@[^:]*:##' -e 's#
 if [ -z "$branch" ] || [ -z "$repo" ] || ! command -v gh > /dev/null 2>&1; then
   echo "PR: non verificata"
 else
-  pr="$(timeout 15 gh api "repos/$repo/pulls?state=open&per_page=100" \
-    --jq ".[] | select(.head.ref == \"$branch\") | \"#\(.number)\(if .draft then \" (bozza)\" else \"\" end) \(.title)\"" \
-    2> /dev/null | head -1 || true)"
-  if [ -n "$pr" ]; then
-    echo "PR: $(accorcia "$pr" 100)"
-  else
-    altre="$(timeout 15 gh api "repos/$repo/pulls?state=open&per_page=100" --jq 'length' 2> /dev/null || true)"
-    case "$altre" in
-      '') echo "PR: non verificata (GitHub non raggiungibile)" ;;
-      0) echo "PR: nessuna aperta sul repository" ;;
-      *) echo "PR: nessuna per questo branch ($altre aperte altrove: attenzione ai file condivisi)" ;;
-    esac
-  fi
+  # Una sola richiesta: l'hook è sincrono, due timeout da 15 s sarebbero 30 s di attesa.
+  # Il filtro `head` lascia al server la ricerca del branch, senza dipendere dalla paginazione.
+  pr="$(timeout 15 gh api "repos/$repo/pulls?state=open&per_page=100&head=${repo%%/*}:$branch" \
+    --jq 'if length == 0 then "NESSUNA" else .[0] as $p | "#\($p.number)\(if $p.draft then " (bozza)" else "" end) \($p.title)" end' \
+    2> /dev/null || true)"
+  case "$pr" in
+    '') echo "PR: non verificata (GitHub non raggiungibile)" ;;
+    NESSUNA) echo "PR: nessuna aperta su questo branch" ;;
+    *) echo "PR: $(accorcia "$pr" 100)" ;;
+  esac
 fi
 
 # --- 3. prima voce di roadmap non completata ---------------------------------
@@ -77,8 +74,12 @@ fi
 if [ -r docs/roadmap.md ]; then
   voci="$(awk -F'|' '
     NF >= 5 {
-      pr = $2; testo = $3; stato = $5
-      gsub(/^[ \t]+|[ \t]+$/, "", pr); gsub(/^[ \t]+|[ \t]+$/, "", testo); gsub(/^[ \t]+|[ \t]+$/, "", stato)
+      pr = $2; testo = $3
+      # Lo stato sta nella ultima colonna non vuota: in questo modo un carattere di tabella
+      # nel testo della voce non la fa sparire in silenzio dal promemoria.
+      stato = ""
+      for (i = NF; i >= 4 && stato == ""; i--) { stato = $i; gsub(/^[ \t]+|[ \t]+$/, "", stato) }
+      gsub(/^[ \t]+|[ \t]+$/, "", pr); gsub(/^[ \t]+|[ \t]+$/, "", testo)
       if (pr !~ /^[0-9]+\.[0-9]+$/) next
       if (stato == "🟨" && corso == "") corso = pr " 🟨 " testo
       if (stato == "⬜" && fare == "") fare = pr " ⬜ " testo
@@ -103,7 +104,8 @@ if [ -d "$cartella" ]; then
   remoto=""
   git rev-parse --verify --quiet origin/main > /dev/null 2>&1 &&
     remoto="$(git ls-tree -r --name-only origin/main -- "$cartella" 2> /dev/null | massimo_di)"
-  massimo="$(printf '%s\n' "${locale:-0}" "${remoto:-0}" | sort -n | tail -1)"
+  # Base 10 esplicita: un file V08__… renderebbe ottale l'aritmetica e la riga fallirebbe.
+  massimo=$((10#$(printf '%s\n' "${locale:-0}" "${remoto:-0}" | sort -n | tail -1)))
   echo "Flyway: prossimo libero V$((massimo + 1)) (massimo attuale V$massimo, ADR 0013)"
 fi
 
