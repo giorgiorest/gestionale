@@ -60,24 +60,49 @@ jobs:
         with:
           workspaces: apps/desktop/src-tauri -> target
 
-      # Android SDK: sul runner c'è già (ANDROID_HOME). L'azione accetta le licenze e lascia
-      # che Gradle scarichi da sé platform e build-tools che servono (compileSdk in build.gradle.kts).
-      - uses: android-actions/setup-android@v3
-
-      # Tauri compila la libreria Rust con il NDK: gli serve NDK_HOME.
-      - name: NDK
+      # SDK e NDK Android: sui runner ubuntu ci sono già, bastano ANDROID_HOME e NDK_HOME.
+      # Niente android-actions/setup-android: la v3 prova a installare il pacchetto "tools",
+      # ritirato da Google, e il job si ferma con "Failed to find package 'tools'".
+      - name: SDK e NDK Android
         env:
           # Usato solo se il runner non ha un NDK preinstallato.
           NDK_FALLBACK_VERSION: '27.2.12479018'
         run: |
           set -euo pipefail
+          sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          if [ -z "$sdk" ] || [ ! -d "$sdk" ]; then
+            echo "::error::SDK Android non trovato sul runner (ANDROID_HOME non impostata)."
+            exit 1
+          fi
+          sdkmanager="$sdk/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$sdkmanager" ]; then
+            sdkmanager=$(find "$sdk/cmdline-tools" -name sdkmanager -type f | sort | tail -1)
+          fi
+          if [ -z "$sdkmanager" ] || [ ! -x "$sdkmanager" ]; then
+            echo "::error::sdkmanager non trovato in $sdk/cmdline-tools."
+            exit 1
+          fi
+
+          # Le licenze sono già accettate sull'immagine del runner; qui si copre il caso contrario.
+          # "yes" riceve SIGPIPE quando sdkmanager esce: con pipefail servirebbe il "|| true".
+          yes | "$sdkmanager" --licenses > /dev/null 2>&1 || true
+
+          # compileSdk di gen/android/app/build.gradle.kts. Se non si installa non è fatale:
+          # con le licenze accettate ci prova Gradle da solo.
+          "$sdkmanager" --install 'platforms;android-37' \
+            || echo "::warning::platforms;android-37 non installabile: ci proverà Gradle."
+
+          # Tauri compila la libreria Rust con il NDK: gli serve NDK_HOME.
           ndk="${ANDROID_NDK_LATEST_HOME:-}"
           if [ -z "$ndk" ] || [ ! -d "$ndk" ]; then
             echo "NDK non preinstallato sul runner: installo ndk;$NDK_FALLBACK_VERSION"
-            sdkmanager --install "ndk;$NDK_FALLBACK_VERSION"
-            ndk="$ANDROID_HOME/ndk/$NDK_FALLBACK_VERSION"
+            "$sdkmanager" --install "ndk;$NDK_FALLBACK_VERSION"
+            ndk="$sdk/ndk/$NDK_FALLBACK_VERSION"
           fi
+
+          echo "ANDROID_HOME=$sdk" >> "$GITHUB_ENV"
           echo "NDK_HOME=$ndk" >> "$GITHUB_ENV"
+          echo "SDK: $sdk"
           echo "NDK: $ndk"
 
       - name: Dipendenze web
