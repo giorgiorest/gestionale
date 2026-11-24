@@ -95,10 +95,11 @@ public class DemoTenantSeeder implements ApplicationRunner {
         Instant now = clock.instant();
         licenses.save(new License(UUID.randomUUID(), DEMO_TENANT_ID, "demo", 5,
                 Set.of(Features.AI_ASSISTANT), 50, now, null));
+        // createdBy null: i dati di esempio non li ha scritti un utente.
         customers.saveAll(List.of(
-                new Customer(UUID.randomUUID(), DEMO_TENANT_ID, "Rossi S.r.l.", "info@rossi.example"),
-                new Customer(UUID.randomUUID(), DEMO_TENANT_ID, "Bianchi & Figli", "amministrazione@bianchi.example"),
-                new Customer(UUID.randomUUID(), DEMO_TENANT_ID, "Verdi S.p.A.", null)));
+                new Customer(UUID.randomUUID(), DEMO_TENANT_ID, "Rossi S.r.l.", "info@rossi.example", null),
+                new Customer(UUID.randomUUID(), DEMO_TENANT_ID, "Bianchi & Figli", "amministrazione@bianchi.example", null),
+                new Customer(UUID.randomUUID(), DEMO_TENANT_ID, "Verdi S.p.A.", null, null)));
         // Scrive subito tenant, licenza e clienti: la notifica (JDBC) li referenzia.
         customers.flush();
         // Comunicazione con presa visione a tutta l'azienda: chi accede dopo la riceve comunque.

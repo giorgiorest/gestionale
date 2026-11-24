@@ -50,7 +50,7 @@ debito da pagare moltiplicato per il numero di entità.
 
 | PR | Contenuto | Migr. | Stato |
 |----|-----------|-------|-------|
-| 1.1 | Cancellazione logica (`deleted_at`), `DELETE /api/customers/{id}` idempotente (oggi la outbox invia DELETE a un endpoint che non esiste), `@Version` per il blocco ottimistico, `created_by`/`updated_by` | V6 | ⬜ |
+| 1.1 | Cancellazione logica (`deleted_at`), `DELETE /api/customers/{id}` idempotente, `@Version` per il blocco ottimistico, `created_by`/`updated_by` ([ADR 0018](decisioni/0018-cancellazione-logica.md)) | V6 | ✅ |
 | 1.2 | `GET /api/sync/changes` con cursore per entità (`updated_at` + id) e tombstones | — | ⬜ |
 | 1.3 | `pullChanges` nel client: cursore in `syncState`, applicazione locale, schermata «modifiche non inviate» | — | ⬜ |
 | 1.4 | Liste paginate, ordinate e ricercabili ([ADR 0014](decisioni/0014-liste-paginate.md)) su `customers`, con gli indici | V7 | ⬜ |

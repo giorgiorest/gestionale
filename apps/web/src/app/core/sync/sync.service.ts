@@ -56,6 +56,16 @@ export class SyncService {
     return this.flushing;
   }
 
+  /**
+   * Modifiche di un'entità ancora in coda: id → operazione accodata per **ultima**.
+   * Serve a chi ricarica un elenco dal server per non rimettere in locale un record la cui
+   * cancellazione non è ancora stata inviata (e per non buttare un record non ancora creato).
+   */
+  async pendingByEntity(entity: string): Promise<Map<string, OutboxOperation>> {
+    const entries = await this.db.outbox.where('entity').equals(entity).sortBy('createdAt');
+    return new Map(entries.map((e) => [(e.payload as OutboxPayload).id, e.operation]));
+  }
+
   /** Scarica le modifiche remote dopo l'ultimo cursore. Stub: restituisce le modifiche applicate. */
   async pullChanges(): Promise<number> {
     // TODO: GET /api/sync/changes?cursor=…, applicazione al db locale, salvataggio del nuovo cursore.

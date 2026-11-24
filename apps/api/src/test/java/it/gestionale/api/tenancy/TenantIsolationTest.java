@@ -52,8 +52,8 @@ class TenantIsolationTest extends AbstractIntegrationTest {
         tenantB = TestData.createTenant(tx, tenants, licenses, "pro", Set.of("aiAssistant"), 100);
         customerA = UUID.randomUUID();
         customerB = UUID.randomUUID();
-        TenantContext.runAs(tenantA, () -> customers.save(new Customer(customerA, tenantA, "Cliente A", null)));
-        TenantContext.runAs(tenantB, () -> customers.save(new Customer(customerB, tenantB, "Cliente B", null)));
+        TenantContext.runAs(tenantA, () -> customers.save(new Customer(customerA, tenantA, "Cliente A", null, "u-a")));
+        TenantContext.runAs(tenantB, () -> customers.save(new Customer(customerB, tenantB, "Cliente B", null, "u-b")));
     }
 
     @Test
@@ -86,7 +86,7 @@ class TenantIsolationTest extends AbstractIntegrationTest {
     @Test
     void cannotWriteRowsOfAnotherTenant() {
         assertThatThrownBy(() -> TenantContext.runAs(tenantA,
-                () -> customers.save(new Customer(UUID.randomUUID(), tenantB, "Intruso", null))))
+                () -> customers.save(new Customer(UUID.randomUUID(), tenantB, "Intruso", null, "u-a"))))
                 .hasStackTraceContaining("row-level security");
     }
 

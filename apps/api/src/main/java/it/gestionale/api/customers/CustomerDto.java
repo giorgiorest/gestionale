@@ -7,11 +7,16 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-/** Rappresentazione di un cliente nell'API. */
-public record CustomerDto(UUID id, String name, String email, Instant updatedAt) {
+/**
+ * Rappresentazione di un cliente nell'API.
+ *
+ * @param version versione del record per il blocco ottimistico
+ */
+public record CustomerDto(UUID id, String name, String email, long version, Instant updatedAt) {
 
     static CustomerDto from(Customer customer) {
-        return new CustomerDto(customer.getId(), customer.getName(), customer.getEmail(), customer.getUpdatedAt());
+        return new CustomerDto(customer.getId(), customer.getName(), customer.getEmail(),
+                customer.getVersion(), customer.getUpdatedAt());
     }
 
     /** Dati in ingresso per creare o aggiornare un cliente. */

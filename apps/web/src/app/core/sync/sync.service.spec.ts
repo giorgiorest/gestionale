@@ -22,6 +22,14 @@ function fakeDb(entries: OutboxEntry[]): LocalDb {
         return 1;
       },
       orderBy: () => ({ toArray: async () => [...entries].sort((a, b) => a.createdAt.localeCompare(b.createdAt)) }),
+      where: (field: 'entity') => ({
+        equals: (value: string) => ({
+          sortBy: async (key: 'createdAt') =>
+            entries
+              .filter((e) => e[field] === value)
+              .sort((a, b) => a[key].localeCompare(b[key])),
+        }),
+      }),
     },
   } as unknown as LocalDb;
 }
@@ -104,5 +112,16 @@ describe('SyncService', () => {
     expect(await done).toBe(1);
     expect(entries).toHaveLength(1);
     expect(entries[0].lastError).toBe('HTTP 400');
+  });
+
+  it('pendingByEntity restituisce l\'ultima operazione in coda per ogni id', async () => {
+    await service.enqueue('customers', 'create', { id: 'c1', name: 'Rossi' });
+    await service.enqueue('notifications', 'update', { id: 'n1' });
+    await service.enqueue('customers', 'delete', { id: 'c1' });
+
+    const pending = await service.pendingByEntity('customers');
+
+    // Solo l'entità chiesta, e per c1 vale la cancellazione accodata per ultima.
+    expect([...pending]).toEqual([['c1', 'delete']]);
   });
 });

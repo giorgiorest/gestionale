@@ -14,27 +14,6 @@ import { uuidv7 } from '../../shared/uuid';
 import { Catalog, ConsoleApiService, ConsoleTenant, NewUserInput } from './console-api.service';
 import { FEATURE_LABELS, endOfDayIso, roleLabel, slugify } from './console-labels';
 
-/** Conferma di un'operazione delicata. */
-@Component({
-  selector: 'app-console-confirm',
-  imports: [MatDialogModule, MatButtonModule],
-  template: `
-    <h2 mat-dialog-title>{{ data.title }}</h2>
-    <mat-dialog-content
-      ><p>{{ data.message }}</p></mat-dialog-content
-    >
-    <mat-dialog-actions align="end">
-      <button mat-button [mat-dialog-close]="false">Annulla</button>
-      <button mat-flat-button [mat-dialog-close]="true" data-testid="confirm">
-        {{ data.confirm }}
-      </button>
-    </mat-dialog-actions>
-  `,
-})
-export class ConfirmDialog {
-  readonly data = inject<{ title: string; message: string; confirm: string }>(MAT_DIALOG_DATA);
-}
-
 /** Password provvisoria: mostrata una sola volta, da consegnare all'utente. */
 @Component({
   selector: 'app-console-password',
