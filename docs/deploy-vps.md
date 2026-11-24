@@ -23,7 +23,7 @@ I file di produzione sono in `infra/deploy/oracle/` (il nome è storico: valgono
 | 4 | Dominio | DuckDNS o DNS | a mano |
 | 5 | Environment `production` | GitHub | a mano, una volta |
 | 6 | **Prepara server**: aggiornamenti, firewall, SSH, Docker, `.env`, backup | GitHub Actions | workflow |
-| 7 | **Rilascio**: build, immagini, installer desktop → **Deploy** con la tua approvazione | GitHub Actions | automatico a ogni merge |
+| 7 | **Rilascio**: build, immagini, installer desktop (automatico a ogni merge) → **Deploy** avviato da te | GitHub Actions | un clic per ogni rilascio |
 
 ## 0. Che macchina scegliere
 
@@ -122,15 +122,18 @@ Repository → *Settings → Environments → New environment* → **`production
 I nomi `OCI_*` sono storici e valgono per qualsiasi server. Se `OCI_SSH_HOST` è un nome a dominio,
 anche la riga dell'impronta deve iniziare con lo stesso nome.
 
-Nella stessa pagina, **protezione** (obbligatoria per il rilascio automatico):
+Nella stessa pagina, **Deployment branches and tags** → *Selected branches* → `main`: il deploy
+parte solo dalla versione ufficiale.
 
-- **Required reviewers** → te stesso: ogni installazione aspetta la tua approvazione;
-- **Deployment branches and tags** → *Selected branches* → `main`.
+**Approvazione dei deploy.** In un repository **privato** GitHub offre i *Required reviewers* degli
+environment solo con il piano Enterprise (con Free, Pro e Team la sezione non compare). Per questo il
+Deploy **non parte da solo**: lo avvii tu dopo ogni rilascio, e quell'avvio è l'approvazione. Solo
+chi ha accesso in scrittura al repository può avviarlo.
 
-Poi *Settings → Secrets and variables → Actions → Variables* (del **repository**):
-
-- `AUTO_DEPLOY` = `true` → a ogni rilascio parte il Deploy (in attesa di approvazione). Impostala
-  **solo dopo** aver attivato *Required reviewers*, altrimenti il deploy partirebbe senza conferma.
+Se un giorno il piano li offre (repository pubblico o GitHub Enterprise): attiva *Required reviewers*
+su `production` e poi la variabile di repository `AUTO_DEPLOY` = `true` (*Settings → Secrets and
+variables → Actions → Variables*): a ogni rilascio il Deploy partirà da solo e aspetterà il tuo
+*Approve*. **Mai `AUTO_DEPLOY` senza Required reviewers**: installerebbe senza conferma.
 
 ## 6. Prepara server
 
@@ -166,21 +169,19 @@ A ogni merge su `main`, **Release immagini**:
 
 1. costruisce l'app desktop per Windows;
 2. pubblica su GHCR le immagini di API e web (con gli installer) per amd64 e arm64;
-3. se `AUTO_DEPLOY = true`, richiama **Deploy** per lo stesso commit, che **aspetta la tua
-   approvazione** (email di GitHub e pulsante *Review deployments* nella pagina del run).
+3. nel riepilogo del run scrive **«Versione pronta»** con il link al Deploy.
 
-Approvato, **Deploy**:
+Poi **tu** avvii **Actions → Deploy → Run workflow** (branch `main`, campo *commit* vuoto = l'ultima
+versione). **Deploy**:
 
 1. verifica che le immagini di quel commit esistano;
 2. **controlla la macchina**: Docker utilizzabile, `.env` presente, `APP_DOMAIN` uguale a quello
-   dell'environment, `ACME_EMAIL` valida, spazio libero;
-3. copia compose, Caddyfile, realm e tema di Keycloak del commit;
+   dell'environment, `ACME_EMAIL` valida, segreto della console, spazio libero;
+3. copia compose, Caddyfile, realm e tema di Keycloak del commit (e riavvia Keycloak se i realm cambiano);
 4. verifica la configurazione, scarica le immagini (accesso a GHCR valido solo per quel job), avvia;
 5. attende che `https://<dominio>/api/health` risponda (fino a 5 minuti).
 
-Se un nuovo rilascio arriva mentre un deploy aspetta l'approvazione, quello in attesa viene
-sostituito dal più recente. Si può sempre lanciare **Deploy** a mano: vuoto = ultima versione di
-`main`, oppure un commit precedente (40 caratteri) per **tornare indietro**.
+Per **tornare indietro**: **Deploy** con un commit precedente (40 caratteri, da *Commits* su GitHub).
 
 La prima volta Keycloak e il certificato richiedono 1–2 minuti. Poi apri `https://<dominio>`.
 L'app per Windows si scarica da `https://<dominio>/app-desktop` (link «App per Windows» nella pagina
@@ -245,8 +246,9 @@ Dopo `usermod` esci e ricollegati. Per il `.env` copia
 | Workflow: *Permission denied (publickey)* | Manca la chiave pubblica del deploy in `/home/ubuntu/.ssh/authorized_keys`, o `OCI_SSH_PRIVATE_KEY` è incompleto (deve includere le righe `BEGIN`/`END`) |
 | Deploy: *Docker non è installato* / *Manca .env* | Lancia **Prepara server** |
 | Deploy: *APP_DOMAIN … non è* / *ACME_EMAIL … non valido* | Correggi `/opt/civilbeefy/.env` o la variabile dell'environment |
-| Il deploy non parte dopo un merge | Manca `AUTO_DEPLOY = true` tra le variabili del repository, oppure *Release immagini* è fallito |
-| Il deploy è partito senza chiedere approvazione | Mancano i *Required reviewers* nell'environment `production`: aggiungili subito |
+| Il deploy non parte dopo un merge | È voluto: il Deploy si avvia a mano dopo ogni rilascio (è l'approvazione) |
+| Non vedo *Required reviewers* nell'environment | Repository privato senza GitHub Enterprise: la funzione non c'è; si approva avviando Deploy a mano |
+| Il deploy è partito senza chiedere approvazione | `AUTO_DEPLOY = true` senza *Required reviewers*: togli subito la variabile |
 | Console: *Accesso amministrativo non consentito da questa rete* | `ADMIN_ALLOWED_IPS` nel `.env` non comprende la tua rete ([console-piattaforma.md](console-piattaforma.md)) |
 | Deploy: *Manca PLATFORM_KEYCLOAK_CLIENT_SECRET* | Lancia **Prepara server**, che lo aggiunge al `.env` |
 | Il sito non ha il certificato | Porte 80/443 chiuse (firewall del fornitore) o DNS non aggiornato; log: `docker compose logs caddy` |

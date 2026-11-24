@@ -7,8 +7,12 @@ name: Release immagini
 # L'immagine web contiene anche gli installer Windows dell'app desktop dello stesso commit
 # (pagina /app-desktop). Se la build desktop fallisce le immagini escono comunque, senza installer.
 #
-# Alla fine, se la variabile di repository AUTO_DEPLOY = true, richiama Deploy per lo stesso commit:
-# il deploy aspetta l'approvazione nell'environment "production" (Required reviewers).
+# Alla fine:
+#   - di norma NON installa: il riepilogo indica la versione pronta e il link a Deploy, che si avvia
+#     a mano (l'avvio manuale è l'approvazione; repository privato senza GitHub Enterprise);
+#   - con la variabile di repository AUTO_DEPLOY = true richiama Deploy per lo stesso commit. Da usare
+#     SOLO se l'environment "production" ha i Required reviewers (repository pubblico o GitHub
+#     Enterprise): altrimenti installerebbe senza conferma.
 on:
   push:
     branches: [main]
@@ -94,3 +98,22 @@ jobs:
     permissions:
       contents: read
       packages: read
+
+  # Senza deploy automatico: versione pronta, da installare avviando Deploy a mano.
+  ready:
+    needs: image
+    if: vars.AUTO_DEPLOY != 'true'
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Versione pronta da installare
+        env:
+          URL: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/deploy.yml
+        run: |
+          {
+            echo "## Versione pronta"
+            echo
+            echo "Immagini \`sha-$GITHUB_SHA\` pubblicate. Per installarle in produzione:"
+            echo "**[Deploy → Run workflow]($URL)** (campo *commit* vuoto = questa versione)."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice::Versione pronta: per installarla avvia Deploy (Actions → Deploy → Run workflow)."

@@ -320,8 +320,12 @@ Il flusso di un rilascio:
 ```
 merge su main ─▶ Release immagini ─┬─ desktop (installer Windows)
                                    ├─ immagini API e web (amd64, arm64; la web contiene gli installer)
-                                   └─ Deploy ─▶ ⏸ approvazione (environment production) ─▶ installazione e verifica
+                                   └─ riepilogo: «versione pronta» ─▶ ⏸ tu avvii Deploy ─▶ installazione e verifica
 ```
+
+L'avvio manuale di **Deploy** è l'approvazione: in un repository privato i *Required reviewers*
+degli environment richiedono GitHub Enterprise. Con un piano che li offre si può attivare il deploy
+automatico in attesa di approvazione (`AUTO_DEPLOY=true`, [ADR 0009](docs/decisioni/0009-rilascio-continuo-con-approvazione.md)).
 
 | Workflow | Quando | Cosa fa |
 |----------|--------|---------|
@@ -329,15 +333,15 @@ merge su main ─▶ Release immagini ─┬─ desktop (installer Windows)
 | `ci-web.yml` | PR e `main` (web) | build, test, immagine web (amd64 e arm64) |
 | `ci-desktop.yml` | PR (web, desktop); richiamato dal rilascio | installer Windows (artifact `gestionale-desktop-windows`, non ancora firmato) |
 | `ci-workflows.yml` | PR (workflow, script) | actionlint e shellcheck |
-| `release-images.yml` | ogni push su `main` | installer desktop, immagini su GHCR (`sha-<commit>`, `latest`), poi Deploy se `AUTO_DEPLOY=true` |
-| `deploy.yml` | dopo il rilascio (con **approvazione**) o a mano | controlla la macchina, installa un commit via SSH, verifica `/api/health`; a mano anche per tornare a un commit precedente |
+| `release-images.yml` | ogni push su `main` | installer desktop, immagini su GHCR (`sha-<commit>`, `latest`); nel riepilogo il link per installare |
+| `deploy.yml` | **a mano** dopo il rilascio (è l'approvazione) | controlla la macchina, installa un commit via SSH, verifica `/api/health`; a mano anche per tornare a un commit precedente |
 | `prepare-server.yml` | a mano | prepara o rimette in ordine il server: aggiornamenti, firewall, SSH, Docker, `.env`, backup |
 
 Scelte: [ADR 0009](docs/decisioni/0009-rilascio-continuo-con-approvazione.md).
 
 **Produzione su un VPS** (es. Aruba, OVH; da circa 5–11 € al mese): guida passo passo in
 [docs/deploy-vps.md](docs/deploy-vps.md): pochi passi a mano (VPS, utente, dominio, environment
-GitHub), poi **Prepara server** e i rilasci automatici con approvazione.
+GitHub), poi **Prepara server**; a ogni rilascio installi con un clic su **Deploy**.
 
 **Produzione su Oracle Cloud (gratuito)**: guida passo passo in
 [docs/deploy-oracle-cloud.md](docs/deploy-oracle-cloud.md); file in `infra/deploy/oracle/`

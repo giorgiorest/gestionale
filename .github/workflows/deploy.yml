@@ -4,16 +4,17 @@ name: Deploy
 # Linux con Docker (VPS come Aruba o OVH, oppure Oracle Cloud). I nomi OCI_* sono storici.
 #
 # Quando parte:
-#   - da solo alla fine di "Release immagini" (ogni merge su main), se la variabile di repository
-#     AUTO_DEPLOY = true: il job aspetta l'APPROVAZIONE nell'environment "production"
-#     (Required reviewers), poi installa;
-#   - a mano: Actions → Deploy → Run workflow (anche per tornare a un commit precedente).
+#   - a mano: Actions → Deploy → Run workflow. È il modo normale: avviarlo È l'approvazione
+#     (repository privato: i Required reviewers degli environment richiedono GitHub Enterprise);
+#     serve anche per tornare a un commit precedente;
+#   - da solo alla fine di "Release immagini", solo se la variabile di repository AUTO_DEPLOY = true:
+#     da attivare SOLO con i Required reviewers sull'environment "production".
 # Guide: docs/deploy-vps.md (VPS), docs/deploy-oracle-cloud.md (Oracle Cloud)
 #
 # Configurazione nell'environment GitHub "production" (Settings → Environments):
 #   secrets:   OCI_SSH_HOST, OCI_SSH_USER, OCI_SSH_PRIVATE_KEY, OCI_SSH_KNOWN_HOSTS
 #   variables: APP_DOMAIN, OCI_APP_DIR (facoltativa, default /opt/civilbeefy)
-#   protezione: Required reviewers (chi approva i deploy), Deployment branches = main
+#   protezione: Deployment branches = main (Required reviewers se disponibili nel piano GitHub)
 
 on:
   workflow_dispatch:
