@@ -252,6 +252,16 @@ e menu laterale. Scelta e alternative: [ADR 0006](docs/decisioni/0006-interfacci
 | `notifications:send` — inviare comunicazioni ai dipendenti e vederne la presa visione | ✓ | | |
 | `users:manage` — gestire gli utenti (area da realizzare) | ✓ | | |
 
+## Console di piattaforma
+
+Su `https://<dominio>/console` chi gestisce il servizio crea le aziende, ne gestisce licenze e utenti
+(password provvisoria mostrata una volta), le sospende o riattiva e consulta il registro delle
+operazioni. Login separato (realm Keycloak `piattaforma`) con **OTP obbligatoria**: i dipendenti delle
+aziende non possono entrarci, e l'API `/api/platform/**` rifiuta i loro token. Facoltativo:
+`ADMIN_ALLOWED_IPS` limita l'accesso a reti note. Guida: [docs/console-piattaforma.md](docs/console-piattaforma.md) ·
+[ADR 0010](docs/decisioni/0010-console-piattaforma.md). In locale: <http://localhost:4200/console>, utente
+`admin.piattaforma` / `piattaforma-demo-2026` (al primo accesso configura l'OTP).
+
 ## Privacy e GDPR
 
 - Solo **cookie tecnici** (accesso): nessun banner di consenso; informativa nella pagina pubblica

@@ -12,6 +12,7 @@
 #   4. SSH solo con chiave, niente accesso di root;
 #   5. Docker e Docker Compose, utente nel gruppo docker;
 #   6. cartella dell'applicazione e .env con password casuali, SOLO se il .env non esiste;
+#      in un .env esistente aggiunge solo le voci nuove (es. segreto della console), senza toccare le altre;
 #   7. backup giornaliero del database alle 3, 14 giorni di storico.
 # Non stampa mai password o segreti.
 set -euo pipefail
@@ -83,7 +84,7 @@ group "6. Cartella dell'applicazione e .env"
 install -d -o "$app_user" -g "$app_user" "$app_dir" "$app_dir/backup"
 env_file="$app_dir/.env"
 if [ -f "$env_file" ]; then
-  echo "Il .env esiste già: non viene modificato."
+  echo "Il .env esiste già: i valori presenti non vengono modificati."
   grep -qx "APP_DOMAIN=$domain" "$env_file" ||
     echo "::warning::APP_DOMAIN nel .env non è $domain: correggilo a mano (nano $env_file)."
 else
@@ -120,6 +121,15 @@ EOF
   chmod 600 "$env_file"
   echo "Creato $env_file con password casuali (leggi la password di Keycloak sulla macchina: grep KEYCLOAK_ADMIN_PASSWORD $env_file)."
 fi
+# Voci introdotte dopo la prima installazione: aggiunte solo se mancano (mai sovrascritte).
+ensure_env() {
+  if ! grep -q "^$1=" "$env_file"; then
+    printf '%s=%s\n' "$1" "$2" >> "$env_file"
+    echo "Aggiunta al .env la voce $1."
+  fi
+}
+ensure_env PLATFORM_KEYCLOAK_CLIENT_SECRET "$(openssl rand -hex 32)"
+ensure_env ADMIN_ALLOWED_IPS ""
 endgroup
 
 group "7. Backup giornaliero del database"

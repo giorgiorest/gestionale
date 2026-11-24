@@ -99,6 +99,23 @@ Dettagli e motivazioni (anche per la rivendita): [ADR 0003](decisioni/0003-ident
 - Accesso a una funzione = **ruolo** dell'utente (permesso) **e** **piano** del tenant (entitlement).
 - L'attributo `tenant_id` lo modificano solo gli amministratori di Keycloak.
 
+## Console di piattaforma
+
+Dettagli: [ADR 0010](decisioni/0010-console-piattaforma.md) e [guida](console-piattaforma.md).
+
+```
+amministratore ── realm "piattaforma" (password + OTP) ──▶ /console ──▶ /api/platform/** (catena propria)
+                                                                          │ app.worker = platform-admin
+                                                                          ├─▶ tenants, licenses, platform_audit (RLS dedicata)
+                                                                          └─▶ IdentityAdmin ─▶ Keycloak Admin API
+                                                                               (client di servizio: solo utenti del realm gestionale)
+```
+
+- Token accettati solo dal realm `piattaforma` con ruolo `platform-admin`; i token delle aziende sono rifiutati.
+- I dati di dominio delle aziende restano invisibili alla console; ogni modifica va in `platform_audit`.
+- Un'azienda sospesa viene bloccata nel `TenantFilter`; il limite di utenti della licenza è applicato.
+- Facoltativo `ADMIN_ALLOWED_IPS` in Caddy per console, login degli amministratori e console di Keycloak.
+
 ## Installazione e rilasci
 
 Dettagli: [ADR 0002](decisioni/0002-deploy-target.md), [guida VPS](deploy-vps.md) e [guida Oracle Cloud](deploy-oracle-cloud.md).

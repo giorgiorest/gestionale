@@ -164,7 +164,9 @@ link configurabili con `LEGAL_PRIVACY_URL` e `LEGAL_TERMS_URL` nel `.env`).
 
 1. Apri `https://<dominio>/sso/admin` ed entra con `KEYCLOAK_ADMIN` / `KEYCLOAK_ADMIN_PASSWORD` del `.env`.
 2. **Amministratore definitivo**: nel realm *master* → *Users → Add user* (il tuo nome), password,
-   *Role mapping → admin*. Esci, rientra con il nuovo utente ed **elimina l'utente temporaneo** `admin`.
+   *Role mapping → admin*. L'utente `admin` del `.env` **resta**: lo usa `keycloak-setup`.
+   Poi crea il tuo amministratore della piattaforma e usa la console:
+   [console-piattaforma.md](console-piattaforma.md).
 3. Passa al realm **gestionale** → *Users → Add user* per ogni persona:
    - username, email, nome e cognome;
    - **Attributes**: `tenant_id` = `00000000-0000-7000-8000-00000000de00` (l'azienda demo, attiva con

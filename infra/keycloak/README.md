@@ -7,6 +7,9 @@ Decisioni e motivazioni: [ADR 0003](../../docs/decisioni/0003-identita-keycloak.
 | `realm/gestionale-realm.json` | Configurazione di prodotto del realm `gestionale`: ruoli, client `gestionale-web`, mapper dei claim, policy password, lingua. Uguale per ogni installazione. |
 | `themes/gestionale/login` | Tema della pagina di login: logo, colori e font dell'applicazione (eredita da `keycloak.v2`). |
 | `dev/gestionale-users-0.json` | **Solo sviluppo**: utenti demo del tenant demo. Non caricarlo mai in un'installazione reale. |
+| `realm/piattaforma-realm.json` | Realm degli **amministratori della piattaforma** (console `/console`): ruolo `platform-admin`, client `gestionale-console`, password ≥ 14 caratteri e **OTP obbligatoria** (flusso `browser-otp-obbligatoria`). Nessun utente: il primo si crea a mano ([docs/console-piattaforma.md](../../docs/console-piattaforma.md)). |
+| `dev/piattaforma-users-0.json` | **Solo sviluppo**: `admin.piattaforma` / `piattaforma-demo-2026`. |
+| `setup/keycloak-setup.sh` | Allineamento idempotente delle installazioni esistenti (servizio compose `keycloak-setup`): client di servizio della console nel realm `gestionale`. |
 
 ## Avvio in sviluppo
 
@@ -58,6 +61,14 @@ Entrambi sono pubblici con PKCE e hanno gli stessi mapper:
 
 L'attributo `tenant_id` è dichiarato nello *user profile* del realm, visibile e modificabile
 **solo dagli amministratori**: un utente non può cambiare il proprio tenant dalla console account.
+
+## Client di servizio della console
+
+`gestionale-platform-admin` (realm `gestionale`) è l'unico modo in cui l'API tocca le API
+amministrative di Keycloak (ADR 0010): client confidenziale, solo *service account*, ruoli
+`view-users`, `query-users`, `manage-users` di `realm-management` (niente *full scope*), scope
+`kc-admin-api` (obbligatorio da Keycloak 26.8.2 per le Admin REST API). Il segreto è
+`${PLATFORM_KEYCLOAK_CLIENT_SECRET}` dal `.env`. Non può leggere client, ruoli o altri realm.
 
 ## Operazioni comuni
 

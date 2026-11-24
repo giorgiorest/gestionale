@@ -10,3 +10,7 @@ spring:
 gestionale:
   demo:
     enabled: false
+  platform:
+    jwt:
+      # Mai contattato: nei test i JWT sono simulati.
+      issuer-uri: http://localhost:0/realms/piattaforma

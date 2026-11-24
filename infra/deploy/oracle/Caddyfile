@@ -3,22 +3,36 @@
 	email {$ACME_EMAIL}
 }
 
+# Indirizzi da cui si raggiungono le parti amministrative (console di piattaforma, login degli
+# amministratori, console di Keycloak). ADMIN_ALLOWED_IPS nel .env, separati da spazi
+# (es. "203.0.113.10 198.51.100.0/24"); vuoto = da qualsiasi rete (protette comunque da password + OTP).
+(solo_reti_amministrative) {
+	@amministrazione_negata {
+		path {args[:]}
+		not remote_ip {$ADMIN_ALLOWED_IPS:0.0.0.0/0 ::/0}
+	}
+	respond @amministrazione_negata "Accesso amministrativo non consentito da questa rete" 403
+}
+
 {$APP_DOMAIN} {
 	encode zstd gzip
 
 	# Keycloak (pagine di login e console): servito sotto /sso (KC_HTTP_RELATIVE_PATH).
 	handle /sso* {
+		import solo_reti_amministrative /sso/realms/piattaforma/* /sso/admin/* /sso/realms/master/*
 		reverse_proxy keycloak:8080
 	}
 
 	# API direttamente da Caddy, che invia X-Forwarded-Proto=https e X-Forwarded-Host:
 	# l'API riconosce così l'indirizzo pubblico (controllo CORS sullo stesso sito).
 	handle /api/* {
+		import solo_reti_amministrative /api/platform/*
 		reverse_proxy api:8080
 	}
 
-	# Tutto il resto: web app (nginx con i file statici e config.json).
+	# Tutto il resto: web app (nginx con i file statici e config.json), console compresa.
 	handle {
+		import solo_reti_amministrative /console /console/*
 		reverse_proxy web:80
 	}
 

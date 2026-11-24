@@ -17,6 +17,14 @@ export interface AppConfig {
   branding?: Branding;
   /** Documenti legali di chi offre il servizio (facoltativi). */
   legal?: Legal;
+  /** Console di piattaforma (/console): login nel realm degli amministratori. Solo nel browser. */
+  console?: ConsoleConfig;
+}
+
+/** Provider OIDC degli amministratori della piattaforma (realm separato da quello delle aziende). */
+export interface ConsoleConfig {
+  authority: string;
+  clientId: string;
 }
 
 /** Link ai documenti legali dell'installazione, mostrati nella pagina Privacy e cookie. */

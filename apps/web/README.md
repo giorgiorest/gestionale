@@ -59,6 +59,14 @@ Con Docker le stesse impostazioni arrivano da `BRAND_NAME`, `BRAND_LOGO_URL`, `B
 Il logo conviene ospitarlo sullo stesso sito: un logo su un altro dominio fa arrivare a quel dominio
 l'indirizzo IP di chi apre l'app (vedi [docs/privacy-gdpr.md](../../docs/privacy-gdpr.md)).
 
+## Console di piattaforma (`features/console`)
+
+Area `/console` per gli amministratori della piattaforma ([docs/console-piattaforma.md](../../docs/console-piattaforma.md)):
+login proprio (`ConsoleAuthService`, realm da `config.json` → `console`, con Docker `CONSOLE_OIDC_AUTHORITY`),
+sessione separata da quella dell'app e chiamate solo con il token degli amministratori
+(`ConsoleApiService`; `authInterceptor` non manda mai il token dei dipendenti a `/api/platform`).
+Solo online e solo nel browser (non nell'app desktop).
+
 ## Service worker (PWA)
 
 `ngsw-config.json` → `navigationUrls`: il service worker risponde con la web app (anche offline)

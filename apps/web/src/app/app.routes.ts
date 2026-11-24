@@ -24,6 +24,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/desktop/desktop-download.page').then((m) => m.DesktopDownloadPage),
   },
+  {
+    // Console di piattaforma: login separato (realm degli amministratori), non per i dipendenti.
+    path: 'console',
+    loadChildren: () => import('./features/console/console.routes').then((m) => m.CONSOLE_ROUTES),
+  },
   // Ritorno dal provider di identità: gestito da AuthService prima del routing.
   { path: 'auth/callback', redirectTo: '' },
   {

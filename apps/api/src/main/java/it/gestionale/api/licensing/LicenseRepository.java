@@ -21,4 +21,7 @@ public interface LicenseRepository extends JpaRepository<License, UUID> {
     List<License> findValid(@Param("tenantId") UUID tenantId, @Param("at") Instant at);
 
     void deleteByTenantId(UUID tenantId);
+
+    /** Tutte le licenze del tenant, la più recente per prima (console di piattaforma). */
+    List<License> findByTenantIdOrderByValidFromDesc(UUID tenantId);
 }

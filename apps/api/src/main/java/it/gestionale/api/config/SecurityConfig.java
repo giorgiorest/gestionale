@@ -3,6 +3,7 @@ package it.gestionale.api.config;
 import it.gestionale.api.auth.RoleAuthoritiesConverter;
 import it.gestionale.api.auth.SecurityProperties;
 import it.gestionale.api.tenancy.TenancyProperties;
+import it.gestionale.api.tenancy.TenantAccessService;
 import it.gestionale.api.tenancy.TenantFilter;
 import java.util.List;
 
@@ -30,6 +31,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  *   <li>i permessi si controllano sugli endpoint con {@code @PreAuthorize};</li>
  *   <li>CORS solo per le origini dell'app desktop ({@link CorsProperties}): token nel header, niente cookie.</li>
  * </ul>
+ *
+ * <p>Le operazioni della console di piattaforma ({@code /api/platform/**}) hanno una catena
+ * propria, con un altro emittente dei token: vedi {@code PlatformSecurityConfig}.
  */
 @Configuration
 @EnableMethodSecurity
@@ -62,6 +66,7 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, TenancyProperties tenancyProperties,
+                                            TenantAccessService tenantAccess,
                                             JwtAuthenticationConverter jwtAuthenticationConverter) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
@@ -71,7 +76,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/health", "/actuator/health", "/actuator/info").permitAll()
                 .anyRequest().authenticated())
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
-            .addFilterAfter(new TenantFilter(tenancyProperties), BearerTokenAuthenticationFilter.class);
+            .addFilterAfter(new TenantFilter(tenancyProperties, tenantAccess), BearerTokenAuthenticationFilter.class);
         return http.build();
     }
 }

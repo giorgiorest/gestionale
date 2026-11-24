@@ -8,6 +8,7 @@ import it.gestionale.api.auth.SecurityProperties;
 import it.gestionale.api.config.CorsProperties;
 import it.gestionale.api.config.SecurityConfig;
 import it.gestionale.api.tenancy.TenancyProperties;
+import it.gestionale.api.tenancy.TenantAccessService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -27,6 +28,9 @@ class HealthControllerTest {
 
     @MockitoBean
     JwtDecoder jwtDecoder;
+
+    @MockitoBean
+    TenantAccessService tenantAccess;
 
     @Test
     void healthIsPublicAndReturnsOk() throws Exception {

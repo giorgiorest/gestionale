@@ -7,5 +7,9 @@
   },
   "branding": {
     "name": "civil beefy"
+  },
+  "console": {
+    "authority": "http://localhost:8180/realms/piattaforma",
+    "clientId": "gestionale-console"
   }
 }

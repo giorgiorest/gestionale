@@ -67,6 +67,10 @@ public class Tenant {
         this.status = status;
     }
 
+    public void rename(String name) {
+        this.name = name;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }

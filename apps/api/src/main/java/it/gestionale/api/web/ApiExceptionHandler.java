@@ -53,6 +53,21 @@ public class ApiExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
     }
 
+    @ExceptionHandler(it.gestionale.api.platform.PlatformException.class)
+    ProblemDetail platform(it.gestionale.api.platform.PlatformException e) {
+        return ProblemDetail.forStatusAndDetail(e.status(), e.getMessage());
+    }
+
+    @ExceptionHandler(it.gestionale.api.platform.identity.IdentityAdminException.class)
+    ProblemDetail identity(it.gestionale.api.platform.identity.IdentityAdminException e) {
+        HttpStatus status = switch (e.kind()) {
+            case NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case CONFLICT -> HttpStatus.CONFLICT;
+            case UNAVAILABLE -> HttpStatus.BAD_GATEWAY;
+        };
+        return ProblemDetail.forStatusAndDetail(status, e.getMessage());
+    }
+
     @ExceptionHandler(InvalidLicenseException.class)
     ProblemDetail invalidLicense(InvalidLicenseException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());

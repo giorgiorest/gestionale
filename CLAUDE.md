@@ -30,7 +30,8 @@ sostituito, perché lo usano configurazioni, token e installazioni esistenti.
 - Ogni endpoint filtra i dati per tenant e per utente autenticato. Nessun endpoint restituisce dati di altri tenant o di altri utenti senza autorizzazione esplicita.
 - Le funzionalità si controllano sempre nel backend con `EntitlementService` (piano del tenant) e con i permessi del ruolo. Il frontend nasconde la UI ma non è una protezione.
 - Profilazione: in Keycloak si assegnano solo ruoli; la mappatura ruolo → permessi sta in `Role`/`Permission` (apps/api, modulo `auth/`). Ogni endpoint dichiara il permesso con `@PreAuthorize("hasAuthority('…')")`. Un nuovo ruolo si aggiunge nel realm, in `Role`, nelle etichette del frontend e nella documentazione.
-- Il codice dipende solo da claim OIDC neutri (`sub`, `tenant_id`, `roles`, `aud`), mai da API specifiche di Keycloak: il prodotto viene rivenduto e il provider di identità deve restare sostituibile.
+- Il codice dipende solo da claim OIDC neutri (`sub`, `tenant_id`, `roles`, `aud`), mai da API specifiche di Keycloak: il prodotto viene rivenduto e il provider di identità deve restare sostituibile. Unica eccezione: la gestione utenti della console di piattaforma, isolata dietro `IdentityAdmin` (implementazione `KeycloakIdentityAdmin`, ADR 0010).
+- Console di piattaforma (`/console`, `/api/platform/**`, ADR 0010): solo per gli amministratori della piattaforma (realm `piattaforma`, ruolo `platform-admin`, OTP obbligatoria). Mai dati di dominio delle aziende nella console; accesso cross-tenant solo con `WorkerContext` `platform-admin` sulle tabelle con la policy dedicata (`tenants`, `licenses`, `platform_audit`). Ogni modifica scrive in `platform_audit` (mai password). Nessun token dei dipendenti verso `/api/platform`.
 - La configurazione di un'installazione (URL, client, chiavi pubbliche) arriva da variabili d'ambiente o da `config.json`, mai ricompilando: la stessa build serve clienti diversi.
 - Il codice web resta unico per browser e desktop: le differenze passano da `isPackagedDesktopApp()` e dalla configurazione, mai da build separate. Firma del codice e chiavi degli aggiornamenti stanno solo nei GitHub Secrets.
 - Le modifiche al realm si fanno nel file JSON versionato; non committare mai utenti reali, password reali o segreti di client.
@@ -44,7 +45,7 @@ sostituito, perché lo usano configurazioni, token e installazioni esistenti.
 - Interfaccia: solo componenti Angular Material. Colori, forme e tipografia solo dalle variabili di sistema (`var(--mat-sys-…)`), mai colori fissi. L'accento giallo (`--mat-sys-tertiary`, con testo `--mat-sys-on-tertiary`) si usa solo come riempimento, mai come colore del testo: il marchio del cliente (`branding` in config.json) deve applicarsi ovunque. Font e icone restano inclusi nell'app (niente Google Fonts o CDN esterni).
 - Ogni nuova libreria UI o di componenti va verificata sulla licenza prima di adottarla: il prodotto viene rivenduto (es. PrimeNG è commerciale oltre certe soglie, vedi ADR 0006).
 - Gli ID delle entità sono UUID generati dal client (preferibilmente v7).
-- Le scritture offline passano dalla tabella outbox. Non chiamare direttamente le API di scrittura dai componenti.
+- Le scritture offline passano dalla tabella outbox. Non chiamare direttamente le API di scrittura dai componenti. Eccezione: la console di piattaforma, solo online (`ConsoleApiService`).
 - Prima di concludere un task: build e test del modulo toccato devono passare.
 - Aggiorna sempre la documentazione nello stesso branch del codice: README (avvio e comandi), docs/architettura.md, un ADR in docs/decisioni/ per le scelte nuove, i README dei moduli in infra/ e apps/.
 - Commit con Conventional Commits in italiano o inglese, coerente con lo storico.

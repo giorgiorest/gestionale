@@ -19,14 +19,17 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * {@link TenantAwareDataSource} ogni volta che una connessione viene presa dal pool, così le
  * policy di Row Level Security filtrano tutte le query della richiesta.
  *
- * <p>Una richiesta autenticata senza tenant valido viene rifiutata con 403.
+ * <p>Una richiesta autenticata senza tenant valido viene rifiutata con 403, come quella di
+ * un'azienda sospesa dalla console di piattaforma ({@link TenantAccessService}).
  */
 public class TenantFilter extends OncePerRequestFilter {
 
     private final TenancyProperties properties;
+    private final TenantAccessService access;
 
-    public TenantFilter(TenancyProperties properties) {
+    public TenantFilter(TenancyProperties properties, TenantAccessService access) {
         this.properties = properties;
+        this.access = access;
     }
 
     @Override
@@ -42,6 +45,12 @@ public class TenantFilter extends OncePerRequestFilter {
         UUID tenantId = parseTenant(jwtAuth.getToken().getClaimAsString(properties.tenantClaim()));
         if (tenantId == null) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Token senza tenant valido");
+            return;
+        }
+
+        if (access.isBlocked(tenantId)) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN,
+                    "Azienda sospesa: contatta il fornitore del servizio");
             return;
         }
 
