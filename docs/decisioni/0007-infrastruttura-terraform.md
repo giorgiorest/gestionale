@@ -1,6 +1,8 @@
 # ADR 0007 — Infrastruttura Oracle Cloud come codice (Terraform)
 
-- Stato: accettata
+- Stato: **superata** (2026-11-24): la produzione è passata a un VPS (Aruba), creato dal pannello del
+  fornitore e configurato dal workflow Prepara server ([ADR 0009](0009-rilascio-continuo-con-approvazione.md)).
+  Workflow e codice Terraform sono stati rimossi; restano nello storico git (commit precedenti al 2026-11-24).
 - Data: 2026-11-23
 
 ## Contesto

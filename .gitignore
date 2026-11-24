@@ -10,17 +10,7 @@ apps/desktop/src-tauri/target/
 .env.*
 !.env.example
 
-# Terraform: stato, piani, configurazione locale e chiavi
-.terraform/
-.terraform.lock.hcl
-*.tfstate
-*.tfstate.*
-*.tfplan
-tfplan
-plan.json
-apply.log
-*.tfvars
-backend.hcl
+# Chiavi private (SSH, API)
 *.pem
 
 # Installer desktop copiati nella web app dalla pipeline di rilascio
