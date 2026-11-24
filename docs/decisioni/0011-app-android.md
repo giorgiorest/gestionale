@@ -65,7 +65,9 @@ stessi permessi (`capabilities/`), stesso punto di ingresso Rust.
 - **Niente aggiornamenti automatici**: l'APK si distribuisce fuori dal Play Store, quindi
   l'utente torna sulla pagina `/app-desktop` e riscarica. Perché Android riconosca un
   aggiornamento serve un `versionCode` più alto, che Tauri ricava da `version` di
-  `tauri.conf.json`: va aumentato a ogni rilascio.
+  `tauri.conf.json`: va aumentato a ogni rilascio. `tauri-plugin-updater` non supporta Android,
+  quindi non basta estendere quanto previsto per il desktop; tracciato nella issue
+  [#32](https://github.com/giorgiorest/gestionale/issues/32).
 - nginx deve servire l'APK come `application/vnd.android.package-archive`: con il tipo generico
   Android scarica il file ma non propone di installarlo.
 - `minSdk` 24 (Android 7): sotto, la WebView di sistema è troppo vecchia.

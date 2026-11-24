@@ -290,6 +290,11 @@ Tracciati come issue su GitHub.
   (`msiexec /i "civil beefy_x.y.z_x64_it-IT.msi" /qn`) via Intune o criteri di gruppo; in futuro si
   potrà precompilare l'indirizzo del server con una proprietà dell'MSI.
 - **macOS e Linux**: rimandati. **iOS**: richiede un Mac e un account sviluppatore Apple.
-- **Android**: aggiornamenti in-app (oggi si riscarica l'APK dalla pagina del server), e login in
-  una Custom Tab invece che nella WebView dell'app (RFC 8252). Il `versionCode` segue `version` di
-  `tauri.conf.json`: va aumentato a ogni rilascio, altrimenti Android non vede un aggiornamento.
+- **Aggiornamenti dell'app Android** ([#32](https://github.com/giorgiorest/gestionale/issues/32)).
+  L'APK sta fuori dal Play Store, quindi oggi l'utente lo riscarica a mano dalla pagina del server.
+  Nella stessa issue il `versionCode`, che segue `version` di `tauri.conf.json`: va aumentato a ogni
+  rilascio, altrimenti Android non vede un aggiornamento. `tauri-plugin-updater` (issue
+  [#4](https://github.com/giorgiorest/gestionale/issues/4)) non copre Android: serve un altro
+  meccanismo.
+- **Android, login nel browser di sistema**: Custom Tab invece della WebView dell'app (RFC 8252),
+  come il punto già aperto per il desktop.
