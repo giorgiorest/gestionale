@@ -198,22 +198,53 @@ Android installa solo APK firmati, e **la chiave non si può cambiare**: un APK 
 un'altra chiave è un'app diversa e non aggiorna quella installata. La chiave va conservata
 (gestore di password o cassaforte aziendale), **fuori dal repository**.
 
+`keytool` arriva con qualsiasi JDK (anche quello di Android Studio). Da una cartella **fuori dal
+repository**:
+
 ```bash
-keytool -genkey -v -keystore release.keystore -alias app-release -keyalg RSA -keysize 2048 -validity 10000
+keytool -genkeypair -v -keystore release.keystore -alias app-release -keyalg RSA -keysize 2048 -validity 10000
 ```
 
+Chiede una password e i dati del certificato (nome, organizzazione, paese: valgono solo come
+etichetta, non li verifica nessuno).
+
+> **Una sola password.** Il formato predefinito dei JDK recenti è PKCS12, che non ammette una
+> password diversa per la chiave: `keytool` avvisa «Different store and key passwords not supported
+> for PKCS12 KeyStores» e ignora `-keypass`. Quindi `ANDROID_KEY_PASSWORD` e
+> `ANDROID_KEYSTORE_PASSWORD` vanno impostati con **lo stesso valore**, altrimenti la build fallisce
+> con un errore poco chiaro sulla lettura della chiave.
+
 Poi si caricano i quattro valori nei **GitHub Secrets** del repository
-(*Settings → Secrets and variables → Actions*), mai nel codice:
+(*Settings → Secrets and variables → Actions → New repository secret*), mai nel codice:
 
 | Secret | Valore |
 |--------|--------|
-| `ANDROID_KEYSTORE_BASE64` | la keystore codificata: `base64 -w0 release.keystore` (su macOS `base64 -i release.keystore`) |
-| `ANDROID_KEYSTORE_PASSWORD` | password della keystore |
-| `ANDROID_KEY_ALIAS` | alias della chiave (`app-release` nel comando sopra) |
-| `ANDROID_KEY_PASSWORD` | password della chiave |
+| `ANDROID_KEYSTORE_BASE64` | la keystore codificata in base64 (comandi qui sotto) |
+| `ANDROID_KEYSTORE_PASSWORD` | la password scelta sopra |
+| `ANDROID_KEY_ALIAS` | alias della chiave: `app-release` |
+| `ANDROID_KEY_PASSWORD` | di nuovo la stessa password |
 
-Si impostano dall'interfaccia di GitHub, oppure con `gh secret set ANDROID_KEY_ALIAS` (il valore
-si digita, non si scrive nel comando: finirebbe nella cronologia della shell).
+La codifica deve essere **su una riga sola**, senza a capo:
+
+```bash
+base64 -w0 release.keystore > release.keystore.b64   # Linux
+```
+
+```bash
+base64 -i release.keystore -o release.keystore.b64   # macOS
+```
+
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("release.keystore")) | Set-Clipboard   # Windows
+```
+
+Si incollano dall'interfaccia di GitHub, oppure con `gh secret set ANDROID_KEYSTORE_BASE64 < release.keystore.b64`
+e `gh secret set ANDROID_KEYSTORE_PASSWORD` (per le password il valore si digita quando richiesto,
+non si scrive nel comando: finirebbe nella cronologia della shell). Dopo l'invio, cancella il file
+`.b64`: è la chiave in chiaro.
+
+Finché i secret mancano, **CI Android** si ferma con «Manca il secret ANDROID_KEYSTORE_BASE64»: è
+voluto, un APK non firmato non si installa.
 
 ### Compilare l'APK sul proprio PC
 
