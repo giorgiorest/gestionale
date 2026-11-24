@@ -1,19 +1,17 @@
-name: Release immagini
+name: Rilascio
 
 # A ogni push su main costruisce e pubblica su GHCR le immagini di API e web per amd64 e arm64
 # (VPS x86 o Oracle Cloud Ampere A1), con le etichette:
-#   sha-<commit completo>  → usata dal workflow Deploy: ogni commit di main ha una coppia coerente
+#   sha-<commit completo>  → usata da "Installa in produzione": ogni commit di main ha una coppia coerente
 #   latest                 → ultima versione di main
 # L'immagine web contiene anche i pacchetti dell'app dello stesso commit (pagina /app-desktop):
 # gli installer Windows e l'APK Android. Se una delle due build fallisce le immagini escono
 # comunque: senza installer se manca il desktop, con la sola parte Windows se manca l'APK.
 #
-# Alla fine:
-#   - job "approvazione": apre l'issue «Rilascio pronto» e aspetta un commento /deploy (o /annulla)
-#     da chi ha accesso in scrittura, al massimo DEPLOY_APPROVAL_MINUTES (default 30); con /deploy
-#     parte il job "deploy" nello stesso run. Script: .github/scripts/attendi-approvazione.sh;
-#   - con la variabile di repository AUTO_DEPLOY = true il deploy parte subito: da usare SOLO se
-#     l'environment "production" ha i Required reviewers (repository pubblico o GitHub Enterprise).
+# Alla fine richiama "Installa in produzione" sullo stesso commit. Il job NON parte da solo:
+# resta in attesa finché un revisore non approva il deployment. Il blocco è dei *Required
+# reviewers* dell'environment "production" (Settings → Environments), non di questo workflow:
+# se quei revisori venissero tolti, ogni push su main andrebbe in produzione senza chiedere.
 on:
   push:
     branches: [main]
@@ -106,43 +104,10 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
 
-  # Approvazione nello stesso run: un'issue «Rilascio pronto» e l'attesa del commento /deploy.
-  # I Required reviewers degli environment, nei repository privati, richiedono GitHub Enterprise.
-  approvazione:
-    needs: image
-    if: vars.AUTO_DEPLOY != 'true'
-    runs-on: ubuntu-latest
-    # L'attesa consuma minuti di Actions: al massimo DEPLOY_APPROVAL_MINUTES (default 30).
-    timeout-minutes: 40
-    # Un rilascio più recente sostituisce quello in attesa.
-    concurrency:
-      group: approvazione-rilascio
-      cancel-in-progress: true
-    permissions:
-      contents: read
-      issues: write
-    outputs:
-      approved: ${{ steps.wait.outputs.approved }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          sparse-checkout: .github/scripts
-      - id: wait
-        env:
-          GH_TOKEN: ${{ github.token }}
-          OWNER: ${{ github.repository_owner }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          DEPLOY_URL: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/deploy.yml
-          WAIT_MINUTES: ${{ vars.DEPLOY_APPROVAL_MINUTES || '30' }}
-        run: bash .github/scripts/attendi-approvazione.sh
-
-  # Installazione in produzione dello stesso commit: dopo /deploy sull'issue, oppure subito
-  # (in attesa dei Required reviewers) con AUTO_DEPLOY = true su piani che li offrono.
+  # Installazione in produzione dello stesso commit, dopo l'approvazione di un revisore
+  # (Required reviewers dell'environment "production"). Parte solo se le immagini sono uscite.
   deploy:
-    needs: [image, approvazione]
-    if: >-
-      ${{ !cancelled() && needs.image.result == 'success' &&
-          (vars.AUTO_DEPLOY == 'true' || needs.approvazione.outputs.approved == 'true') }}
+    needs: image
     uses: ./.github/workflows/deploy.yml
     with:
       commit: ${{ github.sha }}

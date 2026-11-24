@@ -151,7 +151,7 @@ All'installazione l'MSI non è ancora firmato: SmartScreen chiede *Ulteriori inf
 *Esegui comunque*. Al primo avvio indica il server (in locale `http://localhost:4200`). Dettagli,
 modalità sviluppo (`npm run dev`) e problemi frequenti: [apps/desktop/README.md](apps/desktop/README.md).
 In alternativa l'installer già pronto si scarica dalla pagina `/app-desktop` di un server installato,
-oppure da GitHub → Actions → **Release immagini** (o **CI Desktop** per una PR) → artifact
+oppure da GitHub → Actions → **Rilascio** (o **Installer Windows** per una PR) → artifact
 `gestionale-desktop-windows`.
 
 ### Fermare tutto
@@ -219,7 +219,7 @@ npm run tauri -- android build --apk # APK firmato (serve key.properties, vedi s
 
 I comandi Android richiedono l'SDK Android con un NDK (`ANDROID_HOME`, `NDK_HOME`) e i target
 Rust `aarch64-linux-android` e simili; l'APK già pronto si scarica dalla pagina `/app-desktop`
-di un server installato, oppure da GitHub → Actions → **Release immagini** (o **CI Android** per
+di un server installato, oppure da GitHub → Actions → **Rilascio** (o **APK Android** per
 una PR) → artifact `gestionale-android-apk`.
 
 L'installer è unico per tutti i clienti: al primo avvio chiede l'indirizzo del server.
@@ -329,34 +329,34 @@ La campanella si aggiorna ogni minuto: per vedere subito una notifica appena inv
 Il flusso di un rilascio:
 
 ```
-merge su main ─▶ Release immagini ─┬─ desktop (installer Windows)
-                                   ├─ android (APK firmato)
-                                   ├─ immagini API e web (amd64, arm64; la web contiene i pacchetti)
-                                   ├─ approvazione: issue «Rilascio pronto» ─▶ ⏸ commenti /deploy (entro 30 min)
-                                   └─ deploy ─▶ installazione e verifica
+merge su main ─▶ Rilascio ─┬─ installer Windows
+                           ├─ APK Android
+                           ├─ immagini API e web (amd64, arm64; la web contiene i pacchetti)
+                           └─ installa in produzione ─▶ ⏸ approvi il deployment ─▶ installazione e verifica
 ```
 
-L'approvazione avviene **nello stesso run**: un'issue ti avvisa (email e notifica) e il deploy parte
-quando commenti `/deploy` (`/annulla` per rifiutare). I *Required reviewers* degli environment, nei
-repository privati, richiedono GitHub Enterprise; questo li sostituisce. Senza risposta entro 30 minuti
-la richiesta scade e si può sempre lanciare **Deploy** a mano ([ADR 0009](docs/decisioni/0009-rilascio-continuo-con-approvazione.md)).
+L'installazione **non parte da sola**: il job resta in attesa finché un revisore non approva il
+deployment. Il blocco sono i *Required reviewers* dell'environment `production`
+(*Settings → Environments*), una funzione di GitHub: se venissero tolti, ogni push su `main`
+andrebbe in produzione senza chiedere nulla. Si può anche avviare **Installa in produzione** a mano,
+per esempio per tornare a un commit precedente ([ADR 0009](docs/decisioni/0009-rilascio-continuo-con-approvazione.md)).
 
 | Workflow | Quando | Cosa fa |
 |----------|--------|---------|
-| `ci-api.yml` | PR e `main` (API) | build e test dell'API |
-| `ci-web.yml` | PR e `main` (web) | build, test, immagine web (amd64 e arm64) |
-| `ci-desktop.yml` | PR (web, desktop); richiamato dal rilascio | installer Windows (artifact `gestionale-desktop-windows`, non ancora firmato) |
-| `android.yml` | PR (web, desktop); richiamato dal rilascio | APK Android firmato (artifact `gestionale-android-apk`) |
-| `ci-workflows.yml` | PR (workflow, script) | actionlint e shellcheck |
-| `release-images.yml` | ogni push su `main` | installer desktop, immagini su GHCR (`sha-<commit>`, `latest`), approvazione con `/deploy` su un'issue, poi deploy |
-| `deploy.yml` | dal rilascio dopo `/deploy`, o a mano | controlla la macchina, installa un commit via SSH, verifica `/api/health`; a mano anche per tornare a un commit precedente |
-| `prepare-server.yml` | a mano | prepara o rimette in ordine il server: aggiornamenti, firewall, SSH, Docker, `.env`, backup |
+| **Verifica API** (`ci-api.yml`) | PR e `main` (API) | build e test dell'API |
+| **Verifica web** (`ci-web.yml`) | PR e `main` (web) | build, test, immagine web (amd64 e arm64) |
+| **Installer Windows** (`ci-desktop.yml`) | PR (web, desktop); richiamato dal rilascio | installer Windows (artifact `gestionale-desktop-windows`, non ancora firmato) |
+| **APK Android** (`android.yml`) | PR (web, desktop); richiamato dal rilascio | APK Android firmato, solo arm64 (artifact `gestionale-android-apk`) |
+| **Verifica workflow e script** (`ci-workflows.yml`) | PR (workflow, script) | actionlint e shellcheck |
+| **Rilascio** (`release-images.yml`) | ogni push su `main` | installer e APK, immagini su GHCR (`sha-<commit>`, `latest`), poi chiama l'installazione |
+| **Installa in produzione** (`deploy.yml`) | dal rilascio, dopo l'approvazione di un revisore; o a mano | controlla la macchina, installa un commit via SSH, verifica `/api/health`; a mano anche per tornare a un commit precedente |
+| **Prepara il server** (`prepare-server.yml`) | a mano | prepara o rimette in ordine il server: aggiornamenti, firewall, SSH, Docker, `.env`, backup |
 
 Scelte: [ADR 0009](docs/decisioni/0009-rilascio-continuo-con-approvazione.md).
 
 **Produzione su un VPS** (es. Aruba, OVH; da circa 5–11 € al mese): guida passo passo in
 [docs/deploy-vps.md](docs/deploy-vps.md): pochi passi a mano (VPS, utente, dominio, environment
-GitHub), poi **Prepara server**; a ogni rilascio approvi l'installazione commentando `/deploy`.
+GitHub), poi **Prepara il server**; a ogni rilascio approvi il deployment in attesa su GitHub.
 
 **Produzione su Oracle Cloud (gratuito)**: guida passo passo in
 [docs/deploy-oracle-cloud.md](docs/deploy-oracle-cloud.md); file in `infra/deploy/oracle/`

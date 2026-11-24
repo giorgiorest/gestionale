@@ -1,4 +1,4 @@
-name: CI Android
+name: APK Android
 
 # APK Android dell'app (Tauri 2): stessa build di apps/web impacchettata per il telefono.
 #
@@ -13,10 +13,17 @@ name: CI Android
 #   ANDROID_KEY_PASSWORD      password della chiave
 # Come generarli: apps/desktop/README.md, "APK Android".
 #
-# Sulle pull request verifica la build, come CI Desktop. Su main lo richiama "Release immagini",
+# Sulle pull request verifica la build, come "Installer Windows". Su main lo richiama "Rilascio",
 # che mette l'APK nell'immagine web (pagina /app-desktop): niente build doppia.
-# I secret non arrivano alle pull request dai fork: il repository è privato e non ne ha, ma se un
-# giorno ne avesse, questo job andrebbe limitato alle PR interne.
+#
+# Il repository è pubblico, e i secret NON arrivano alle pull request dai fork: lì il job si
+# fermerebbe sempre sulla chiave di firma. Per questo salta le PR che non vengono da questo
+# repository (vedi `if` del job).
+#
+# La libreria Rust si compila solo per arm64-v8a: è l'unica architettura dei telefoni Android
+# in commercio. Compilarne quattro (arm64, armv7, x86, x86_64) quadruplicava la parte più lenta
+# del job per coprire emulatori e dispositivi a 32 bit, che non sono il bersaglio del prodotto.
+# Per provare l'app su un emulatore si usa `tauri android dev`, che compila per quella macchina.
 
 on:
   pull_request:
@@ -32,6 +39,10 @@ permissions:
 
 jobs:
   apk:
+    # Le PR dai fork non ricevono i secret di firma: inutile farle fallire sulla chiave.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -52,9 +63,10 @@ jobs:
             apps/web/package-lock.json
             apps/desktop/package-lock.json
 
+      # Solo arm64: un target invece di quattro, sulla parte più lenta del job.
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+          targets: aarch64-linux-android
 
       - uses: Swatinem/rust-cache@v2
         with:
@@ -140,7 +152,7 @@ jobs:
       # beforeBuildCommand (tauri.conf.json) esegue prima la build di produzione di apps/web.
       - name: Build APK
         working-directory: apps/desktop
-        run: npm run tauri -- android build --apk
+        run: npm run tauri -- android build --apk --target aarch64
 
       - name: Verifica che l'APK sia firmato
         run: |

@@ -30,7 +30,7 @@ export interface DesktopRelease {
 /**
  * Pagina pubblica di download dell'app installabile: Windows e Android.
  *
- * I pacchetti sono nell'immagine web dello stesso rilascio (Release immagini): ogni server
+ * I pacchetti sono nell'immagine web dello stesso rilascio (Rilascio): ogni server
  * offre l'app della propria versione. Un solo pacchetto per tutti i clienti: al primo avvio
  * l'utente indica l'indirizzo di questo server, mostrato qui da copiare.
  *

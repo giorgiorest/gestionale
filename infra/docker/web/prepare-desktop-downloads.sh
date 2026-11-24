@@ -2,10 +2,10 @@
 # Prepara i pacchetti dell'app per la pagina di download della web app (/app-desktop).
 # Uso: prepare-desktop-downloads.sh <cartella installer CI> <cartella destinazione> <commit> [cartella APK]
 #
-# Dalla cartella dell'artifact della CI Desktop (msi/*.msi e nsis/*-setup.exe) copia:
+# Dalla cartella dell'artifact della Installer Windows (msi/*.msi e nsis/*-setup.exe) copia:
 #   civilbeefy-setup.exe  installazione per l'utente, senza permessi di amministratore
 #   civilbeefy.msi        installazione centralizzata (reparto IT, criteri di gruppo)
-# e, se è indicata la cartella dell'artifact di CI Android:
+# e, se è indicata la cartella dell'artifact di APK Android:
 #   civilbeefy.apk        app Android, da installare a mano (fuori dal Play Store)
 #
 # Scrive desktop.json (versione, commit, data, dimensione e SHA-256 di ogni file), letto dalla

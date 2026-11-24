@@ -43,7 +43,7 @@ stessi permessi (`capabilities/`), stesso punto di ingresso Rust.
    produrre un APK non firmato. Identificatore dell'app invariato (`it.gestionale.desktop`):
    cambiarlo creerebbe un'app diversa agli occhi di Android e del desktop.
 7. **CI e distribuzione**: `.github/workflows/android.yml` (runner Linux) produce l'APK come
-   artifact sulle pull request; su `main` lo richiama *Release immagini*, che lo include
+   artifact sulle pull request; su `main` lo richiama *Rilascio*, che lo include
    nell'**immagine web dello stesso commit** insieme agli installer Windows. Gli utenti lo
    scaricano dalla pagina `/app-desktop` del server della loro azienda, come il setup Windows:
    versione dell'app e del server restano allineate, anche nei ritorni indietro.
@@ -71,6 +71,11 @@ stessi permessi (`capabilities/`), stesso punto di ingresso Rust.
 - nginx deve servire l'APK come `application/vnd.android.package-archive`: con il tipo generico
   Android scarica il file ma non propone di installarlo.
 - `minSdk` 24 (Android 7): sotto, la WebView di sistema è troppo vecchia.
+- L'APK di rilascio contiene la libreria Rust per il solo **arm64-v8a**: compilarla per quattro
+  architetture era la parte più lenta della CI, e x86/x86_64 su Android servono agli emulatori e ai
+  Chromebook, non ai telefoni. Chi deve provare su un emulatore usa `tauri android dev`, che compila
+  per quella macchina. Per rimettere le altre basta togliere `--target aarch64` dal workflow e
+  rimettere i target in `dtolnay/rust-toolchain`.
 - iOS resta fuori: richiede un Mac e un account sviluppatore Apple.
 
 ## Alternative scartate

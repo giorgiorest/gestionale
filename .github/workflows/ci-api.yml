@@ -1,4 +1,4 @@
-name: CI API
+name: Verifica API
 
 # Verifica (build e test). Le immagini le pubblica release-images.yml a ogni push su main.
 

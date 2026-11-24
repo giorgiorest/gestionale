@@ -57,8 +57,8 @@ e dal menu utente (nascosta dentro l'app già installata). La pagina mostra:
 
 Come ci arrivano i pacchetti:
 
-1. a ogni merge su `main` il workflow **Release immagini** richiama **CI Desktop** (Windows) e
-   **CI Android** (Linux);
+1. a ogni merge su `main` il workflow **Rilascio** richiama **Installer Windows** (Windows) e
+   **APK Android** (Linux);
 2. `infra/docker/web/prepare-desktop-downloads.sh` copia i pacchetti in `apps/web/public/downloads/`
    come `civilbeefy-setup.exe`, `civilbeefy.msi` e `civilbeefy.apk`, con `desktop.json` (versione,
    commit, data, dimensioni, SHA-256);
@@ -75,10 +75,10 @@ da git) con lo script sopra, che accetta la cartella dell'APK come quarto argome
 
 ## Scaricare l'MSI dalla CI (senza installare nulla)
 
-Le pull request che toccano `apps/web` o `apps/desktop` fanno partire **CI Desktop**, che crea gli
-installer su Windows; su `main` li crea **Release immagini** (job `desktop`).
+Le pull request che toccano `apps/web` o `apps/desktop` fanno partire **Installer Windows**, che crea gli
+installer su Windows; su `main` li crea **Rilascio** (job `desktop`).
 
-1. GitHub → repository → **Actions** → **Release immagini** (per `main`) o **CI Desktop** (per una PR) → l'esecuzione che interessa.
+1. GitHub → repository → **Actions** → **Rilascio** (per `main`) o **Installer Windows** (per una PR) → l'esecuzione che interessa.
 2. In fondo alla pagina, sezione **Artifacts**: scarica `gestionale-desktop-windows` (zip).
 3. Dentro ci sono `Civil Beefy_<versione>_x64_it-IT.msi` e `Civil Beefy_<versione>_x64-setup.exe`.
 
@@ -181,9 +181,9 @@ non va rigenerato con `tauri android init` senza rimettere quelle modifiche.
 
 ### Scaricare l'APK dalla CI
 
-Il workflow **CI Android** (`.github/workflows/android.yml`) gira sulle pull request che toccano
-`apps/web` o `apps/desktop` e a mano (*Actions → CI Android → Run workflow*); su `main` lo richiama
-**Release immagini**. Pubblica l'artifact `gestionale-android-apk`.
+Il workflow **APK Android** (`.github/workflows/android.yml`) gira sulle pull request che toccano
+`apps/web` o `apps/desktop` e a mano (*Actions → APK Android → Run workflow*); su `main` lo richiama
+**Rilascio**. Pubblica l'artifact `gestionale-android-apk`.
 
 ```bash
 gh run download --repo giorgiorest/gestionale --name gestionale-android-apk
@@ -243,7 +243,7 @@ e `gh secret set ANDROID_KEYSTORE_PASSWORD` (per le password il valore si digita
 non si scrive nel comando: finirebbe nella cronologia della shell). Dopo l'invio, cancella il file
 `.b64`: è la chiave in chiaro.
 
-Finché i secret mancano, **CI Android** si ferma con «Manca il secret ANDROID_KEYSTORE_BASE64»: è
+Finché i secret mancano, **APK Android** si ferma con «Manca il secret ANDROID_KEYSTORE_BASE64»: è
 voluto, un APK non firmato non si installa.
 
 ### Compilare l'APK sul proprio PC
@@ -253,6 +253,11 @@ Serve l'SDK Android (Android Studio o i *command line tools*) con un NDK, e i ta
 ```bash
 rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
 ```
+
+In locale conviene tenerli tutti, perché `android dev` compila per l'architettura dell'emulatore
+(di solito x86_64). La CI invece costruisce **solo arm64-v8a**: è l'unica architettura dei telefoni
+in commercio, e compilarne quattro quadruplicava la parte più lenta del job. L'APK pubblicato non
+si installa quindi sugli emulatori x86.
 
 Variabili d'ambiente richieste da Tauri: `ANDROID_HOME` (cartella dell'SDK), `NDK_HOME`
 (cartella della versione di NDK, es. `$ANDROID_HOME/ndk/27.2.12479018`) e un JDK 21.

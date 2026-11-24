@@ -23,7 +23,7 @@ I file di produzione sono in `infra/deploy/oracle/` (il nome è storico: valgono
 | 4 | Dominio | DuckDNS o DNS | a mano |
 | 5 | Environment `production` | GitHub | a mano, una volta |
 | 6 | **Prepara server**: aggiornamenti, firewall, SSH, Docker, `.env`, backup | GitHub Actions | workflow |
-| 7 | **Rilascio**: build, immagini, installer desktop (automatico a ogni merge) → **Deploy** avviato da te | GitHub Actions | un clic per ogni rilascio |
+| 7 | **Rilascio**: build, immagini, installer e APK (automatico a ogni merge) → **Installa in produzione**, che aspetta la tua approvazione | GitHub Actions | un clic per ogni rilascio |
 
 ## 0. Che macchina scegliere
 
@@ -125,21 +125,15 @@ anche la riga dell'impronta deve iniziare con lo stesso nome.
 Nella stessa pagina, **Deployment branches and tags** → *Selected branches* → `main`: il deploy
 parte solo dalla versione ufficiale.
 
-**Approvazione dei deploy.** In un repository **privato** GitHub offre i *Required reviewers* degli
-environment solo con il piano Enterprise. Al loro posto, a ogni rilascio il job **approvazione** apre
-un'issue «Rilascio pronto» (ti arrivano email e notifica, anche sull'app GitHub del telefono) e aspetta:
+**Approvazione dei deploy.** Nella stessa pagina dell'environment, **Required reviewers** →
+aggiungi te stesso (o chi deve poter approvare). È il blocco che tiene l'installazione in attesa:
+a ogni rilascio GitHub ti manda una notifica e il job resta fermo finché non premi *Review
+deployments → Approve and deploy*. Puoi anche rifiutare.
 
-- commenti **`/deploy`** → il deploy parte nello stesso run;
-- commenti **`/annulla`** → la produzione resta com'è;
-- nessuna risposta entro **30 minuti** → la richiesta scade (avvia **Deploy** a mano quando vuoi).
-
-Conta solo il commento di chi ha accesso in scrittura al repository. L'attesa consuma minuti di
-GitHub Actions (uno al minuto): per cambiarne la durata, variabile di repository
-`DEPLOY_APPROVAL_MINUTES`. Un rilascio più recente sostituisce quello in attesa.
-
-Con un piano che offre i *Required reviewers* (repository pubblico o Enterprise) si può invece usare
-`AUTO_DEPLOY` = `true` con i revisori su `production`. **Mai `AUTO_DEPLOY` senza Required reviewers**:
-installerebbe senza conferma.
+> **Senza Required reviewers ogni merge su `main` va dritto in produzione.** Il workflow non ha
+> altri freni: il controllo è tutto in questa impostazione. Verificala prima di lavorare sul
+> ramo principale. Sui repository **pubblici** la sezione c'è con qualsiasi piano, Free compreso;
+> sui privati serve GitHub Pro, Team o Enterprise.
 
 ## 6. Prepara server
 
@@ -171,14 +165,14 @@ voci: [`infra/deploy/oracle/.env.example`](../infra/deploy/oracle/.env.example).
 
 ## 7. Rilasci
 
-A ogni merge su `main`, **Release immagini**:
+A ogni merge su `main`, **Rilascio**:
 
-1. costruisce l'app desktop per Windows;
-2. pubblica su GHCR le immagini di API e web (con gli installer) per amd64 e arm64;
-3. apre l'issue **«Rilascio pronto»** e aspetta il tuo **`/deploy`** (vedi passo 5);
-4. dopo `/deploy` esegue **Deploy** per la stessa versione, nello stesso run.
+1. costruisce l'installer Windows e l'APK Android;
+2. pubblica su GHCR le immagini di API e web (con i pacchetti dentro) per amd64 e arm64;
+3. richiama **Installa in produzione** per la stessa versione, nello stesso run: il job resta in
+   attesa finché non approvi il deployment (notifica di GitHub, anche sull'app del telefono).
 
-**Deploy**:
+**Installa in produzione**:
 
 1. verifica che le immagini di quel commit esistano;
 2. **controlla la macchina**: Docker utilizzabile, `.env` presente, `APP_DOMAIN` uguale a quello
@@ -187,7 +181,8 @@ A ogni merge su `main`, **Release immagini**:
 4. verifica la configurazione, scarica le immagini (accesso a GHCR valido solo per quel job), avvia;
 5. attende che `https://<dominio>/api/health` risponda (fino a 5 minuti).
 
-Per **tornare indietro**: **Deploy** con un commit precedente (40 caratteri, da *Commits* su GitHub).
+Per **tornare indietro**: **Installa in produzione** → *Run workflow* con un commit precedente
+(40 caratteri, da *Commits* su GitHub).
 
 La prima volta Keycloak e il certificato richiedono 1–2 minuti. Poi apri `https://<dominio>`.
 Le app per Windows e Android si scaricano da `https://<dominio>/app-desktop` (link «App per Windows
@@ -247,17 +242,17 @@ Dopo `usermod` esci e ricollegati. Per il `.env` copia
 | `docker ps`: *permission denied … docker.sock* | L'utente è stato appena aggiunto al gruppo `docker`: esci e ricollegati |
 | `ssh-keyscan`: *unsupported KEX method* | OpenSSH di Windows troppo vecchio: leggi l'impronta dalla macchina (passo 3) |
 | `nslookup`: *Non-existent domain* | Prova `nslookup <dominio> 1.1.1.1`; se risponde, è il DNS della rete del PC |
-| Prepara server: *deve poter usare sudo senza password* | Rifai il comando del passo 3 come root |
+| Prepara il server: *deve poter usare sudo senza password* | Rifai il comando del passo 3 come root |
 | Workflow: *No ED25519 host key is known* / *Host key verification failed* | `OCI_SSH_KNOWN_HOSTS` non corrisponde al server: rigenera la riga sul server (passo 3) e incollala intera, su una riga. Il workflow stampa l'impronta che ha ricevuto (*Impronta del server: SHA256:…*): sul server confrontala con `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` |
 | Workflow: *indirizzo diverso da OCI_SSH_HOST* | La riga dell'impronta deve iniziare con lo stesso indirizzo scritto in `OCI_SSH_HOST` (es. entrambi l'IP) |
 | Workflow: *Permission denied (publickey)* | Manca la chiave pubblica del deploy in `/home/ubuntu/.ssh/authorized_keys`, o `OCI_SSH_PRIVATE_KEY` è incompleto (deve includere le righe `BEGIN`/`END`) |
-| Deploy: *Docker non è installato* / *Manca .env* | Lancia **Prepara server** |
-| Deploy: *APP_DOMAIN … non è* / *ACME_EMAIL … non valido* | Correggi `/opt/civilbeefy/.env` o la variabile dell'environment |
-| Il deploy non parte dopo un merge | Aspetta il tuo `/deploy` sull'issue «Rilascio pronto» (30 minuti); scaduto, avvia **Deploy** a mano |
-| `/deploy` non fa partire nulla | Va scritto da un account con accesso in scrittura, sull'issue del rilascio ancora aperta |
-| Non vedo *Required reviewers* nell'environment | Repository privato senza GitHub Enterprise: la funzione non c'è; si approva con `/deploy` sull'issue |
-| Il deploy è partito senza chiedere approvazione | `AUTO_DEPLOY = true` senza *Required reviewers*: togli subito la variabile |
+| Installazione: *Docker non è installato* / *Manca .env* | Lancia **Prepara il server** |
+| Installazione: *APP_DOMAIN … non è* / *ACME_EMAIL … non valido* | Correggi `/opt/civilbeefy/.env` o la variabile dell'environment |
+| Il deploy non parte dopo un merge | È in attesa di approvazione: apri il run del *Rilascio* → *Review deployments* → *Approve and deploy* |
+| Più deployment in attesa insieme | Dopo più merge ravvicinati: approva quello del commit più recente, rifiuta gli altri |
+| Non vedo *Required reviewers* nell'environment | Sui repository privati serve GitHub Pro, Team o Enterprise. **Finché manca, ogni merge installa senza chiedere** |
+| Il deploy è partito senza chiedere approvazione | Mancano i *Required reviewers* su `production`: aggiungili subito |
 | Console: *Accesso amministrativo non consentito da questa rete* | `ADMIN_ALLOWED_IPS` nel `.env` non comprende la tua rete ([console-piattaforma.md](console-piattaforma.md)) |
-| Deploy: *Manca PLATFORM_KEYCLOAK_CLIENT_SECRET* | Lancia **Prepara server**, che lo aggiunge al `.env` |
+| Installazione: *Manca PLATFORM_KEYCLOAK_CLIENT_SECRET* | Lancia **Prepara il server**, che lo aggiunge al `.env` |
 | La pagina di accesso ha l'aspetto standard di Keycloak (sfondo scuro, niente logo) | Tema non caricato: sul VPS `cd /opt/civilbeefy && docker compose restart keycloak` (dalla versione con il tema sul posto il Deploy lo fa da solo) |
 | Il sito non ha il certificato | Porte 80/443 chiuse (firewall del fornitore) o DNS non aggiornato; log: `docker compose logs caddy` |

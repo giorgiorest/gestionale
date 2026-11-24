@@ -1,4 +1,4 @@
-name: Prepara server
+name: Prepara il server
 
 # Prepara (o rimette in ordine) la macchina di produzione via SSH: aggiornamenti, firewall,
 # SSH solo con chiave, Docker, cartella dell'app, .env con password casuali (solo se manca),
@@ -72,7 +72,7 @@ jobs:
           REBOOT: ${{ inputs.reboot }}
         run: |
           if [ "$REBOOT" != "true" ]; then
-            echo "::warning::Gli aggiornamenti richiedono un riavvio: rilancia Prepara server con «Riavvia», oppure sulla macchina: sudo reboot"
+            echo "::warning::Gli aggiornamenti richiedono un riavvio: rilancia «Prepara il server» con «Riavvia», oppure sulla macchina: sudo reboot"
             exit 0
           fi
           ssh server "sudo systemctl reboot" || true
@@ -95,5 +95,5 @@ jobs:
             echo "- Firewall: 22, 80, 443 · SSH solo con chiave · backup del database ogni notte alle 3"
             echo "- Password di Keycloak (primo accesso), sulla macchina: \`grep KEYCLOAK_ADMIN_PASSWORD $APP_DIR/.env\`"
             echo
-            echo "Prossimo passo: **Deploy** (Actions → Deploy → Run workflow), dopo ogni rilascio."
+            echo "Prossimo passo: approvare l'installazione al primo rilascio, oppure avviarla a mano (Actions → Installa in produzione → Run workflow)."
           } >> "$GITHUB_STEP_SUMMARY"

@@ -52,7 +52,7 @@ principalmente la propria parte** dei dati. Deve funzionare su web, mobile e des
 Dettagli: [ADR 0004](decisioni/0004-app-desktop.md) e `apps/desktop/README.md`.
 
 - Tauri 2 incapsula la build web; l'app riconosce a runtime di girare nell'app installata.
-- **Distribuzione**: gli installer (setup `.exe` e MSI) sono costruiti da *Release immagini* e inclusi
+- **Distribuzione**: gli installer (setup `.exe` e MSI) sono costruiti da *Rilascio* e inclusi
   nell'immagine web dello stesso commit; ogni server li offre alla pagina pubblica `/app-desktop`,
   che mostra anche l'indirizzo del server da inserire al primo avvio.
 - **Un installer per tutti i clienti**: al primo avvio l'utente indica l'indirizzo del server,
@@ -127,7 +127,7 @@ Dettagli: [ADR 0002](decisioni/0002-deploy-target.md), [guida VPS](deploy-vps.md
 - Produzione su un server Linux con Docker Compose, raggiunto via SSH: un VPS (es. Aruba, x86) o
   una macchina Oracle Cloud Always Free (Ampere A1, arm64). Stessi file e stesso workflow:
   Caddy (HTTPS automatico) → web, `/api` → API, `/sso` → Keycloak; PostgreSQL per app e Keycloak.
-- A ogni push su `main`, *Release immagini* costruisce gli installer desktop e le immagini di API e
+- A ogni push su `main`, *Rilascio* costruisce gli installer desktop e le immagini di API e
   web per amd64 e arm64 (`sha-<commit>`), poi richiama *Deploy* per lo stesso commit, che attende
   l'**approvazione** nell'environment `production`, controlla la macchina, installa via SSH e
   verifica la salute ([ADR 0009](decisioni/0009-rilascio-continuo-con-approvazione.md)).

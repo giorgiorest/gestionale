@@ -1,4 +1,4 @@
-name: CI Web
+name: Verifica web
 
 on:
   push:

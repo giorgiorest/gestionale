@@ -12,8 +12,8 @@ Internet ──HTTPS──▶ Caddy ──┬── /       ▶ web (Angular, ng
 Tutto gira su una sola macchina virtuale con Docker; i file sono in `infra/deploy/oracle/`.
 Su un VPS di un altro fornitore (Aruba, OVH, Hetzner…) gli stessi file e lo stesso workflow
 funzionano uguali: guida [deploy-vps.md](deploy-vps.md).
-Rilasci: a ogni merge su `main` il workflow **Release immagini** pubblica le immagini su GitHub
-(GHCR); il workflow **Deploy**, avviato a mano, le installa sulla macchina.
+Rilasci: a ogni merge su `main` il workflow **Rilascio** pubblica le immagini su GitHub
+(GHCR); il workflow **Installa in produzione** le mette sulla macchina, dopo la tua approvazione.
 
 ## 0. Cosa è gratuito e a cosa fare attenzione
 
@@ -76,7 +76,7 @@ Verifica dal tuo PC: `nslookup <dominio>` deve restituire l'IP della macchina.
 
 ## 4. Preparare la macchina
 
-> Il workflow **Prepara server** ([deploy-vps.md](deploy-vps.md#6-prepara-server)) è pensato per i
+> Il workflow **Prepara il server** ([deploy-vps.md](deploy-vps.md#6-prepara-server)) è pensato per i
 > VPS e usa il firewall `ufw`: sulle immagini Oracle, che hanno già regole `iptables` proprie, segui
 > invece i passi qui sotto.
 
@@ -114,7 +114,7 @@ Proteggi il file: `chmod 600 .env`. Il `.env` resta solo sulla macchina: non va 
 
 ## 5. Collegare GitHub alla macchina
 
-Il workflow **Deploy** entra nella macchina con una chiave SSH dedicata. Sul tuo PC:
+Il workflow **Installa in produzione** entra nella macchina con una chiave SSH dedicata. Sul tuo PC:
 
 ```bash
 ssh-keygen -t ed25519 -f civilbeefy-deploy -N "" -C "github-deploy"
@@ -149,8 +149,8 @@ installazione va approvata.
 
 ## 6. Il primo rilascio
 
-1. Le immagini devono esistere: il workflow **Release immagini** parte a ogni merge su `main`
-   (Actions → *Release immagini*: deve essere verde). La prima volta puoi avviarlo a mano.
+1. Le immagini devono esistere: il workflow **Rilascio** parte a ogni merge su `main`
+   (Actions → *Rilascio*: deve essere verde). La prima volta puoi avviarlo a mano.
 2. **Actions → Deploy → Run workflow** (lascia vuoto il campo *commit* per installare l'ultima versione).
 3. Il workflow copia la configurazione, scarica le immagini, avvia i servizi e verifica
    `https://<dominio>/api/health`. La prima volta Keycloak e i certificati richiedono 1–2 minuti.
@@ -181,7 +181,7 @@ per ora ogni azienda richiede una riga in `tenants` e una licenza.
 
 ## 8. Rilasci successivi e ritorno indietro
 
-- **Nuova versione**: merge su `main` → attendi *Release immagini* verde → **Deploy → Run workflow**.
+- **Nuova versione**: merge su `main` → *Rilascio* costruisce e pubblica → approva il deployment in attesa.
 - **Tornare indietro**: **Deploy → Run workflow** con il commit precedente (40 caratteri, da
   *Commits* su GitHub). Le migrazioni del database non si annullano: un ritorno indietro va bene
   finché la versione precedente è compatibile con lo schema.
@@ -256,7 +256,7 @@ Alternative gratuite, utili più avanti:
 |---------|-----------|
 | Il sito non risponde | Porte del passo 2 (security list **e** iptables); `docker compose ps` sulla macchina. |
 | Errore di certificato nei primi minuti | Caddy sta ottenendo il certificato: attendi; `docker compose logs caddy`. Serve che il dominio punti già all'IP e che la porta 80 sia aperta. |
-| Deploy: «Immagine … non trovata» | *Release immagini* non è ancora terminato (o è fallito) per quel commit. |
+| Installazione: «Immagine … non trovata» | *Rilascio* non è ancora terminato (o è fallito) per quel commit. |
 | Deploy: errore SSH «Host key verification failed» | `OCI_SSH_KNOWN_HOSTS` non corrisponde: ripeti `ssh-keyscan` (es. dopo aver ricreato la macchina). |
 | Login: «Invalid parameter: redirect_uri» | `APP_DOMAIN` nel `.env` diverso dall'indirizzo con cui apri il sito. |
 | Dopo l'accesso: «Nessuna azienda associata» o errore 403 | L'utente non ha l'attributo `tenant_id` o l'azienda non esiste (`DEMO_ENABLED=true` per quella demo). |
