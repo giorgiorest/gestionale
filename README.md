@@ -321,12 +321,14 @@ Il flusso di un rilascio:
 ```
 merge su main ─▶ Release immagini ─┬─ desktop (installer Windows)
                                    ├─ immagini API e web (amd64, arm64; la web contiene gli installer)
-                                   └─ riepilogo: «versione pronta» ─▶ ⏸ tu avvii Deploy ─▶ installazione e verifica
+                                   ├─ approvazione: issue «Rilascio pronto» ─▶ ⏸ commenti /deploy (entro 30 min)
+                                   └─ deploy ─▶ installazione e verifica
 ```
 
-L'avvio manuale di **Deploy** è l'approvazione: in un repository privato i *Required reviewers*
-degli environment richiedono GitHub Enterprise. Con un piano che li offre si può attivare il deploy
-automatico in attesa di approvazione (`AUTO_DEPLOY=true`, [ADR 0009](docs/decisioni/0009-rilascio-continuo-con-approvazione.md)).
+L'approvazione avviene **nello stesso run**: un'issue ti avvisa (email e notifica) e il deploy parte
+quando commenti `/deploy` (`/annulla` per rifiutare). I *Required reviewers* degli environment, nei
+repository privati, richiedono GitHub Enterprise; questo li sostituisce. Senza risposta entro 30 minuti
+la richiesta scade e si può sempre lanciare **Deploy** a mano ([ADR 0009](docs/decisioni/0009-rilascio-continuo-con-approvazione.md)).
 
 | Workflow | Quando | Cosa fa |
 |----------|--------|---------|
@@ -334,15 +336,15 @@ automatico in attesa di approvazione (`AUTO_DEPLOY=true`, [ADR 0009](docs/decisi
 | `ci-web.yml` | PR e `main` (web) | build, test, immagine web (amd64 e arm64) |
 | `ci-desktop.yml` | PR (web, desktop); richiamato dal rilascio | installer Windows (artifact `gestionale-desktop-windows`, non ancora firmato) |
 | `ci-workflows.yml` | PR (workflow, script) | actionlint e shellcheck |
-| `release-images.yml` | ogni push su `main` | installer desktop, immagini su GHCR (`sha-<commit>`, `latest`); nel riepilogo il link per installare |
-| `deploy.yml` | **a mano** dopo il rilascio (è l'approvazione) | controlla la macchina, installa un commit via SSH, verifica `/api/health`; a mano anche per tornare a un commit precedente |
+| `release-images.yml` | ogni push su `main` | installer desktop, immagini su GHCR (`sha-<commit>`, `latest`), approvazione con `/deploy` su un'issue, poi deploy |
+| `deploy.yml` | dal rilascio dopo `/deploy`, o a mano | controlla la macchina, installa un commit via SSH, verifica `/api/health`; a mano anche per tornare a un commit precedente |
 | `prepare-server.yml` | a mano | prepara o rimette in ordine il server: aggiornamenti, firewall, SSH, Docker, `.env`, backup |
 
 Scelte: [ADR 0009](docs/decisioni/0009-rilascio-continuo-con-approvazione.md).
 
 **Produzione su un VPS** (es. Aruba, OVH; da circa 5–11 € al mese): guida passo passo in
 [docs/deploy-vps.md](docs/deploy-vps.md): pochi passi a mano (VPS, utente, dominio, environment
-GitHub), poi **Prepara server**; a ogni rilascio installi con un clic su **Deploy**.
+GitHub), poi **Prepara server**; a ogni rilascio approvi l'installazione commentando `/deploy`.
 
 **Produzione su Oracle Cloud (gratuito)**: guida passo passo in
 [docs/deploy-oracle-cloud.md](docs/deploy-oracle-cloud.md); file in `infra/deploy/oracle/`
