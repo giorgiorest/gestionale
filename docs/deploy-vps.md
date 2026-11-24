@@ -131,8 +131,6 @@ Poi *Settings → Secrets and variables → Actions → Variables* (del **reposi
 
 - `AUTO_DEPLOY` = `true` → a ogni rilascio parte il Deploy (in attesa di approvazione). Impostala
   **solo dopo** aver attivato *Required reviewers*, altrimenti il deploy partirebbe senza conferma.
-- Se non usi Oracle Cloud: togli `OCI_RETRY_ENABLED` e disattiva *Actions → Infrastruttura Oracle
-  (tentativi)* → **⋯ → Disable workflow**.
 
 ## 6. Prepara server
 

@@ -318,12 +318,10 @@ merge su main ─▶ Release immagini ─┬─ desktop (installer Windows)
 | `ci-api.yml` | PR e `main` (API) | build e test dell'API |
 | `ci-web.yml` | PR e `main` (web) | build, test, immagine web (amd64 e arm64) |
 | `ci-desktop.yml` | PR (web, desktop); richiamato dal rilascio | installer Windows (artifact `gestionale-desktop-windows`, non ancora firmato) |
-| `ci-infra.yml` | PR (Terraform) | formato e validità dei file Terraform |
 | `ci-workflows.yml` | PR (workflow, script) | actionlint e shellcheck |
 | `release-images.yml` | ogni push su `main` | installer desktop, immagini su GHCR (`sha-<commit>`, `latest`), poi Deploy se `AUTO_DEPLOY=true` |
 | `deploy.yml` | dopo il rilascio (con **approvazione**) o a mano | controlla la macchina, installa un commit via SSH, verifica `/api/health`; a mano anche per tornare a un commit precedente |
 | `prepare-server.yml` | a mano | prepara o rimette in ordine il server: aggiornamenti, firewall, SSH, Docker, `.env`, backup |
-| `infra.yml`, `infra-retry.yml` | a mano / ogni ora se `OCI_RETRY_ENABLED=true` | solo Oracle Cloud: Terraform per rete, porte, macchina e IP fisso ([infra/terraform/oracle](infra/terraform/oracle/README.md), [ADR 0007](docs/decisioni/0007-infrastruttura-terraform.md)) |
 
 Scelte: [ADR 0009](docs/decisioni/0009-rilascio-continuo-con-approvazione.md).
 
