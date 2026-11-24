@@ -126,14 +126,20 @@ Nella stessa pagina, **Deployment branches and tags** → *Selected branches* �
 parte solo dalla versione ufficiale.
 
 **Approvazione dei deploy.** In un repository **privato** GitHub offre i *Required reviewers* degli
-environment solo con il piano Enterprise (con Free, Pro e Team la sezione non compare). Per questo il
-Deploy **non parte da solo**: lo avvii tu dopo ogni rilascio, e quell'avvio è l'approvazione. Solo
-chi ha accesso in scrittura al repository può avviarlo.
+environment solo con il piano Enterprise. Al loro posto, a ogni rilascio il job **approvazione** apre
+un'issue «Rilascio pronto» (ti arrivano email e notifica, anche sull'app GitHub del telefono) e aspetta:
 
-Se un giorno il piano li offre (repository pubblico o GitHub Enterprise): attiva *Required reviewers*
-su `production` e poi la variabile di repository `AUTO_DEPLOY` = `true` (*Settings → Secrets and
-variables → Actions → Variables*): a ogni rilascio il Deploy partirà da solo e aspetterà il tuo
-*Approve*. **Mai `AUTO_DEPLOY` senza Required reviewers**: installerebbe senza conferma.
+- commenti **`/deploy`** → il deploy parte nello stesso run;
+- commenti **`/annulla`** → la produzione resta com'è;
+- nessuna risposta entro **30 minuti** → la richiesta scade (avvia **Deploy** a mano quando vuoi).
+
+Conta solo il commento di chi ha accesso in scrittura al repository. L'attesa consuma minuti di
+GitHub Actions (uno al minuto): per cambiarne la durata, variabile di repository
+`DEPLOY_APPROVAL_MINUTES`. Un rilascio più recente sostituisce quello in attesa.
+
+Con un piano che offre i *Required reviewers* (repository pubblico o Enterprise) si può invece usare
+`AUTO_DEPLOY` = `true` con i revisori su `production`. **Mai `AUTO_DEPLOY` senza Required reviewers**:
+installerebbe senza conferma.
 
 ## 6. Prepara server
 
@@ -169,10 +175,10 @@ A ogni merge su `main`, **Release immagini**:
 
 1. costruisce l'app desktop per Windows;
 2. pubblica su GHCR le immagini di API e web (con gli installer) per amd64 e arm64;
-3. nel riepilogo del run scrive **«Versione pronta»** con il link al Deploy.
+3. apre l'issue **«Rilascio pronto»** e aspetta il tuo **`/deploy`** (vedi passo 5);
+4. dopo `/deploy` esegue **Deploy** per la stessa versione, nello stesso run.
 
-Poi **tu** avvii **Actions → Deploy → Run workflow** (branch `main`, campo *commit* vuoto = l'ultima
-versione). **Deploy**:
+**Deploy**:
 
 1. verifica che le immagini di quel commit esistano;
 2. **controlla la macchina**: Docker utilizzabile, `.env` presente, `APP_DOMAIN` uguale a quello
@@ -246,8 +252,9 @@ Dopo `usermod` esci e ricollegati. Per il `.env` copia
 | Workflow: *Permission denied (publickey)* | Manca la chiave pubblica del deploy in `/home/ubuntu/.ssh/authorized_keys`, o `OCI_SSH_PRIVATE_KEY` è incompleto (deve includere le righe `BEGIN`/`END`) |
 | Deploy: *Docker non è installato* / *Manca .env* | Lancia **Prepara server** |
 | Deploy: *APP_DOMAIN … non è* / *ACME_EMAIL … non valido* | Correggi `/opt/civilbeefy/.env` o la variabile dell'environment |
-| Il deploy non parte dopo un merge | È voluto: il Deploy si avvia a mano dopo ogni rilascio (è l'approvazione) |
-| Non vedo *Required reviewers* nell'environment | Repository privato senza GitHub Enterprise: la funzione non c'è; si approva avviando Deploy a mano |
+| Il deploy non parte dopo un merge | Aspetta il tuo `/deploy` sull'issue «Rilascio pronto» (30 minuti); scaduto, avvia **Deploy** a mano |
+| `/deploy` non fa partire nulla | Va scritto da un account con accesso in scrittura, sull'issue del rilascio ancora aperta |
+| Non vedo *Required reviewers* nell'environment | Repository privato senza GitHub Enterprise: la funzione non c'è; si approva con `/deploy` sull'issue |
 | Il deploy è partito senza chiedere approvazione | `AUTO_DEPLOY = true` senza *Required reviewers*: togli subito la variabile |
 | Console: *Accesso amministrativo non consentito da questa rete* | `ADMIN_ALLOWED_IPS` nel `.env` non comprende la tua rete ([console-piattaforma.md](console-piattaforma.md)) |
 | Deploy: *Manca PLATFORM_KEYCLOAK_CLIENT_SECRET* | Lancia **Prepara server**, che lo aggiunge al `.env` |
