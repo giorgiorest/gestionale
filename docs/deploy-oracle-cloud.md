@@ -1,6 +1,6 @@
-# Installare civil beefy su Oracle Cloud (Always Free)
+# Installare Civil Beefy su Oracle Cloud (Always Free)
 
-Risultato: civil beefy raggiungibile da chiunque su `https://<tuo-dominio>`, con HTTPS automatico,
+Risultato: Civil Beefy raggiungibile da chiunque su `https://<tuo-dominio>`, con HTTPS automatico,
 e rilasci con un clic da GitHub. Tutto nel piano gratuito di Oracle Cloud.
 
 ```
@@ -18,7 +18,7 @@ Rilasci: a ogni merge su `main` il workflow **Release immagini** pubblica le imm
 ## 0. Cosa è gratuito e a cosa fare attenzione
 
 - **Always Free**: macchine **Ampere A1** (ARM) fino a 4 CPU e 24 GB di RAM in totale, 200 GB di
-  disco, 10 TB al mese di traffico in uscita. Per civil beefy bastano **2 CPU e 12 GB**.
+  disco, 10 TB al mese di traffico in uscita. Per Civil Beefy bastano **2 CPU e 12 GB**.
 - **Macchine inattive**: sugli account solo gratuiti Oracle può recuperare le macchine Always Free
   poco usate (CPU sotto il 20% per 7 giorni). Per evitarlo puoi passare l'account a
   *Pay As You Go*: le risorse Always Free restano gratuite. In quel caso imposta subito un
@@ -50,7 +50,7 @@ Security List → Add Ingress Rules*, con *Source CIDR* `0.0.0.0/0`:
 | Protocollo | Porta di destinazione | Perché |
 |------------|-----------------------|--------|
 | TCP | 80 | certificati Let's Encrypt e reindirizzamento a HTTPS |
-| TCP | 443 | civil beefy |
+| TCP | 443 | Civil Beefy |
 | UDP | 443 | HTTP/3 (facoltativo) |
 
 **Sulla macchina** (le immagini Ubuntu di Oracle bloccano tutto tranne SSH):
@@ -154,7 +154,7 @@ installazione va approvata.
 2. **Actions → Deploy → Run workflow** (lascia vuoto il campo *commit* per installare l'ultima versione).
 3. Il workflow copia la configurazione, scarica le immagini, avvia i servizi e verifica
    `https://<dominio>/api/health`. La prima volta Keycloak e i certificati richiedono 1–2 minuti.
-4. Apri **`https://<dominio>`**: compare la pagina di accesso di civil beefy.
+4. Apri **`https://<dominio>`**: compare la pagina di accesso di Civil Beefy.
 
 ## 7. Primo accesso e utenti
 
@@ -198,7 +198,7 @@ SMTP_HOST=smtp-relay.brevo.com
 SMTP_PORT=587
 SMTP_USERNAME=<utente SMTP>
 SMTP_PASSWORD=<chiave SMTP>
-MAIL_FROM=civil beefy <noreply@tuodominio.it>
+MAIL_FROM=Civil Beefy <noreply@tuodominio.it>
 ```
 
 poi `docker compose up -d` nella cartella `/opt/civilbeefy`.

@@ -38,7 +38,7 @@ di comandi da copiare. Con il passaggio a un VPS (Aruba) servono:
 ## Aggiornamento — approvazione nel repository privato (2026-11-24)
 
 I *Required reviewers* degli environment sono disponibili nei repository privati solo con GitHub
-Enterprise (con Free, Pro e Team solo nei repository pubblici): nel repository di civil beefy la
+Enterprise (con Free, Pro e Team solo nei repository pubblici): nel repository di Civil Beefy la
 sezione non c'è. Quindi:
 
 - di norma **Release immagini non installa**: chiude con un job che scrive «Versione pronta» e il link

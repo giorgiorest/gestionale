@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "civil beefy",
+  "productName": "Civil Beefy",
   "version": "0.1.0",
   "identifier": "it.gestionale.desktop",
   "build": {
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "civil beefy",
+        "title": "Civil Beefy",
         "width": 1280,
         "height": 800,
         "minWidth": 900,
@@ -36,9 +36,9 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "publisher": "civil beefy",
-    "shortDescription": "civil beefy — gestionale aziendale",
-    "longDescription": "App desktop di civil beefy: si collega al server della propria azienda.",
+    "publisher": "Civil Beefy",
+    "shortDescription": "Civil Beefy — gestionale aziendale",
+    "longDescription": "App desktop di Civil Beefy: si collega al server della propria azienda.",
     "windows": {
       "webviewInstallMode": {
         "type": "downloadBootstrapper"

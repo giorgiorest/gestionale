@@ -6,7 +6,7 @@
     "desktopClientId": "gestionale-desktop"
   },
   "branding": {
-    "name": "civil beefy"
+    "name": "Civil Beefy"
   },
   "console": {
     "authority": "http://localhost:8180/realms/piattaforma",

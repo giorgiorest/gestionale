@@ -1,6 +1,6 @@
-# Installare civil beefy su un VPS (Aruba, OVH, Hetzner…)
+# Installare Civil Beefy su un VPS (Aruba, OVH, Hetzner…)
 
-Risultato: civil beefy su `https://<tuo-dominio>`, con HTTPS automatico. Ogni merge su `main`
+Risultato: Civil Beefy su `https://<tuo-dominio>`, con HTTPS automatico. Ogni merge su `main`
 costruisce tutto e installa in produzione **dopo la tua approvazione**. Vale per qualsiasi server
 Linux raggiungibile via SSH; per creare la macchina su Oracle Cloud c'è
 [deploy-oracle-cloud.md](deploy-oracle-cloud.md).
@@ -251,4 +251,5 @@ Dopo `usermod` esci e ricollegati. Per il `.env` copia
 | Il deploy è partito senza chiedere approvazione | `AUTO_DEPLOY = true` senza *Required reviewers*: togli subito la variabile |
 | Console: *Accesso amministrativo non consentito da questa rete* | `ADMIN_ALLOWED_IPS` nel `.env` non comprende la tua rete ([console-piattaforma.md](console-piattaforma.md)) |
 | Deploy: *Manca PLATFORM_KEYCLOAK_CLIENT_SECRET* | Lancia **Prepara server**, che lo aggiunge al `.env` |
+| La pagina di accesso ha l'aspetto standard di Keycloak (sfondo scuro, niente logo) | Tema non caricato: sul VPS `cd /opt/civilbeefy && docker compose restart keycloak` (dalla versione con il tema sul posto il Deploy lo fa da solo) |
 | Il sito non ha il certificato | Porte 80/443 chiuse (firewall del fornitore) o DNS non aggiornato; log: `docker compose logs caddy` |

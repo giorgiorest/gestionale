@@ -1,4 +1,4 @@
-# Stack locale di civil beefy per podman-compose (consigliato), podman compose e Docker Compose.
+# Stack locale di Civil Beefy per podman-compose (consigliato), podman compose e Docker Compose.
 # Guida: docs/avvio-locale.md
 #
 # Due modalità, dalla cartella infra/docker (dopo aver copiato .env.example in .env):
@@ -126,7 +126,7 @@ services:
       EMAIL_ENABLED: ${EMAIL_ENABLED:-true}
       SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-mailpit}
       SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-1025}
-      MAIL_FROM: ${MAIL_FROM:-civil beefy <noreply@localhost>}
+      MAIL_FROM: ${MAIL_FROM:-Civil Beefy <noreply@localhost>}
       EMAIL_INCLUDE_BODY: ${EMAIL_INCLUDE_BODY:-true}
       APP_PUBLIC_URL: ${GESTIONALE_WEB_URL:-http://localhost:4200}
       AI_PROVIDER: ${AI_PROVIDER:-none}

@@ -1,4 +1,4 @@
-# Ingresso pubblico di civil beefy: HTTPS automatico (Let's Encrypt) e instradamento ai container.
+# Ingresso pubblico di Civil Beefy: HTTPS automatico (Let's Encrypt) e instradamento ai container.
 {
 	email {$ACME_EMAIL}
 }

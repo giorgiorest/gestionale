@@ -5,7 +5,7 @@
 
 ## Contesto
 
-civil beefy viene venduto ad aziende che lo usano con i dati dei dipendenti e dei loro clienti: chi
+Civil Beefy viene venduto ad aziende che lo usano con i dati dei dipendenti e dei loro clienti: chi
 lo vende in SaaS è responsabile del trattamento (art. 28 GDPR). Un'analisi del codice ha mostrato:
 
 - cookie solo tecnici (Keycloak) e nessun contenuto di terze parti, ma nessuna informativa nell'app;
