@@ -42,7 +42,7 @@ di comandi da copiare. Con il passaggio a un VPS (Aruba) servono:
 - Le password di produzione nascono sulla macchina e non passano mai da GitHub; per leggerle serve
   l'accesso SSH.
 - Prepara server non è pensato per le immagini Oracle (regole `iptables` proprie): lì valgono la
-  guida Oracle e Terraform (ADR 0007).
+  guida Oracle.
 
 ## Alternative scartate
 

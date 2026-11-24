@@ -57,7 +57,7 @@ servono solo SSH, Docker e il `.env` sulla macchina. Guida: [deploy-vps.md](../d
 - Il workflow Deploy controlla la macchina prima di installare (Docker utilizzabile, `.env`
   presente, `APP_DOMAIN` coerente con l'environment, `ACME_EMAIL` valida, spazio libero) e valida
   la configurazione con `docker compose config` prima di scaricare le immagini.
-- Terraform e i tentativi automatici (ADR 0007) restano specifici di Oracle Cloud; su un VPS la
+- Terraform e i tentativi automatici (ADR 0007, poi rimossi) erano specifici di Oracle Cloud; su un VPS la
   macchina si crea dal pannello del fornitore.
 
 ## Alternative scartate

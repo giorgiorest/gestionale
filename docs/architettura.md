@@ -129,10 +129,6 @@ Dettagli: [ADR 0002](decisioni/0002-deploy-target.md), [guida VPS](deploy-vps.md
   verifica la salute ([ADR 0009](decisioni/0009-rilascio-continuo-con-approvazione.md)).
 - *Prepara server* configura un server Ubuntu qualsiasi (aggiornamenti, firewall, SSH solo con
   chiave, Docker, `.env` con password generate sulla macchina, backup notturno), in modo idempotente.
-- Infrastruttura come codice ([ADR 0007](decisioni/0007-infrastruttura-terraform.md)): Terraform in
-  `infra/terraform/oracle` crea rete, porte, macchina e IP riservato; stato su Object Storage. I workflow
-  *Infrastruttura Oracle* la applicano (a mano, o a tentativi orari finché ci sono macchine A1 libere) e non
-  eliminano risorse senza un'opzione esplicita.
 
 ## Privacy
 
