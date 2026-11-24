@@ -8,7 +8,12 @@ con **Keycloak** (OIDC).
 Il nome del prodotto è «Civil Beefy»; `gestionale` resta il nome tecnico (repository, pacchetti,
 realm e client Keycloak, database), che non va cambiato perché lo usano configurazioni e token.
 
+Il prodotto è rivolto alle **imprese edili e di cantiere**
+([ADR 0012](docs/decisioni/0012-verticale-edilizia.md)).
+
 Visione e scelte tecniche: [docs/architettura.md](docs/architettura.md) e [docs/decisioni/](docs/decisioni/).
+Lavoro da fare, diviso in pull request: [docs/roadmap.md](docs/roadmap.md).
+Mappa del codice e ricettario per aggiungere un'entità: [CLAUDE.md](CLAUDE.md).
 
 ## Struttura
 
@@ -24,6 +29,7 @@ gestionale/
 │   └── keycloak/        # realm "gestionale" (configurazione come codice) e utenti demo
 ├── docs/
 │   ├── architettura.md
+│   ├── roadmap.md       # lavoro da fare, una voce = una pull request
 │   └── decisioni/       # ADR
 ├── CLAUDE.md            # regole per le sessioni di Claude Code
 └── README.md

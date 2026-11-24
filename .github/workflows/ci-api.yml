@@ -5,15 +5,31 @@ name: CI API
 on:
   push:
     branches: [main]
-    paths: ['apps/api/**', '.github/workflows/ci-api.yml']
+    paths: ['apps/api/**', '.github/workflows/ci-api.yml', '.github/scripts/controlla-migrazioni.sh']
   pull_request:
-    paths: ['apps/api/**', '.github/workflows/ci-api.yml']
+    paths: ['apps/api/**', '.github/workflows/ci-api.yml', '.github/scripts/controlla-migrazioni.sh']
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  # Numerazione delle migrazioni Flyway (ADR 0013): con piu' branch aperti due PR possono
+  # prenotare lo stesso numero, e in produzione il deploy si fermerebbe. Qui l'errore emerge
+  # nella pull request. Il checkout di una PR non porta il ramo di base: va preso a parte
+  # (profondita' 1: allo script serve solo l'elenco dei file, non la storia). Se il fetch
+  # fallisce il job fallisce, perche' un controllo saltato in silenzio sarebbe peggio di niente.
+  migrazioni:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Numerazione delle migrazioni
+        env:
+          RIFERIMENTO: ${{ github.event.pull_request.base.ref || github.ref_name }}
+        run: |
+          git fetch --no-tags --depth=1 origin "$RIFERIMENTO:refs/remotes/origin/$RIFERIMENTO"
+          .github/scripts/controlla-migrazioni.sh "origin/$RIFERIMENTO"
+
   build:
     runs-on: ubuntu-latest
     defaults:

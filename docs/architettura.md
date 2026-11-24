@@ -2,9 +2,16 @@
 
 ## Obiettivo
 
-Un gestionale usato da circa **50 utenti** per installazione, dove **ogni utente modifica
-principalmente la propria parte** dei dati. Deve funzionare su web, mobile e desktop, anche
-**senza connessione**, e servire più aziende clienti da un'unica istanza.
+Il gestionale delle **imprese edili e di cantiere** ([ADR 0012](decisioni/0012-verticale-edilizia.md)):
+la commessa è l'entità centrale e il rapportino giornaliero, compilato dal telefono in cantiere, è
+il documento più usato.
+
+Usato da circa **50 utenti** per installazione, dove **ogni utente modifica principalmente la
+propria parte** dei dati. Deve funzionare su web, mobile e desktop, anche **senza connessione** —
+in cantiere il campo non c'è, e una funzionalità che richiede la rete è una funzionalità incompleta —
+e servire più aziende clienti da un'unica istanza.
+
+Lo stato del dominio e il lavoro da fare, diviso in pull request: [roadmap.md](roadmap.md).
 
 ## Panoramica
 
