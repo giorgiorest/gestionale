@@ -1,6 +1,6 @@
 # Gestire utenti, ruoli e aziende
 
-Come si amministra un'installazione di civil beefy: aziende clienti (tenant), licenze e utenti.
+Come si amministra un'installazione di Civil Beefy: aziende clienti (tenant), licenze e utenti.
 
 > **Il modo normale è la [console di piattaforma](console-piattaforma.md)** (`https://<dominio>/console`):
 > crei l'azienda, la sua licenza e i suoi utenti senza SQL né console di Keycloak. Questa guida spiega

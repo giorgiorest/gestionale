@@ -43,7 +43,7 @@ if [ -z "$id" ]; then
   "$KC" create clients --config "$CFG" -r gestionale -f - > /dev/null <<JSON
 {
   "clientId": "$CLIENT",
-  "name": "civil beefy · servizio della console di piattaforma",
+  "name": "Civil Beefy · servizio della console di piattaforma",
   "enabled": true,
   "publicClient": false,
   "clientAuthenticatorType": "client-secret",
@@ -88,6 +88,18 @@ if [ -n "$scope_id" ]; then
   "$KC" update "clients/$id/default-client-scopes/$scope_id" --config "$CFG" -r gestionale > /dev/null
 fi
 echo "Client $CLIENT pronto (solo gestione utenti del realm gestionale)."
+
+# Aspetto delle pagine di accesso: tema di prodotto e nome (configurazione di prodotto, come nei
+# realm versionati). Nome, logo e colori del cliente li applica il tema da /config.json.
+for realm in gestionale piattaforma; do
+  if "$KC" get "realms/$realm" --config "$CFG" --fields realm > /dev/null 2>&1; then
+    name="Civil Beefy"
+    if [ "$realm" = piattaforma ]; then name="Civil Beefy · amministrazione"; fi
+    printf '{"loginTheme": "gestionale", "displayName": "%s", "displayNameHtml": "<div class=\\"kc-logo-text\\"><span>%s</span></div>"}' "$name" "$name" |
+      "$KC" update "realms/$realm" --config "$CFG" -f - > /dev/null
+  fi
+done
+echo "Pagine di accesso: tema gestionale."
 
 if "$KC" get realms/piattaforma --config "$CFG" --fields realm > /dev/null 2>&1; then
   echo "Realm piattaforma presente."

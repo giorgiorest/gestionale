@@ -1,4 +1,4 @@
-# civil beefy in produzione su una macchina virtuale (es. Oracle Cloud Always Free, Ampere A1 arm64).
+# Civil Beefy in produzione su una macchina virtuale (es. Oracle Cloud Always Free, Ampere A1 arm64).
 # Guida: docs/deploy-oracle-cloud.md
 #
 # Sulla macchina, nella cartella dell'applicazione (es. /opt/civilbeefy):
@@ -122,7 +122,9 @@ services:
     volumes:
       # Realm di prodotto: gestionale (aziende) e piattaforma (amministratori, OTP obbligatoria).
       - ./keycloak/realm:/opt/keycloak/data/import:ro
-      - ./keycloak/themes/gestionale:/opt/keycloak/themes/gestionale:ro
+      # Cartella dei temi intera (non la sottocartella): il deploy ne sostituisce il contenuto e
+      # Keycloak deve vedere i file nuovi anche senza ricreare il container.
+      - ./keycloak/themes:/opt/keycloak/themes:ro
 
   # Allinea Keycloak nelle installazioni esistenti (client di servizio della console): idempotente.
   keycloak-setup:
@@ -167,7 +169,7 @@ services:
       SPRING_MAIL_PASSWORD: ${SMTP_PASSWORD:-}
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "true"
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
-      MAIL_FROM: ${MAIL_FROM:-civil beefy <noreply@localhost>}
+      MAIL_FROM: ${MAIL_FROM:-Civil Beefy <noreply@localhost>}
       LICENSE_PUBLIC_KEY: ${LICENSE_PUBLIC_KEY:-}
       AI_PROVIDER: ${AI_PROVIDER:-none}
       AI_API_KEY: ${AI_API_KEY:-}

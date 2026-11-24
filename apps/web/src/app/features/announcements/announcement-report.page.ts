@@ -18,7 +18,7 @@ import { AnnouncementSummary, AnnouncementsService, RecipientStatus } from './an
         <div class="page-header">
           <div>
             <h1>{{ s.title }}</h1>
-            <span class="subtitle">Inviata da {{ s.senderName ?? 'civil beefy' }} il {{ s.createdAt | date: 'd MMMM y, HH:mm' }}</span>
+            <span class="subtitle">Inviata da {{ s.senderName ?? 'Civil Beefy' }} il {{ s.createdAt | date: 'd MMMM y, HH:mm' }}</span>
           </div>
         </div>
         <div class="cards totals" data-testid="totals">

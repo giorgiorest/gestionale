@@ -5,7 +5,7 @@
 
 ## Contesto
 
-civil beefy deve essere raggiungibile da altre persone, a costo zero nella fase iniziale, con
+Civil Beefy deve essere raggiungibile da altre persone, a costo zero nella fase iniziale, con
 rilasci ripetibili da GitHub. Le domande aperte erano: provider, metodo, segreti, ambienti.
 
 ## Decisione

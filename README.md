@@ -1,11 +1,11 @@
-# civil beefy
+# Civil Beefy
 
-**civil beefy** è un gestionale multi-piattaforma e multi-tenant: un'unica base di codice per **web** (PWA),
+**Civil Beefy** è un gestionale multi-piattaforma e multi-tenant: un'unica base di codice per **web** (PWA),
 **mobile** (Capacitor) e **desktop** (Tauri), con funzionamento **offline** e
 sincronizzazione verso un backend **Spring Boot** su **PostgreSQL**. Login e profili utente
 con **Keycloak** (OIDC).
 
-Il nome del prodotto è «civil beefy»; `gestionale` resta il nome tecnico (repository, pacchetti,
+Il nome del prodotto è «Civil Beefy»; `gestionale` resta il nome tecnico (repository, pacchetti,
 realm e client Keycloak, database), che non va cambiato perché lo usano configurazioni e token.
 
 Visione e scelte tecniche: [docs/architettura.md](docs/architettura.md) e [docs/decisioni/](docs/decisioni/).
@@ -144,7 +144,7 @@ npm run build -- --bundles msi
 ```
 
 La prima build richiede 10–15 minuti (compilazione Rust e download di WiX). Il file è in
-`apps/desktop/src-tauri/target/release/bundle/msi/civil beefy_<versione>_x64_it-IT.msi`.
+`apps/desktop/src-tauri/target/release/bundle/msi/Civil Beefy_<versione>_x64_it-IT.msi`.
 Senza `--bundles msi` viene creato anche il setup `.exe`.
 
 All'installazione l'MSI non è ancora firmato: SmartScreen chiede *Ulteriori informazioni* →
@@ -231,7 +231,8 @@ e menu laterale. Scelta e alternative: [ADR 0006](docs/decisioni/0006-interfacci
   esagonali è usato anche come icona della scheda del browser, della PWA e dell'app desktop.
 - **Marchio di un cliente** senza ricompilare: `branding` in `config.json` (nome, logo, colore
   principale e di accento) o, con Docker, `BRAND_NAME`, `BRAND_LOGO_URL`, `BRAND_PRIMARY_COLOR`,
-  `BRAND_ACCENT_COLOR`.
+  `BRAND_ACCENT_COLOR`. Vale anche per le **pagine di accesso** (Keycloak sullo stesso dominio legge lo
+  stesso `config.json`): nessun segno di Keycloak, solo nome, logo e colori dell'installazione.
 - Font (Inter) e icone (Material Symbols) sono inclusi nell'app: niente Google Fonts.
 
 ## Utenti, ruoli e permessi
