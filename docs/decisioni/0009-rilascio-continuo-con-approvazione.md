@@ -35,6 +35,17 @@ di comandi da copiare. Con il passaggio a un VPS (Aruba) servono:
   dell'impronta e un test di connessione con messaggio chiaro.
 - **CI Workflow**: actionlint e shellcheck sulle modifiche a workflow e script.
 
+## Aggiornamento — approvazione nel repository privato (2026-11-24)
+
+I *Required reviewers* degli environment sono disponibili nei repository privati solo con GitHub
+Enterprise (con Free, Pro e Team solo nei repository pubblici): nel repository di civil beefy la
+sezione non c'è. Quindi:
+
+- di norma **Release immagini non installa**: chiude con un job che scrive «Versione pronta» e il link
+  al Deploy; **l'avvio manuale di Deploy è l'approvazione** (solo chi ha accesso in scrittura può farlo);
+- `AUTO_DEPLOY = true` resta per quando il piano offrirà i revisori, e va attivata solo con loro;
+- il resto (controlli della macchina, concorrenza, ritorno indietro) non cambia.
+
 ## Conseguenze
 
 - Ogni merge su `main` genera una richiesta di approvazione (email di GitHub). Chi non la approva

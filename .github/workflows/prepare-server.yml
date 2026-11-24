@@ -95,5 +95,5 @@ jobs:
             echo "- Firewall: 22, 80, 443 · SSH solo con chiave · backup del database ogni notte alle 3"
             echo "- Password di Keycloak (primo accesso), sulla macchina: \`grep KEYCLOAK_ADMIN_PASSWORD $APP_DIR/.env\`"
             echo
-            echo "Prossimo passo: **Deploy** (Actions → Deploy → Run workflow), o il prossimo rilascio con AUTO_DEPLOY."
+            echo "Prossimo passo: **Deploy** (Actions → Deploy → Run workflow), dopo ogni rilascio."
           } >> "$GITHUB_STEP_SUMMARY"

@@ -143,7 +143,8 @@ Su GitHub: repository → **Settings → Environments → New environment** → 
 | Variable | `APP_DOMAIN` | il dominio, es. `civilbeefy.duckdns.org` |
 | Variable | `OCI_APP_DIR` | facoltativa, default `/opt/civilbeefy` |
 
-Consigliato: in *Deployment protection rules* attiva **Required reviewers** (te stesso), così ogni
+Se il piano GitHub lo consente (repository pubblico o Enterprise): in *Deployment protection rules*
+attiva **Required reviewers** (te stesso), così ogni
 installazione va approvata.
 
 ## 6. Il primo rilascio
