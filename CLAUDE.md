@@ -24,6 +24,89 @@ sostituito, perché lo usano configurazioni, token e installazioni esistenti.
 - La CI deve passare prima di proporre la merge. Nessuna installazione in produzione senza approvazione umana: `release-images.yml` (solo da `main`, amd64 e arm64) pubblica le immagini, poi il job `approvazione` apre un'issue e aspetta `/deploy` da chi ha accesso in scrittura (`.github/scripts/attendi-approvazione.sh`, al massimo 30 minuti) prima del job `deploy`; Deploy si può sempre avviare a mano (repository privato: i Required reviewers degli environment richiedono GitHub Enterprise). La variabile `AUTO_DEPLOY` (deploy automatico in attesa di approvazione) si attiva solo se l'environment `production` ha i Required reviewers. Produzione su un server Linux via SSH (VPS come Aruba o Oracle Cloud; file in `infra/deploy/oracle`, guide `docs/deploy-vps.md` e `docs/deploy-oracle-cloud.md`, ADR 0002 e 0009). Il server si prepara con il workflow Prepara server (`infra/deploy/oracle/prepare-server.sh`, idempotente).
 - Ogni modifica che richiede nuove variabili di produzione aggiorna `infra/deploy/oracle/.env.example`, `infra/deploy/oracle/compose.yml` e `docs/deploy-oracle-cloud.md`. I segreti di produzione stanno solo nel `.env` della macchina e negli environment GitHub.
 
+## Prodotto e lavoro da fare
+
+Verticale: **imprese edili e di cantiere** (ADR 0012). Il lavoro da fare, diviso in pull request, è
+in `docs/roadmap.md`: è la fonte di verità, va aggiornata nella stessa PR che completa una voce.
+
+## Mappa del codice
+
+| Dove | Cosa c'è |
+|------|----------|
+| `apps/api/src/main/java/it/gestionale/api/` | `auth/` (ruoli→permessi), `tenancy/` (tenant dal JWT, RLS), `licensing/` (piani, licenze offline), `customers/` (unica entità di dominio: è il modello da copiare), `notifications/`, `platform/` (console), `ai/`, `health/`, `web/` (gestore errori), `config/` |
+| `apps/api/src/main/resources/db/migration/` | migrazioni Flyway `V1`…`V5` |
+| `apps/api/src/test/java/` | test di integrazione con Testcontainers; `AbstractIntegrationTest`, `TestData`, `TestJwt` sono la base da riusare |
+| `apps/web/src/app/core/` | `auth/`, `profile/` (permessi), `entitlements/` (piano), `sync/` (outbox), `notifications/`, `privacy/`, `branding/`, `config/`, `layout/` |
+| `apps/web/src/app/features/` | una cartella per pagina; `features/customers/` è il modello da copiare |
+| `apps/web/src/app/db/local-db.ts` | schema Dexie (IndexedDB) |
+| `infra/docker/` | compose per lo sviluppo, Dockerfile web, nginx |
+| `infra/deploy/oracle/` | compose di produzione, `.env.example`, `prepare-server.sh`, Caddyfile |
+| `docs/decisioni/` | ADR: leggi quello pertinente prima di cambiare una scelta architetturale |
+
+## Ricettario
+
+### Nuova entità di dominio
+
+1. **Migrazione** `V<n>__nome.sql` (numero: vedi ADR 0013):
+   ```sql
+   CREATE TABLE commesse (
+       id         UUID PRIMARY KEY,                               -- UUID v7 dal client
+       tenant_id  UUID NOT NULL REFERENCES tenants (id) ON DELETE CASCADE,
+       ...
+       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   );
+   CREATE INDEX commesse_tenant_id_idx ON commesse (tenant_id);
+   CALL enable_tenant_rls('commesse');
+   ```
+2. **Backend**: copia la struttura di `customers/` → `Entity`, `Repository`, `Dto` (con `Input`
+   validato), `Service` (`@Transactional`, filtra per `TenantContext.require()` anche se la RLS già
+   protegge: difesa in profondità), `Controller` (`@PreAuthorize("hasAuthority('…')")`, upsert
+   idempotente con `PUT /{id}`).
+3. **Permesso nuovo**: `auth/Permission.java` + realm in `infra/keycloak/realm` + etichette nel
+   frontend + `docs/gestione-utenti-e-aziende.md`.
+4. **Funzionalità di piano nuova**: `licensing/Features.java` + console di piattaforma.
+5. **Frontend**: copia `features/customers/` (service + page), rotta in `app.routes.ts` con
+   `permissionGuard` ed eventuale `featureGuard`.
+6. **Offline**: tabella in `db/local-db.ts` con una **nuova** `version()` (mai modificare quelle
+   esistenti), e aggiungila a `LocalDataService.clear()` (regola di privacy, ADR 0008).
+7. **Scritture dal client**: solo `SyncService.enqueue()`, mai chiamate dirette alle API di
+   scrittura (eccezione: la console di piattaforma, `ConsoleApiService`).
+8. **Test**: un test di integrazione che estende `AbstractIntegrationTest`, incluso il caso
+   «un tenant non vede i dati di un altro» (vedi `TenantIsolationTest`).
+9. **Documentazione**: tabella dei moduli nel README, `docs/architettura.md`, e un ADR se la scelta
+   è nuova.
+
+### Liste (paginazione, ordinamento, ricerca)
+
+Convenzione unica in ADR 0014: `?page=&size=&sort=&q=`, risposta `PageDto<T>` esplicita, indice su
+`(tenant_id, campo di ordinamento)`. La paginazione **non** è il meccanismo di sincronizzazione.
+
+### Comandi
+
+```bash
+cd apps/api && ./mvnw -q test -Dtest=NomeDelTest   # un solo test, non tutta la suite
+cd apps/api && ./mvnw -q -DskipTests package
+cd apps/web && npm test -- --watch=false
+cd apps/web && npm run build -- --configuration production
+```
+
+## Lavorare in modo efficiente in questo repository
+
+- **Una pull request = una voce di `docs/roadmap.md` = una sessione.** Se non ci sta, va spezzata
+  nella roadmap prima di iniziare.
+- **Non cercare dove sta una cosa**: usa la mappa qui sopra e i percorsi indicati nel prompt.
+- **Test mirati**, non la suite intera: i test di integrazione avviano PostgreSQL con Testcontainers
+  e costano minuti. La suite completa la esegue la CI.
+- **Output lungo su file**, non a schermo: `… > /tmp/out.log 2>&1; tail -30 /tmp/out.log`.
+  Vale per build, test e log dei container.
+- **Prima il piano** sulle voci grandi, poi il codice.
+- **Chiusura di ogni PR**: `/code-review` (livello `medium`; `high` o più solo su RLS, permessi,
+  allegati, fatturazione e pagamenti), poi `/simplify`; `/security-review` sulle voci marcate 🔐
+  nella roadmap.
+- Dopo aver aperto la PR, **iscriviti alla sua attività** per correggere i fallimenti della CI
+  quando arrivano, senza attendere né ricontrollare a vuoto.
+
 ## Regole
 - Nessun segreto nel repository. Le credenziali arrivano da variabili d'ambiente o da GitHub Secrets.
 - Ogni modifica al database passa da una migrazione Flyway nuova. Non modificare migrazioni già applicate.

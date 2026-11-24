@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "permissions": {
+    "allow": [
+      "Read",
+      "Edit(apps/**)",
+      "Edit(docs/**)",
+      "Edit(infra/**)",
+      "Edit(.github/**)",
+      "Edit(CLAUDE.md)",
+      "Edit(README.md)",
+      "Bash(./mvnw *)",
+      "Bash(mvn *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git branch*)",
+      "Bash(git switch*)",
+      "Bash(git checkout*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git mv*)",
+      "Bash(git restore*)",
+      "Bash(git fetch*)",
+      "Bash(git merge*)",
+      "Bash(git rev-parse*)",
+      "Bash(git ls-tree*)",
+      "Bash(git ls-files*)",
+      "Bash(ls*)",
+      "Bash(cat*)",
+      "Bash(head*)",
+      "Bash(tail*)",
+      "Bash(wc*)",
+      "Bash(find*)",
+      "Bash(grep*)",
+      "Bash(rg*)",
+      "Bash(diff*)",
+      "Bash(jq*)",
+      "Bash(sed -n*)",
+      "Bash(shellcheck*)",
+      "Bash(.github/scripts/controlla-migrazioni.sh*)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Read(**/.env)",
+      "Read(**/.env.*)"
+    ]
+  }
+}
