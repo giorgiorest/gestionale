@@ -23,7 +23,7 @@ CREATE TABLE work_activities (
     description          TEXT,
     status               TEXT NOT NULL DEFAULT 'pianificata'
                          CHECK (status IN ('pianificata', 'in_corso', 'completata')),
-    progress_percentage  SMALLINT NOT NULL DEFAULT 0 CHECK (progress_percentage BETWEEN 0 AND 100),
+    progress_percentage  INTEGER NOT NULL DEFAULT 0 CHECK (progress_percentage BETWEEN 0 AND 100),
     created_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at           TIMESTAMPTZ NOT NULL DEFAULT now()
 );
