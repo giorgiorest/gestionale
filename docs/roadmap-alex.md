@@ -179,7 +179,11 @@ essere il modello sotto queste tre viste specifiche.
   ("Analisi_Completa.md"): seguire le epiche GitHub
   [#40](https://github.com/giorgiorest/gestionale/issues/40) (R0 — Foundation),
   [#41](https://github.com/giorgiorest/gestionale/issues/41) (R1 — Rapportino MVP),
-  [#42](https://github.com/giorgiorest/gestionale/issues/42) (R2 — Controllo manodopera) come
+  [#42](https://github.com/giorgiorest/gestionale/issues/42) (R2 — Controllo manodopera:
+  [#52](https://github.com/giorgiorest/gestionale/issues/52) ✅,
+  [#53](https://github.com/giorgiorest/gestionale/issues/53) ✅ (PR
+  [#124](https://github.com/giorgiorest/gestionale/pull/124)),
+  [#54](https://github.com/giorgiorest/gestionale/issues/54) ⬜) come
   modello di riferimento, non le vecchie voci.
 - Le Fasi B, C, D possono procedere in parallelo alla Fase A, ma D.4 (rapportino/archivio) condivide
   la UI del rapportino con le storie [#49](https://github.com/giorgiorest/gestionale/issues/49)–[#51](https://github.com/giorgiorest/gestionale/issues/51): tenerle vicine.
