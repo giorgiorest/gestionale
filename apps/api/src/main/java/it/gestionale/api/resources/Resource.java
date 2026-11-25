@@ -1,5 +1,6 @@
 package it.gestionale.api.resources;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -41,6 +42,16 @@ public class Resource {
 
     @Column(name = "team_lead_id")
     private UUID teamLeadId;
+
+    /**
+     * Tariffa oraria base (V14, #53): fallback usato nello snapshot del costo manodopera quando
+     * l'assegnazione attiva non ha un {@code hourlyCostOverride}. Non esposta da {@code
+     * ResourceDto}/{@code ResourceController} (permesso {@code resources:read/write}, troppo
+     * largo per un dato di retribuzione implicita): solo da {@code ResourceLaborCostDto} e dai due
+     * endpoint dedicati, dietro {@code labor-cost:read/write}.
+     */
+    @Column(name = "standard_hourly_cost")
+    private BigDecimal standardHourlyCost;
 
     @Version
     @Column(nullable = false)
@@ -88,6 +99,13 @@ public class Resource {
         this.updatedAt = at;
     }
 
+    /** Imposta la tariffa oraria base (#53), indipendentemente dagli altri campi. */
+    public void updateStandardHourlyCost(BigDecimal standardHourlyCost, String actorUserId, Instant at) {
+        this.standardHourlyCost = standardHourlyCost;
+        this.updatedBy = actorUserId;
+        this.updatedAt = at;
+    }
+
     /** Cancellazione logica, idempotente: non fa nulla se la risorsa è già cancellata. */
     public void markDeleted(String actorUserId, Instant at) {
         if (deletedAt != null) {
@@ -124,6 +142,10 @@ public class Resource {
 
     public UUID getTeamLeadId() {
         return teamLeadId;
+    }
+
+    public BigDecimal getStandardHourlyCost() {
+        return standardHourlyCost;
     }
 
     public long getVersion() {

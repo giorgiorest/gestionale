@@ -1,0 +1,21 @@
+-- =====================================================================
+-- V14 — Tariffa oraria base della risorsa (GitHub #53).
+--
+-- standard_hourly_cost  Fallback usato da WorkEntryService.snapshotFor() quando l'assegnazione
+--                       attiva non ha un hourly_cost_override (V9): prima si cerca l'override
+--                       contestuale alla commessa, poi questa tariffa standard della persona.
+--                       Nullable come hourly_cost_override: una risorsa senza tariffa nota resta
+--                       con costo sconosciuto (NULL), non zero — stesso trattamento di
+--                       hourly_cost_override e di work_entry_cost_snapshots.hourly_cost (V13).
+--
+-- Prima ALTER TABLE su una tabella di dominio già esistente nel repo (le colonne di costo
+-- precedenti, V9 e V13, sono nate dentro una CREATE TABLE): add_sync_columns non si richiama di
+-- nuovo (già presente su resources da V7), e l'indice esistente (resources_tenant_name_idx) non
+-- serve modifiche, perché non ordina né filtra per questo campo.
+--
+-- Il campo non è esposto da GET/PUT /api/resources (permesso resources:read/write, che hanno
+-- anche operaio e amministrativo): è letto/scritto solo da GET/PUT /api/resources/{id}/labor-cost,
+-- dietro il permesso dedicato labor-cost:read/write (vedi ADR 0021).
+-- =====================================================================
+
+ALTER TABLE resources ADD COLUMN standard_hourly_cost NUMERIC(10, 2);

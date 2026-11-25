@@ -357,6 +357,109 @@ class DailyReportControllerTest extends AbstractIntegrationTest {
         assertThat(unpriced.getLaborCost()).isNull();
     }
 
+    /** Nessun override sull'assegnazione: lo snapshot ricade sulla tariffa oraria base della risorsa (#53). */
+    @Test
+    void closeFallsBackToTheResourceStandardHourlyCostWhenNoOverrideExists() throws Exception {
+        UUID resourceId = UUID.randomUUID();
+        UUID activityId = UUID.randomUUID();
+        UUID reportId = UUID.randomUUID();
+        TenantContext.runAs(tenantA, () -> tx.executeWithoutResult(s -> {
+            Resource resource = new Resource(resourceId, tenantA, "Mario", "Rossi", null, null, "u-a");
+            resource.updateStandardHourlyCost(new BigDecimal("15.00"), "u-a", java.time.Instant.now());
+            resources.save(resource);
+            assignments.save(new ResourceAssignment(UUID.randomUUID(), tenantA, resourceId, commessaA,
+                    LocalDate.parse("2026-01-01"), null, "operaio", null, true, "u-a"));
+            activities.save(new WorkActivity(activityId, tenantA, commessaA, null, "ARM-01", "Armatura pilastri",
+                    null, WorkActivityStatus.PIANIFICATA, 0, "u-a"));
+        }));
+        putReport(tenantA, "capocantiere", reportId, body(commessaA, "2026-06-01", "Sereno"))
+                .andExpect(status().isOk());
+        UUID entryId = UUID.randomUUID();
+        TenantContext.runAs(tenantA, () -> tx.executeWithoutResult(s -> workEntries.save(new WorkEntry(entryId,
+                tenantA, reportId, resourceId, activityId, new BigDecimal("8"), BigDecimal.ZERO, null, "u-a"))));
+        submitReport(tenantA, "capocantiere", reportId).andExpect(status().isOk());
+        closeReport(tenantA, "capocantiere", reportId).andExpect(status().isOk());
+
+        WorkEntryCostSnapshot snapshot = TenantContext
+                .callAs(tenantA, () -> costSnapshots.findByDailyReportIdAndTenantId(reportId, tenantA)).get(0);
+        assertThat(snapshot.getHourlyCost()).isEqualByComparingTo(new BigDecimal("15.00"));
+        assertThat(snapshot.getLaborCost()).isEqualByComparingTo(new BigDecimal("120.00"));
+    }
+
+    /** L'override dell'assegnazione, quando esiste, vince sulla tariffa base della risorsa (#53). */
+    @Test
+    void assignmentOverrideWinsOverTheResourceStandardHourlyCost() throws Exception {
+        UUID resourceId = UUID.randomUUID();
+        UUID activityId = UUID.randomUUID();
+        UUID reportId = UUID.randomUUID();
+        TenantContext.runAs(tenantA, () -> tx.executeWithoutResult(s -> {
+            Resource resource = new Resource(resourceId, tenantA, "Mario", "Rossi", null, null, "u-a");
+            resource.updateStandardHourlyCost(new BigDecimal("15.00"), "u-a", java.time.Instant.now());
+            resources.save(resource);
+            assignments.save(new ResourceAssignment(UUID.randomUUID(), tenantA, resourceId, commessaA,
+                    LocalDate.parse("2026-01-01"), null, "operaio", new BigDecimal("25.00"), true, "u-a"));
+            activities.save(new WorkActivity(activityId, tenantA, commessaA, null, "ARM-01", "Armatura pilastri",
+                    null, WorkActivityStatus.PIANIFICATA, 0, "u-a"));
+        }));
+        putReport(tenantA, "capocantiere", reportId, body(commessaA, "2026-06-01", "Sereno"))
+                .andExpect(status().isOk());
+        UUID entryId = UUID.randomUUID();
+        TenantContext.runAs(tenantA, () -> tx.executeWithoutResult(s -> workEntries.save(new WorkEntry(entryId,
+                tenantA, reportId, resourceId, activityId, new BigDecimal("4"), BigDecimal.ZERO, null, "u-a"))));
+        submitReport(tenantA, "capocantiere", reportId).andExpect(status().isOk());
+        closeReport(tenantA, "capocantiere", reportId).andExpect(status().isOk());
+
+        WorkEntryCostSnapshot snapshot = TenantContext
+                .callAs(tenantA, () -> costSnapshots.findByDailyReportIdAndTenantId(reportId, tenantA)).get(0);
+        assertThat(snapshot.getHourlyCost()).isEqualByComparingTo(new BigDecimal("25.00"));
+        assertThat(snapshot.getLaborCost()).isEqualByComparingTo(new BigDecimal("100.00"));
+    }
+
+    /**
+     * Definition of Done della storia #53: chiude un rapportino, poi cambia il costo orario della
+     * risorsa, poi rilegge il consuntivo già chiuso — che non deve essere cambiato. Il fallback si
+     * applica una sola volta, al momento dello snapshot (vedi {@code WorkEntryService.snapshotFor}).
+     */
+    @Test
+    void changingTheStandardHourlyCostAfterCloseDoesNotAlterTheFrozenSnapshot() throws Exception {
+        UUID resourceId = UUID.randomUUID();
+        UUID activityId = UUID.randomUUID();
+        UUID reportId = UUID.randomUUID();
+        TenantContext.runAs(tenantA, () -> tx.executeWithoutResult(s -> {
+            Resource resource = new Resource(resourceId, tenantA, "Mario", "Rossi", null, null, "u-a");
+            resource.updateStandardHourlyCost(new BigDecimal("15.00"), "u-a", java.time.Instant.now());
+            resources.save(resource);
+            assignments.save(new ResourceAssignment(UUID.randomUUID(), tenantA, resourceId, commessaA,
+                    LocalDate.parse("2026-01-01"), null, "operaio", null, true, "u-a"));
+            activities.save(new WorkActivity(activityId, tenantA, commessaA, null, "ARM-01", "Armatura pilastri",
+                    null, WorkActivityStatus.PIANIFICATA, 0, "u-a"));
+        }));
+        putReport(tenantA, "capocantiere", reportId, body(commessaA, "2026-06-01", "Sereno"))
+                .andExpect(status().isOk());
+        UUID entryId = UUID.randomUUID();
+        TenantContext.runAs(tenantA, () -> tx.executeWithoutResult(s -> workEntries.save(new WorkEntry(entryId,
+                tenantA, reportId, resourceId, activityId, new BigDecimal("8"), BigDecimal.ZERO, null, "u-a"))));
+        submitReport(tenantA, "capocantiere", reportId).andExpect(status().isOk());
+        closeReport(tenantA, "capocantiere", reportId).andExpect(status().isOk());
+
+        WorkEntryCostSnapshot beforeChange = TenantContext
+                .callAs(tenantA, () -> costSnapshots.findByDailyReportIdAndTenantId(reportId, tenantA)).get(0);
+        assertThat(beforeChange.getHourlyCost()).isEqualByComparingTo(new BigDecimal("15.00"));
+        assertThat(beforeChange.getLaborCost()).isEqualByComparingTo(new BigDecimal("120.00"));
+
+        // Il costo orario della risorsa cambia DOPO la chiusura: il consuntivo già chiuso non deve cambiare.
+        TenantContext.runAs(tenantA, () -> tx.executeWithoutResult(s -> {
+            Resource resource = resources.findByIdAndTenantId(resourceId, tenantA).orElseThrow();
+            resource.updateStandardHourlyCost(new BigDecimal("99.00"), "u-a", java.time.Instant.now());
+            resources.save(resource);
+        }));
+
+        WorkEntryCostSnapshot afterChange = TenantContext
+                .callAs(tenantA, () -> costSnapshots.findByDailyReportIdAndTenantId(reportId, tenantA)).get(0);
+        assertThat(afterChange.getHourlyCost()).isEqualByComparingTo(new BigDecimal("15.00"));
+        assertThat(afterChange.getLaborCost()).isEqualByComparingTo(new BigDecimal("120.00"));
+    }
+
     /**
      * Due richieste di chiusura concorrenti sullo stesso rapportino: una sola deve avere
      * successo. L'altra fallisce con 409 — per il controllo applicativo sullo stato (se legge il

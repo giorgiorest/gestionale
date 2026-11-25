@@ -25,7 +25,7 @@ class RoleAuthoritiesConverterTest {
         assertThat(authorities).extracting(GrantedAuthority::getAuthority)
                 .containsExactlyInAnyOrder("ROLE_viewer", "customers:read", "resources:read", "commesse:read",
                         "resource-assignments:read", "work-activities:read", "daily-reports:read",
-                        "work-entries:read");
+                        "work-entries:read", "labor-cost:read");
     }
 
     @Test

@@ -17,35 +17,51 @@ public enum Role {
      * sono qui solo perché senza vedere le commesse e le risorse esistenti, il permesso su
      * {@code resource-assignments} sarebbe irraggiungibile dalla UI (tab "Risorse" della commessa):
      * non è la pagina delle risorse o delle commesse a essere concessa, solo la loro lettura.
+     * {@code labor-cost:read/write} (#53): ha già {@code resource-assignments:write}, cioè può già
+     * impostare un costo (l'override contestuale alla commessa) — la tariffa oraria base della
+     * risorsa è la stessa responsabilità, non un dato nuovo da proteggere diversamente.
      */
     OPERATOR("operator", EnumSet.of(Permission.CUSTOMERS_READ, Permission.CUSTOMERS_WRITE, Permission.ASSISTANT_USE,
             Permission.RESOURCES_READ, Permission.COMMESSE_READ, Permission.RESOURCE_ASSIGNMENTS_READ,
             Permission.RESOURCE_ASSIGNMENTS_WRITE, Permission.WORK_ACTIVITIES_READ,
             Permission.WORK_ACTIVITIES_WRITE, Permission.DAILY_REPORTS_READ, Permission.DAILY_REPORTS_WRITE,
-            Permission.WORK_ENTRIES_READ, Permission.WORK_ENTRIES_WRITE)),
-    /** Consultazione: sola lettura. {@code resources:read}/{@code commesse:read} per lo stesso motivo di {@code OPERATOR}. */
+            Permission.WORK_ENTRIES_READ, Permission.WORK_ENTRIES_WRITE, Permission.LABOR_COST_READ,
+            Permission.LABOR_COST_WRITE)),
+    /**
+     * Consultazione: sola lettura. {@code resources:read}/{@code commesse:read} per lo stesso
+     * motivo di {@code OPERATOR}. {@code labor-cost:read} (#53, non {@code write}, coerente con un
+     * ruolo di sola lettura): ha già {@code resource-assignments:read}, cioè vede già l'override di
+     * costo contestuale — stesso trattamento per la tariffa base.
+     */
     VIEWER("viewer", EnumSet.of(Permission.CUSTOMERS_READ, Permission.RESOURCES_READ, Permission.COMMESSE_READ,
             Permission.RESOURCE_ASSIGNMENTS_READ, Permission.WORK_ACTIVITIES_READ, Permission.DAILY_REPORTS_READ,
-            Permission.WORK_ENTRIES_READ)),
+            Permission.WORK_ENTRIES_READ, Permission.LABOR_COST_READ)),
 
     // Ruoli di cantiere (docs/roadmap-alex.md): ogni PR che introduce una funzione di cantiere
     // aggiunge qui i Permission giusti ai ruoli giusti.
     /**
      * Capocantiere: verifica e conferma il lavoro delle squadre sul cantiere, gestisce il
      * personale e la propria commessa (anche lo stato: è lui a saperla in corso o conclusa).
+     * {@code labor-cost:read/write} (#53): gestisce già il personale ({@code resources:write}) e
+     * già imposta costi (l'override contestuale su {@code resource-assignments:write}) — la
+     * tariffa base è coerente con quella stessa responsabilità.
      */
     CAPOCANTIERE("capocantiere", EnumSet.of(Permission.RESOURCES_READ, Permission.RESOURCES_WRITE,
             Permission.COMMESSE_READ, Permission.COMMESSE_WRITE, Permission.RESOURCE_ASSIGNMENTS_READ,
             Permission.RESOURCE_ASSIGNMENTS_WRITE, Permission.WORK_ACTIVITIES_READ,
             Permission.WORK_ACTIVITIES_WRITE, Permission.DAILY_REPORTS_READ, Permission.DAILY_REPORTS_WRITE,
-            Permission.WORK_ENTRIES_READ, Permission.WORK_ENTRIES_WRITE)),
+            Permission.WORK_ENTRIES_READ, Permission.WORK_ENTRIES_WRITE, Permission.LABOR_COST_READ,
+            Permission.LABOR_COST_WRITE)),
     /**
      * Caposquadra: coordina la propria squadra sul cantiere. Il piano prevede scrittura sul
      * rapportino (e sulle sue righe di ore) limitata alla propria squadra ("RW squadra"): finché
      * quel controllo non esiste (richiede incrociare {@code daily-reports}/{@code work-entries}
      * con le assegnazioni della squadra, {@code resource-assignments}), solo lettura qui, non il
      * pieno {@code DAILY_REPORTS_WRITE}/{@code WORK_ENTRIES_WRITE} di {@code CAPOCANTIERE} —
-     * altrimenti scriverebbe anche sui rapportini di commesse/squadre non sue.
+     * altrimenti scriverebbe anche sui rapportini di commesse/squadre non sue. Niente
+     * {@code labor-cost:read} (#53, a differenza di {@code CAPOCANTIERE}): coordina la squadra sul
+     * campo, non ne gestisce il personale a livello economico — il costo orario è una
+     * retribuzione implicita, non un dato di coordinamento.
      */
     CAPOSQUADRA("caposquadra", EnumSet.of(Permission.RESOURCES_READ, Permission.COMMESSE_READ,
             Permission.RESOURCE_ASSIGNMENTS_READ, Permission.WORK_ACTIVITIES_READ,
@@ -57,11 +73,17 @@ public enum Role {
      * prodotto non ancora presa (richiederebbe incrociare {@code Resource.userId} con {@code
      * WorkEntry.resourceId}, un controllo diverso da quello di {@code CAPOSQUADRA} sopra). Niente
      * permesso finché quella scelta non arriva, per non concedere nel frattempo una scrittura più
-     * ampia di quella voluta.
+     * ampia di quella voluta. Niente {@code labor-cost:read} (#53): è l'ultima persona che deve
+     * vedere il proprio costo orario (o quello dei colleghi) — una retribuzione implicita.
      */
     OPERAIO("operaio", EnumSet.of(Permission.RESOURCES_READ, Permission.COMMESSE_READ,
             Permission.RESOURCE_ASSIGNMENTS_READ, Permission.WORK_ACTIVITIES_READ)),
-    /** Amministrativo: personale d'ufficio con accesso limitato (materiali, personale, attrezzature, fornitori, archivio), mai a rapportini, contabilità o pianificazione. */
+    /**
+     * Amministrativo: personale d'ufficio con accesso limitato (materiali, personale, attrezzature,
+     * fornitori, archivio), mai a rapportini, contabilità o pianificazione. Niente
+     * {@code labor-cost:read/write} (#53), nonostante {@code resources:write}: il costo orario è
+     * un dato di contabilità/payroll, esattamente ciò che questo ruolo non deve mai toccare.
+     */
     AMMINISTRATIVO("amministrativo", EnumSet.of(Permission.RESOURCES_READ, Permission.RESOURCES_WRITE,
             Permission.COMMESSE_READ, Permission.COMMESSE_WRITE));
 
