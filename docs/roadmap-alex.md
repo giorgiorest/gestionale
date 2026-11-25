@@ -61,6 +61,7 @@ Voci A.5 e successive in [Epica GitHub #61](https://github.com/giorgiorest/gesti
 | A.10 | 🔐 Corsi di formazione sicurezza: catalogo (RSPP, ASPP, preposto, PLE, gru, DPI, ecc.), scadenze calcolate, upload attestati — [#74](https://github.com/giorgiorest/gestionale/issues/74) | da assegnare | ⬜ |
 | A.11 | 🔐 Lettura automatica AI degli attestati (foto/PDF → corso e data riconosciuti) — [#75](https://github.com/giorgiorest/gestionale/issues/75) | — | ⬜ |
 | A.12 | Cruscotto scadenze personale (documenti + corsi) con filtri per orizzonte temporale (scadute/30/60/90 gg) — [#72](https://github.com/giorgiorest/gestionale/issues/72) | — | ⬜ |
+| A.13 | 🔐 Falla pre-esistente notata in [ADR 0021](decisioni/0021-storico-costi-manodopera.md) (introdotta da #47/#51, non da #53): `hourlyCostOverride` (costo orario, contestuale a una commessa) esposto da `GET /api/commesse/{id}/resource-assignments` a chi ha `resource-assignments:read` ma non `labor-cost:read` (`caposquadra`, `operaio`) — chiusa in [PR #125](https://github.com/giorgiorest/gestionale/pull/125) nascondendo il campo nella risposta | — | ✅ |
 
 ## Fase B — Attrezzature e mezzi
 
