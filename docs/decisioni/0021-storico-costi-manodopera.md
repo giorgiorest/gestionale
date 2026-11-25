@@ -72,15 +72,23 @@ implicita), diverso dagli altri campi di `Resource` (nome, cognome) che chiunque
   lo snapshot singolo (NULL ≠ zero, ma nessun contatore di "ore a costo sconosciuto" inventato qui,
   perché non richiesto dall'issue).
 
-## Nota su una falla pre-esistente (non toccata da questa storia)
+## Nota su una falla pre-esistente, risolta in una PR dedicata
 
-`CAPOSQUADRA` e `OPERAIO` hanno già oggi `resource-assignments:read` e quindi vedono già
+`CAPOSQUADRA` e `OPERAIO` avevano già `resource-assignments:read` e quindi vedevano già
 `hourlyCostOverride` tramite `GET /api/commesse/{id}/resource-assignments` — un costo, anche se
-contestuale a una commessa invece che la tariffa base della persona. È una falla precedente a
-questa storia (introdotta da #47/#51, non da #53): non la sistemo qui per non allargare lo scope di
-questa PR a un endpoint diverso con una storia già chiusa, ma va ripresa (restringere
-`resource-assignments:read` per quei ruoli, o nascondere `hourlyCostOverride` dalla risposta per chi
-non ha `labor-cost:read`).
+contestuale a una commessa invece che la tariffa base della persona. Era una falla precedente a
+questa storia (introdotta da #47/#51, non da #53): non è stata sistemata qui per non allargare lo
+scope di questa PR a un endpoint diverso con una storia già chiusa.
+
+Risolta in una PR successiva, dedicata, con la seconda delle due opzioni elencate sopra:
+`ResourceAssignmentController.listByCommessa()` nasconde `hourlyCostOverride` (lo imposta a
+`null`) nella risposta quando il chiamante non ha `labor-cost:read`, anche se ha
+`resource-assignments:read`. Non la prima (endpoint/DTO dedicato come per la tariffa base di
+`Resource`) perché, a differenza di quella, `hourlyCostOverride` è parte di un'entità sincronizzata
+offline (`ResourceAssignment`, outbox): separarlo in un endpoint online-only avrebbe richiesto
+toccare anche la scrittura via outbox, uno scope più ampio della sola falla di lettura. La
+scrittura non ne aveva bisogno: ogni ruolo con `resource-assignments:write` (`ADMIN`, `OPERATOR`,
+`CAPOCANTIERE`) ha già anche `labor-cost:write`.
 
 ## Alternative scartate
 

@@ -26,6 +26,13 @@ public record ResourceAssignmentDto(UUID id, UUID resourceId, UUID commessaId, L
                 a.getUpdatedAt());
     }
 
+    /** Copia senza il costo, per chi non ha {@code labor-cost:read} (vedi ADR 0021). */
+    ResourceAssignmentDto withoutHourlyCostOverride() {
+        return hourlyCostOverride == null ? this
+                : new ResourceAssignmentDto(id, resourceId, commessaId, validFrom, validTo, role, null, active,
+                        version, updatedAt);
+    }
+
     /** Dati in ingresso per creare o aggiornare un'assegnazione. */
     public record Input(@NotNull UUID resourceId, @NotNull UUID commessaId, @NotNull LocalDate validFrom,
                         LocalDate validTo, @NotBlank @Size(max = 100) String role,
