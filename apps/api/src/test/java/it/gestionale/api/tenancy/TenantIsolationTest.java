@@ -13,9 +13,14 @@ import java.util.UUID;
 
 import it.gestionale.api.AbstractIntegrationTest;
 import it.gestionale.api.TestData;
+import it.gestionale.api.commesse.Commessa;
+import it.gestionale.api.commesse.CommessaRepository;
+import it.gestionale.api.commesse.CommessaStato;
 import it.gestionale.api.customers.Customer;
 import it.gestionale.api.customers.CustomerRepository;
 import it.gestionale.api.licensing.LicenseRepository;
+import it.gestionale.api.resources.Resource;
+import it.gestionale.api.resources.ResourceRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +43,10 @@ class TenantIsolationTest extends AbstractIntegrationTest {
     LicenseRepository licenses;
     @Autowired
     CustomerRepository customers;
+    @Autowired
+    ResourceRepository resources;
+    @Autowired
+    CommessaRepository commesse;
     @Autowired
     JdbcTemplate jdbc;
 
@@ -87,6 +96,42 @@ class TenantIsolationTest extends AbstractIntegrationTest {
     void cannotWriteRowsOfAnotherTenant() {
         assertThatThrownBy(() -> TenantContext.runAs(tenantA,
                 () -> customers.save(new Customer(UUID.randomUUID(), tenantB, "Intruso", null, "u-a"))))
+                .hasStackTraceContaining("row-level security");
+    }
+
+    /**
+     * Stesso controllo di {@link #eachTenantSeesOnlyItsOwnRows} e {@link #cannotWriteRowsOfAnotherTenant},
+     * ma su {@code resources}: non basta che il meccanismo RLS funzioni (lo prova già Customer),
+     * serve verificare che sia stato davvero attivato su questa tabella (una nuova entità che
+     * dimentica {@code enable_tenant_rls} in una migrazione non darebbe altrimenti nessun errore).
+     */
+    @Test
+    void resourcesAreIsolatedByTenant() {
+        UUID resourceA = UUID.randomUUID();
+        UUID resourceB = UUID.randomUUID();
+        TenantContext.runAs(tenantA,
+                () -> resources.save(new Resource(resourceA, tenantA, "Mario", "Rossi", null, null, "u-a")));
+        TenantContext.runAs(tenantB,
+                () -> resources.save(new Resource(resourceB, tenantB, "Luigi", "Bianchi", null, null, "u-b")));
+
+        List<Resource> seenByA = TenantContext.callAs(tenantA, resources::findAll);
+        assertThat(seenByA).extracting(Resource::getId).containsExactly(resourceA);
+        assertThatThrownBy(() -> TenantContext.runAs(tenantA,
+                () -> resources.save(new Resource(UUID.randomUUID(), tenantB, "Intruso", "Intruso", null, null, "u-a"))))
+                .hasStackTraceContaining("row-level security");
+    }
+
+    /** Come {@link #resourcesAreIsolatedByTenant}, ma su {@code commesse}. */
+    @Test
+    void commesseAreIsolatedByTenant() {
+        UUID commessaA = UUID.randomUUID();
+        TenantContext.runAs(tenantA, () -> commesse.save(
+                new Commessa(commessaA, tenantA, customerA, "Tetto", null, CommessaStato.PIANIFICATA, "u-a")));
+
+        List<Commessa> seenByA = TenantContext.callAs(tenantA, commesse::findAll);
+        assertThat(seenByA).extracting(Commessa::getId).containsExactly(commessaA);
+        assertThatThrownBy(() -> TenantContext.runAs(tenantA, () -> commesse.save(new Commessa(UUID.randomUUID(),
+                tenantB, customerB, "Furto", null, CommessaStato.PIANIFICATA, "u-a"))))
                 .hasStackTraceContaining("row-level security");
     }
 
