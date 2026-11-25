@@ -99,7 +99,7 @@ class DailyReportControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.status").value("draft"))
                 .andExpect(jsonPath("$.version").value(2));
 
-        mvc.perform(get("/api/daily-reports/" + id).with(TestJwt.user(tenantA, "operaio")))
+        mvc.perform(get("/api/daily-reports/" + id).with(TestJwt.user(tenantA, "viewer")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.weather").value("Pioggia"));
     }
@@ -120,14 +120,14 @@ class DailyReportControllerTest extends AbstractIntegrationTest {
         putReport(tenantA, "capocantiere", UUID.randomUUID(), body(commessaA, "2026-06-02", "Pioggia"))
                 .andExpect(status().isOk());
 
-        mvc.perform(get("/api/commesse/" + commessaA + "/daily-reports").with(TestJwt.user(tenantA, "operaio")))
+        mvc.perform(get("/api/commesse/" + commessaA + "/daily-reports").with(TestJwt.user(tenantA, "viewer")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].date").value("2026-06-02"));
 
         mvc.perform(get("/api/commesse/" + commessaA + "/daily-reports")
                 .param("date", "2026-06-01")
-                .with(TestJwt.user(tenantA, "operaio")))
+                .with(TestJwt.user(tenantA, "viewer")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].weather").value("Sereno"));
@@ -141,7 +141,7 @@ class DailyReportControllerTest extends AbstractIntegrationTest {
 
         deleteReport(tenantA, "capocantiere", id).andExpect(status().isNoContent());
 
-        mvc.perform(get("/api/commesse/" + commessaA + "/daily-reports").with(TestJwt.user(tenantA, "operaio")))
+        mvc.perform(get("/api/commesse/" + commessaA + "/daily-reports").with(TestJwt.user(tenantA, "viewer")))
                 .andExpect(jsonPath("$.length()").value(0));
         DailyReport deleted = TenantContext.callAs(tenantA, () -> reports.findByIdAndTenantId(id, tenantA))
                 .orElseThrow();
@@ -157,7 +157,7 @@ class DailyReportControllerTest extends AbstractIntegrationTest {
 
     @Test
     void getUnknownReportIsNotFound() throws Exception {
-        mvc.perform(get("/api/daily-reports/" + UUID.randomUUID()).with(TestJwt.user(tenantA, "operaio")))
+        mvc.perform(get("/api/daily-reports/" + UUID.randomUUID()).with(TestJwt.user(tenantA, "viewer")))
                 .andExpect(status().isNotFound());
     }
 
