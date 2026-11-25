@@ -366,14 +366,26 @@ class DailyReportControllerTest extends AbstractIntegrationTest {
      */
     @Test
     void concurrentCloseRequestsOnlyOneSucceeds() throws Exception {
+        UUID resourceId = UUID.randomUUID();
+        UUID activityId = UUID.randomUUID();
         UUID id = UUID.randomUUID();
+        TenantContext.runAs(tenantA, () -> tx.executeWithoutResult(s -> {
+            resources.save(new Resource(resourceId, tenantA, "Mario", "Rossi", null, null, "u-a"));
+            assignments.save(new ResourceAssignment(UUID.randomUUID(), tenantA, resourceId, commessaA,
+                    LocalDate.parse("2026-01-01"), null, "operaio", new BigDecimal("20.00"), true, "u-a"));
+            activities.save(new WorkActivity(activityId, tenantA, commessaA, null, "ARM-01", "Armatura pilastri",
+                    null, WorkActivityStatus.PIANIFICATA, 0, "u-a"));
+        }));
         putReport(tenantA, "capocantiere", id, body(commessaA, "2026-06-01", "Sereno")).andExpect(status().isOk());
+        UUID entryId = UUID.randomUUID();
+        TenantContext.runAs(tenantA, () -> tx.executeWithoutResult(s -> workEntries.save(new WorkEntry(entryId,
+                tenantA, id, resourceId, activityId, new BigDecimal("8"), BigDecimal.ZERO, null, "u-a"))));
         submitReport(tenantA, "capocantiere", id).andExpect(status().isOk());
 
         ExecutorService pool = Executors.newFixedThreadPool(2);
         try {
             Callable<MvcResult> attempt = () -> closeReport(tenantA, "capocantiere", id).andReturn();
-            List<Future<MvcResult>> results = pool.invokeAll(List.of(attempt, attempt));
+            List<Future<MvcResult>> results = pool.invokeAll(List.of(attempt, attempt), 30, TimeUnit.SECONDS);
             List<Integer> statuses = results.stream().map(f -> {
                 try {
                     return f.get().getResponse().getStatus();
@@ -384,12 +396,17 @@ class DailyReportControllerTest extends AbstractIntegrationTest {
             assertThat(statuses).containsExactly(200, 409);
         } finally {
             pool.shutdown();
-            pool.awaitTermination(10, TimeUnit.SECONDS);
+            assertThat(pool.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
         }
 
         DailyReport closed = TenantContext.callAs(tenantA, () -> reports.findByIdAndTenantId(id, tenantA))
                 .orElseThrow();
         assertThat(closed.getStatus()).isEqualTo(DailyReportStatus.CLOSED);
         assertThat(closed.getVersion()).isEqualTo(2);
+        // La riga concorrente perdente non deve aver lasciato un secondo snapshot del costo.
+        List<WorkEntryCostSnapshot> snapshots = TenantContext
+                .callAs(tenantA, () -> costSnapshots.findByDailyReportIdAndTenantId(id, tenantA));
+        assertThat(snapshots).hasSize(1);
+        assertThat(snapshots.get(0).getLaborCost()).isEqualByComparingTo(new BigDecimal("160.00"));
     }
 }

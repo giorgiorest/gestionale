@@ -3,9 +3,12 @@ package it.gestionale.api.workentries;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import it.gestionale.api.dailyreports.DailyReport;
 import it.gestionale.api.dailyreports.DailyReportRepository;
@@ -128,23 +131,34 @@ public class WorkEntryService {
      * una tariffa standard di fallback — il costo di quella riga resta sconosciuto (NULL), non
      * zero: è una scelta di prodotto non ancora presa, non va inventata qui. Lo straordinario usa
      * la stessa tariffa delle ore normali: non esiste ancora una maggiorazione definita.
+     *
+     * <p>Le assegnazioni della commessa si leggono in una sola query (non una per riga): un
+     * rapportino con molte righe non deve costare una query per persona.
      */
     @Transactional
     public void snapshotCostsForClose(DailyReport report) {
         UUID tenantId = TenantContext.require();
         List<WorkEntry> activeEntries = entries
                 .findByDailyReportIdAndTenantIdAndDeletedAtIsNullOrderByCreatedAtAsc(report.getId(), tenantId);
+        Map<UUID, List<ResourceAssignment>> assignmentsByResource = assignments
+                .findByCommessaIdAndTenantIdAndDeletedAtIsNullOrderByValidFromAsc(report.getCommessaId(), tenantId)
+                .stream().filter(ResourceAssignment::isActive)
+                .collect(Collectors.groupingBy(ResourceAssignment::getResourceId));
         List<WorkEntryCostSnapshot> snapshots = activeEntries.stream()
-                .map(entry -> snapshotFor(report, entry, tenantId))
+                .map(entry -> snapshotFor(report, entry, tenantId, assignmentsByResource))
                 .toList();
         costSnapshots.saveAll(snapshots);
         costSnapshots.flush();
     }
 
-    private WorkEntryCostSnapshot snapshotFor(DailyReport report, WorkEntry entry, UUID tenantId) {
-        BigDecimal hourlyCost = assignments
-                .findValidAssignments(entry.getResourceId(), report.getCommessaId(), report.getDate(), tenantId)
-                .stream().findFirst().map(ResourceAssignment::getHourlyCostOverride).orElse(null);
+    private WorkEntryCostSnapshot snapshotFor(DailyReport report, WorkEntry entry, UUID tenantId,
+            Map<UUID, List<ResourceAssignment>> assignmentsByResource) {
+        LocalDate date = report.getDate();
+        BigDecimal hourlyCost = assignmentsByResource.getOrDefault(entry.getResourceId(), List.of()).stream()
+                .filter(a -> !a.getValidFrom().isAfter(date) && (a.getValidTo() == null || !a.getValidTo().isBefore(date)))
+                .max(Comparator.comparing(ResourceAssignment::getValidFrom))
+                .map(ResourceAssignment::getHourlyCostOverride)
+                .orElse(null);
         BigDecimal laborCost = hourlyCost == null ? null
                 : entry.getHours().add(entry.getOvertimeHours()).multiply(hourlyCost);
         return new WorkEntryCostSnapshot(UUID.randomUUID(), tenantId, report.getId(), entry.getId(),
