@@ -3,10 +3,13 @@ package it.gestionale.api.resourceassignments;
 import java.util.List;
 import java.util.UUID;
 
+import it.gestionale.api.auth.Permission;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,10 +30,24 @@ public class ResourceAssignmentController {
         this.service = service;
     }
 
+    /**
+     * {@code hourlyCostOverride} è un costo (contestuale alla commessa) tanto quanto la tariffa
+     * oraria base di {@code Resource}: va nascosto a chi ha {@code resource-assignments:read} ma
+     * non {@code labor-cost:read}, per coerenza con quella (vedi ADR 0021, nota sulla falla ora
+     * risolta).
+     */
     @GetMapping("/api/commesse/{commessaId}/resource-assignments")
     @PreAuthorize("hasAuthority('resource-assignments:read')")
     public List<ResourceAssignmentDto> listByCommessa(@PathVariable UUID commessaId) {
-        return service.listByCommessa(commessaId);
+        List<ResourceAssignmentDto> assignments = service.listByCommessa(commessaId);
+        return hasLaborCostRead() ? assignments
+                : assignments.stream().map(ResourceAssignmentDto::withoutHourlyCostOverride).toList();
+    }
+
+    private static boolean hasLaborCostRead() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals(Permission.LABOR_COST_READ.code()));
     }
 
     /** Creazione o aggiornamento idempotente: l'id è generato dal client (UUID v7). */

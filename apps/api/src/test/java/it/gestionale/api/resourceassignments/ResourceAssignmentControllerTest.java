@@ -91,6 +91,13 @@ class ResourceAssignmentControllerTest extends AbstractIntegrationTest {
                 + role + "\",\"active\":true}";
     }
 
+    private String bodyWithCost(UUID resourceId, UUID commessaId, String role, String validFrom,
+                                String hourlyCostOverride) {
+        return "{\"resourceId\":\"" + resourceId + "\",\"commessaId\":\"" + commessaId + "\",\"validFrom\":\""
+                + validFrom + "\",\"validTo\":null,\"role\":\"" + role + "\",\"hourlyCostOverride\":"
+                + hourlyCostOverride + ",\"active\":true}";
+    }
+
     @Test
     void capocantiereCreatesAndUpdatesIdempotently() throws Exception {
         UUID id = UUID.randomUUID();
@@ -154,6 +161,33 @@ class ResourceAssignmentControllerTest extends AbstractIntegrationTest {
         putAssignment(tenantA, "caposquadra", UUID.randomUUID(),
                 body(resourceA, commessaA1, "operaio", "2026-01-01", null))
                 .andExpect(status().isForbidden());
+    }
+
+    /**
+     * {@code hourlyCostOverride} è un costo (retribuzione implicita contestuale alla commessa)
+     * tanto quanto la tariffa base di {@code Resource} (#53, ADR 0021): va nascosto a chi ha
+     * {@code resource-assignments:read} ma non {@code labor-cost:read}.
+     */
+    @Test
+    void hourlyCostOverrideIsHiddenFromRolesWithoutLaborCostRead() throws Exception {
+        UUID id = UUID.randomUUID();
+        putAssignment(tenantA, "capocantiere", id, bodyWithCost(resourceA, commessaA1, "operaio", "2026-01-01", "15.00"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hourlyCostOverride").value(15.00));
+
+        // caposquadra e operaio: resource-assignments:read senza labor-cost:read.
+        for (String role : new String[] { "caposquadra", "operaio" }) {
+            mvc.perform(get("/api/commesse/" + commessaA1 + "/resource-assignments").with(TestJwt.user(tenantA, role)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].hourlyCostOverride").doesNotExist());
+        }
+
+        // capocantiere, operator, viewer, admin: hanno anche labor-cost:read.
+        for (String role : new String[] { "capocantiere", "operator", "viewer", "admin" }) {
+            mvc.perform(get("/api/commesse/" + commessaA1 + "/resource-assignments").with(TestJwt.user(tenantA, role)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].hourlyCostOverride").value(15.00));
+        }
     }
 
     @Test
