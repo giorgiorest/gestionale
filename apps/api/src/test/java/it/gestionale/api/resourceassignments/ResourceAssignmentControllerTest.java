@@ -1,0 +1,206 @@
+package it.gestionale.api.resourceassignments;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.Set;
+import java.util.UUID;
+
+import it.gestionale.api.AbstractIntegrationTest;
+import it.gestionale.api.TestData;
+import it.gestionale.api.TestJwt;
+import it.gestionale.api.commesse.Commessa;
+import it.gestionale.api.commesse.CommessaRepository;
+import it.gestionale.api.commesse.CommessaStato;
+import it.gestionale.api.customers.Customer;
+import it.gestionale.api.customers.CustomerRepository;
+import it.gestionale.api.licensing.LicenseRepository;
+import it.gestionale.api.resources.Resource;
+import it.gestionale.api.resources.ResourceRepository;
+import it.gestionale.api.tenancy.TenantContext;
+import it.gestionale.api.tenancy.TenantRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.support.TransactionTemplate;
+
+@AutoConfigureMockMvc
+class ResourceAssignmentControllerTest extends AbstractIntegrationTest {
+
+    @Autowired
+    MockMvc mvc;
+    @Autowired
+    TransactionTemplate tx;
+    @Autowired
+    TenantRepository tenants;
+    @Autowired
+    LicenseRepository licenses;
+    @Autowired
+    CustomerRepository customers;
+    @Autowired
+    CommessaRepository commesse;
+    @Autowired
+    ResourceRepository resources;
+    @Autowired
+    ResourceAssignmentRepository assignments;
+
+    UUID tenantA;
+    UUID tenantB;
+    UUID resourceA;
+    UUID commessaA1;
+    UUID commessaA2;
+
+    @BeforeEach
+    void setUp() {
+        tenantA = TestData.createTenant(tx, tenants, licenses, "base", Set.of(), 0);
+        tenantB = TestData.createTenant(tx, tenants, licenses, "base", Set.of(), 0);
+        resourceA = UUID.randomUUID();
+        commessaA1 = UUID.randomUUID();
+        commessaA2 = UUID.randomUUID();
+        UUID customerA = UUID.randomUUID();
+        TenantContext.runAs(tenantA, () -> tx.executeWithoutResult(s -> {
+            customers.save(new Customer(customerA, tenantA, "Cliente A", null, null));
+            resources.save(new Resource(resourceA, tenantA, "Mario", "Rossi", null, null, "u-a"));
+            commesse.save(new Commessa(commessaA1, tenantA, customerA, "Tetto", null, CommessaStato.PIANIFICATA,
+                    "u-a"));
+            commesse.save(new Commessa(commessaA2, tenantA, customerA, "Muro", null, CommessaStato.PIANIFICATA,
+                    "u-a"));
+        }));
+    }
+
+    private ResultActions putAssignment(UUID tenant, String role, UUID id, String json) throws Exception {
+        return mvc.perform(put("/api/resource-assignments/" + id).with(TestJwt.user(tenant, role))
+                .contentType(MediaType.APPLICATION_JSON).content(json));
+    }
+
+    private ResultActions deleteAssignment(UUID tenant, String role, UUID id) throws Exception {
+        return mvc.perform(delete("/api/resource-assignments/" + id).with(TestJwt.user(tenant, role)));
+    }
+
+    private String body(UUID resourceId, UUID commessaId, String role, String validFrom, String validTo) {
+        return "{\"resourceId\":\"" + resourceId + "\",\"commessaId\":\"" + commessaId + "\",\"validFrom\":\""
+                + validFrom + "\",\"validTo\":" + (validTo == null ? "null" : "\"" + validTo + "\"") + ",\"role\":\""
+                + role + "\",\"active\":true}";
+    }
+
+    @Test
+    void capocantiereCreatesAndUpdatesIdempotently() throws Exception {
+        UUID id = UUID.randomUUID();
+        String json = body(resourceA, commessaA1, "capocantiere", "2026-01-01", null);
+
+        putAssignment(tenantA, "capocantiere", id, json)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id.toString()))
+                .andExpect(jsonPath("$.role").value("capocantiere"))
+                .andExpect(jsonPath("$.version").value(0));
+        // Reinvio dalla outbox: stesso id, nessun duplicato.
+        putAssignment(tenantA, "capocantiere", id, json).andExpect(status().isOk());
+
+        String updated = body(resourceA, commessaA1, "operaio", "2026-01-01", "2026-06-30");
+        putAssignment(tenantA, "capocantiere", id, updated)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.role").value("operaio"))
+                .andExpect(jsonPath("$.validTo").value("2026-06-30"))
+                .andExpect(jsonPath("$.version").value(2));
+    }
+
+    @Test
+    void sameResourceCanBeAssignedToDifferentCommesseWithDifferentPeriodsAndRoles() throws Exception {
+        putAssignment(tenantA, "capocantiere", UUID.randomUUID(),
+                body(resourceA, commessaA1, "capocantiere", "2026-01-01", "2026-03-31"))
+                .andExpect(status().isOk());
+        putAssignment(tenantA, "capocantiere", UUID.randomUUID(),
+                body(resourceA, commessaA2, "operaio", "2026-04-01", null))
+                .andExpect(status().isOk());
+
+        mvc.perform(get("/api/commesse/" + commessaA1 + "/resource-assignments").with(TestJwt.user(tenantA, "operaio")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].role").value("capocantiere"));
+        mvc.perform(get("/api/commesse/" + commessaA2 + "/resource-assignments").with(TestJwt.user(tenantA, "operaio")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].role").value("operaio"));
+    }
+
+    @Test
+    void deleteIsLogicalAndIdempotent() throws Exception {
+        UUID id = UUID.randomUUID();
+        putAssignment(tenantA, "capocantiere", id, body(resourceA, commessaA1, "operaio", "2026-01-01", null))
+                .andExpect(status().isOk());
+
+        deleteAssignment(tenantA, "capocantiere", id).andExpect(status().isNoContent());
+
+        mvc.perform(get("/api/commesse/" + commessaA1 + "/resource-assignments").with(TestJwt.user(tenantA, "operaio")))
+                .andExpect(jsonPath("$.length()").value(0));
+        ResourceAssignment deleted = TenantContext.callAs(tenantA, () -> assignments.findByIdAndTenantId(id, tenantA))
+                .orElseThrow();
+        assertThat(deleted.isDeleted()).isTrue();
+
+        deleteAssignment(tenantA, "capocantiere", id).andExpect(status().isNoContent());
+        deleteAssignment(tenantA, "capocantiere", UUID.randomUUID()).andExpect(status().isNoContent());
+    }
+
+    @Test
+    void caposquadraCannotWrite() throws Exception {
+        putAssignment(tenantA, "caposquadra", UUID.randomUUID(),
+                body(resourceA, commessaA1, "operaio", "2026-01-01", null))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void assignmentsOfAnotherTenantAreNeitherVisibleNorOverwritable() throws Exception {
+        UUID id = UUID.randomUUID();
+        putAssignment(tenantA, "capocantiere", id, body(resourceA, commessaA1, "operaio", "2026-01-01", null))
+                .andExpect(status().isOk());
+
+        mvc.perform(get("/api/commesse/" + commessaA1 + "/resource-assignments").with(TestJwt.user(tenantB, "admin")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+
+        UUID resourceB = UUID.randomUUID();
+        UUID customerB = UUID.randomUUID();
+        UUID commessaB = UUID.randomUUID();
+        TenantContext.runAs(tenantB, () -> tx.executeWithoutResult(s -> {
+            customers.save(new Customer(customerB, tenantB, "Cliente B", null, null));
+            resources.save(new Resource(resourceB, tenantB, "Luigi", "Bianchi", null, null, "u-b"));
+            commesse.save(new Commessa(commessaB, tenantB, customerB, "Furto", null, CommessaStato.PIANIFICATA,
+                    "u-b"));
+        }));
+        putAssignment(tenantB, "admin", id, body(resourceB, commessaB, "operaio", "2026-01-01", null))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void resourceAndCommessaMustBeActiveAndOfTheSameTenant() throws Exception {
+        UUID unknownResource = UUID.randomUUID();
+        putAssignment(tenantA, "capocantiere", UUID.randomUUID(),
+                body(unknownResource, commessaA1, "operaio", "2026-01-01", null))
+                .andExpect(status().isBadRequest());
+
+        UUID unknownCommessa = UUID.randomUUID();
+        putAssignment(tenantA, "capocantiere", UUID.randomUUID(),
+                body(resourceA, unknownCommessa, "operaio", "2026-01-01", null))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void rejectsInvalidInput() throws Exception {
+        // validTo precedente a validFrom.
+        putAssignment(tenantA, "capocantiere", UUID.randomUUID(),
+                body(resourceA, commessaA1, "operaio", "2026-06-01", "2026-01-01"))
+                .andExpect(status().isBadRequest());
+        // Ruolo vuoto.
+        putAssignment(tenantA, "capocantiere", UUID.randomUUID(),
+                body(resourceA, commessaA1, " ", "2026-01-01", null))
+                .andExpect(status().isBadRequest());
+    }
+}

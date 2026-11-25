@@ -51,6 +51,20 @@ export interface LocalCommessa {
   updatedAt: string;
 }
 
+/** Copia locale di un'assegnazione di una risorsa a una commessa (stesso schema dell'API). */
+export interface LocalResourceAssignment {
+  id: string;
+  tenantId: string;
+  resourceId: string;
+  commessaId: string;
+  validFrom: string;
+  validTo: string | null;
+  role: string;
+  hourlyCostOverride: number | null;
+  active: boolean;
+  updatedAt: string;
+}
+
 /** Copia locale di una notifica dell'utente (stesso schema di GET /api/notifications). */
 export interface LocalNotification {
   id: string;
@@ -92,6 +106,7 @@ export class LocalDb extends Dexie {
   meta!: Table<LocalMeta, string>;
   resources!: Table<LocalResource, string>;
   commesse!: Table<LocalCommessa, string>;
+  resourceAssignments!: Table<LocalResourceAssignment, string>;
 
   // Nota: in Dexie si dichiarano solo chiave primaria e indici; i campi non indicizzati
   // (es. OutboxEntry.lastError) si aggiungono senza nuova versione.
@@ -117,6 +132,10 @@ export class LocalDb extends Dexie {
     // v5: commesse (roadmap 3.1).
     this.version(5).stores({
       commesse: 'id, tenantId, customerId, updatedAt',
+    });
+    // v6: assegnazioni risorsa-commessa (GitHub #47).
+    this.version(6).stores({
+      resourceAssignments: 'id, tenantId, commessaId, resourceId, updatedAt',
     });
   }
 }
