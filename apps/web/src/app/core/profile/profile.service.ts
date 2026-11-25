@@ -40,6 +40,8 @@ export const PERMISSION_LABELS: Record<string, string> = {
   'resource-assignments:write': 'Assegnare e rimuovere risorse dalle commesse',
   'work-activities:read': 'Consultare le lavorazioni delle commesse',
   'work-activities:write': 'Creare e modificare le lavorazioni delle commesse',
+  'daily-reports:read': 'Consultare i rapportini giornalieri',
+  'daily-reports:write': 'Creare e modificare i rapportini giornalieri',
 };
 
 /**

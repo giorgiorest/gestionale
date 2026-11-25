@@ -21,10 +21,10 @@ public enum Role {
     OPERATOR("operator", EnumSet.of(Permission.CUSTOMERS_READ, Permission.CUSTOMERS_WRITE, Permission.ASSISTANT_USE,
             Permission.RESOURCES_READ, Permission.COMMESSE_READ, Permission.RESOURCE_ASSIGNMENTS_READ,
             Permission.RESOURCE_ASSIGNMENTS_WRITE, Permission.WORK_ACTIVITIES_READ,
-            Permission.WORK_ACTIVITIES_WRITE)),
+            Permission.WORK_ACTIVITIES_WRITE, Permission.DAILY_REPORTS_READ, Permission.DAILY_REPORTS_WRITE)),
     /** Consultazione: sola lettura. {@code resources:read}/{@code commesse:read} per lo stesso motivo di {@code OPERATOR}. */
     VIEWER("viewer", EnumSet.of(Permission.CUSTOMERS_READ, Permission.RESOURCES_READ, Permission.COMMESSE_READ,
-            Permission.RESOURCE_ASSIGNMENTS_READ, Permission.WORK_ACTIVITIES_READ)),
+            Permission.RESOURCE_ASSIGNMENTS_READ, Permission.WORK_ACTIVITIES_READ, Permission.DAILY_REPORTS_READ)),
 
     // Ruoli di cantiere (docs/roadmap-alex.md): ogni PR che introduce una funzione di cantiere
     // aggiunge qui i Permission giusti ai ruoli giusti.
@@ -35,11 +35,19 @@ public enum Role {
     CAPOCANTIERE("capocantiere", EnumSet.of(Permission.RESOURCES_READ, Permission.RESOURCES_WRITE,
             Permission.COMMESSE_READ, Permission.COMMESSE_WRITE, Permission.RESOURCE_ASSIGNMENTS_READ,
             Permission.RESOURCE_ASSIGNMENTS_WRITE, Permission.WORK_ACTIVITIES_READ,
-            Permission.WORK_ACTIVITIES_WRITE)),
-    /** Caposquadra: coordina la propria squadra sul cantiere. */
+            Permission.WORK_ACTIVITIES_WRITE, Permission.DAILY_REPORTS_READ, Permission.DAILY_REPORTS_WRITE)),
+    /**
+     * Caposquadra: coordina la propria squadra sul cantiere. Il piano prevede scrittura sul
+     * rapportino limitata alla propria squadra ("RW squadra"): finché quel controllo non esiste
+     * (richiede incrociare {@code daily-reports} con le assegnazioni della squadra, {@code
+     * resource-assignments}), solo lettura qui, non il pieno {@code DAILY_REPORTS_WRITE} di
+     * {@code CAPOCANTIERE} — altrimenti scriverebbe anche sui rapportini di commesse/squadre non
+     * sue.
+     */
     CAPOSQUADRA("caposquadra", EnumSet.of(Permission.RESOURCES_READ, Permission.COMMESSE_READ,
-            Permission.RESOURCE_ASSIGNMENTS_READ, Permission.WORK_ACTIVITIES_READ)),
-    /** Operaio: lavora sul cantiere (ore, rapportini). */
+            Permission.RESOURCE_ASSIGNMENTS_READ, Permission.WORK_ACTIVITIES_READ,
+            Permission.DAILY_REPORTS_READ)),
+    /** Operaio: lavora sul cantiere (ore, rapportini). Non ancora la testata (tabella permessi). */
     OPERAIO("operaio", EnumSet.of(Permission.RESOURCES_READ, Permission.COMMESSE_READ,
             Permission.RESOURCE_ASSIGNMENTS_READ, Permission.WORK_ACTIVITIES_READ)),
     /** Amministrativo: personale d'ufficio con accesso limitato (materiali, personale, attrezzature, fornitori, archivio), mai a rapportini, contabilità o pianificazione. */

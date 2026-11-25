@@ -17,7 +17,9 @@ public enum Permission {
     RESOURCE_ASSIGNMENTS_READ("resource-assignments:read"),
     RESOURCE_ASSIGNMENTS_WRITE("resource-assignments:write"),
     WORK_ACTIVITIES_READ("work-activities:read"),
-    WORK_ACTIVITIES_WRITE("work-activities:write");
+    WORK_ACTIVITIES_WRITE("work-activities:write"),
+    DAILY_REPORTS_READ("daily-reports:read"),
+    DAILY_REPORTS_WRITE("daily-reports:write");
 
     private final String code;
 
