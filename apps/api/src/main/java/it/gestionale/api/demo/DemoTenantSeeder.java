@@ -92,13 +92,17 @@ public class DemoTenantSeeder implements ApplicationRunner {
                 tenants.save(new Tenant(DEMO_TENANT_ID, "Azienda Demo", "demo", TenantKind.DEMO));
             }
             jdbc.update("DELETE FROM notifications WHERE tenant_id = ?", DEMO_TENANT_ID);
-            commesse.deleteByTenantId(DEMO_TENANT_ID);
+            // commesse.customer_id e resources.team_lead_id sono chiavi esterne vere ma non
+            // relazioni JPA mappate: Hibernate non sa che vanno sciolte prima delle righe che
+            // referenziano (lo si è visto rotto in pratica). DELETE/UPDATE diretti invece delle
+            // repository: eseguono subito, nell'ordine scritto, senza dipendere da come il flush
+            // ordinerebbe entità che non si conoscono a vicenda.
+            jdbc.update("DELETE FROM commesse WHERE tenant_id = ?", DEMO_TENANT_ID);
+            jdbc.update("UPDATE resources SET team_lead_id = NULL WHERE tenant_id = ?", DEMO_TENANT_ID);
             customers.deleteByTenantId(DEMO_TENANT_ID);
             resources.deleteByTenantId(DEMO_TENANT_ID);
             licenses.deleteByTenantId(DEMO_TENANT_ID);
-            // Le repository condividono la stessa sessione JPA: un solo flush scrive tutte le
-            // cancellazioni pendenti, qualunque repository lo chiami.
-            commesse.flush();
+            customers.flush();
             insertSampleData();
             log.info("Tenant demo ripristinato");
         }));
