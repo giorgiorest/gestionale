@@ -16,13 +16,13 @@ simultanee); una freccia (→) indica dipendenza diretta, da fare in sequenza.
 
 ## Onda 0 — Decisioni, zero codice
 
-Gratis e bloccanti: ogni giorno in cui restano aperte rischia di far scrivere codice su
-un'assunzione sbagliata (vedi le tabelle "Decisioni ancora da prendere" nei due file).
+Prese il 25/11/2026 (vedi "Decisioni prese" in `roadmap-alex.md`): ruoli multipli per utente
+(confermato, tracciato come 5.12 in `roadmap.md`), AI sui documenti rimandata a dopo le
+fondamenta (E.2, E.5, E.6, C.3, A.11, F.5, G.6 → Onda 10), dettatura vocale confermata presto
+(D.5 resta in Onda 4). Restano aperte solo le due di `roadmap.md`, scelte di fornitore non
+generiche da proporre:
 
-- Ruolo d'account vs ruolo di cantiere (multiplo o no) — blocca parte di Fase A
-- AI sui documenti: differenziante da subito o estensione da rimandare — blocca E.2, E.5, E.6, C.3, A.11, F.5, G.6
-- Dettatura vocale: stesso bivio — blocca D.5
-- Fornitore canale SDI — blocca 4.8 (roadmap.md)
+- Fornitore canale SDI — blocca 4.8
 - Fornitore archivio allegati in SaaS — non blocca lo sviluppo (si procede con MinIO), solo la produzione
 
 ## Onda 1 — Fondamenta non ancora fatte
@@ -38,6 +38,9 @@ Parallelizzabili tra loro:
 
 In sequenza (ognuna dipende dalla precedente):
 - 1.2 → 1.3 → 1.4 → 1.5
+
+- 5.12 Ruoli multipli per utente (decisione presa il 25/11/2026) — conviene farla qui, prima che
+  altre onde assegnino un ruolo di cantiere assumendo la scelta singola
 
 ## Onda 2 — Anagrafiche di base
 
@@ -68,10 +71,10 @@ Onda 2 (moduli diversi), ma entrambe richiedono Onda 1 completata (sincronizzazi
 in `roadmap-alex.md` ("Note di sequenza"): **la coppia di voci da parallelizzare più
 aggressivamente**, appena Onda 2/3 sono avviate.
 
-- Fase A: A.5, A.6, A.8, A.9, A.10 → A.11, A.12 (parallele salvo A.11 dopo A.10)
+- Fase A: A.5, A.6, A.8, A.9, A.10 → A.12 (parallele) — A.11 rimandata, vedi Onda 10
 - Fase B: B.1 → (B.2, B.3, B.4, B.5, B.6, B.7, B.8 → B.9) — B.1 prima di tutte, il resto parallelo
-- Fase C: C.1 → C.2 → C.3 (in sequenza)
-- Fase D: D.1 → D.2 → D.3 → D.4 → D.5 (se Onda 0 conferma la dettatura)
+- Fase C: C.1 → C.2 (in sequenza) — C.3 rimandata, vedi Onda 10
+- Fase D: D.1 → D.2 → D.3 → D.4 → D.5 (confermata, non rimandata)
 - Verificare prima di duplicare: gli incrementi 9/10 del piano tecnico si sovrappongono
   concettualmente a C/B — leggere le issue [#55](https://github.com/giorgiorest/gestionale/issues/55)/[#56](https://github.com/giorgiorest/gestionale/issues/56)
   prima di cominciare l'uno o l'altro
@@ -81,7 +84,7 @@ aggressivamente**, appena Onda 2/3 sono avviate.
 `roadmap-alex.md` Fase E + incremento 11 ([#57](https://github.com/giorgiorest/gestionale/issues/57)).
 Dopo 2.2 (fornitori base, Onda 2).
 
-- E.1 → E.2 (se Onda 0 conferma l'AI) → E.3 → E.4 → E.5 → E.6
+- E.1 → E.3 → E.4 — E.2, E.5, E.6 rimandate, vedi Onda 10
 - [#57](https://github.com/giorgiorest/gestionale/issues/57) Fornitori/acquisti base
 
 ## Onda 6 — Fatturazione, contabilità e vicende contrattuali
@@ -90,7 +93,7 @@ Dopo 2.2 (fornitori base, Onda 2).
 ([#58](https://github.com/giorgiorest/gestionale/issues/58), già nota dipendenza per F).
 
 - 4.1 → 4.2 → 4.3 → 4.4 → 4.5 → 4.6 → 4.7 (4.8 in pausa, decisione esterna) → 4.9 → 4.10
-- [#58](https://github.com/giorgiorest/gestionale/issues/58) WBS e budget → **poi** F.1 → (F.2, F.3) → F.4 → F.5 (se AI) → F.6 → F.7
+- [#58](https://github.com/giorgiorest/gestionale/issues/58) WBS e budget → **poi** F.1 → (F.2, F.3) → F.4 → F.6 → F.7 — F.5 rimandata, vedi Onda 10
 - Fase I, in parallelo a F (tabelle diverse): (I.1 → I.2), I.3, I.4 (dopo G.2, Onda 7), I.5, I.6 (dopo E.1), I.7, I.8
 
 ## Onda 7 — Pianificazione (Gantt/WBS)
@@ -98,7 +101,7 @@ Dopo 2.2 (fornitori base, Onda 2).
 `roadmap-alex.md` Fase G. Dopo F.1 (costi industriali) e le commesse (già fatte).
 
 - G.1 → G.2 → G.3
-- G.4, G.5, G.6 (se AI) — parallele tra loro, indipendenti da G.3
+- G.4, G.5 — parallele tra loro, indipendenti da G.3 — G.6 rimandata, vedi Onda 10
 
 ## Onda 8 — Archivio documentale
 
@@ -119,8 +122,8 @@ blocca nessun'altra onda, a differenza delle precedenti.
 
 ## Onda 10 — Assistente AI reale
 
-`roadmap.md` Fase 7 + le voci AI condizionali delle onde precedenti (se Onda 0 le confermano).
-Ultima perché ha bisogno dei dati e dei tool di dominio costruiti da tutto il resto.
+`roadmap.md` Fase 7 + le voci AI rimandate per decisione (25/11/2026). Ultima perché ha bisogno
+dei dati e dei tool di dominio costruiti da tutto il resto.
 
 - 7.1 → 7.2 → (7.3, 7.4, 7.5)
-- Le voci AI rimaste in sospeso: E.2, E.5, E.6, C.3, A.11, F.5, G.6 (quelle non già fatte prima, se la decisione di Onda 0 le confermava e qualcuna era rimasta indietro)
+- Voci AI rimandate: E.2, E.5, E.6, C.3, A.11, F.5, G.6
