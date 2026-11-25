@@ -3,6 +3,7 @@ package it.gestionale.api.workentries;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -252,5 +253,23 @@ class WorkEntryControllerTest extends AbstractIntegrationTest {
                 .andExpect(status().isBadRequest());
         putEntry(tenantA, "capocantiere", UUID.randomUUID(), body(reportA, resourceA, activityA, "8", "-1"))
                 .andExpect(status().isBadRequest());
+    }
+
+    /** Il rapportino collegato non più DRAFT blocca update/delete della riga (#51). */
+    @Test
+    void cannotUpdateOrDeleteAnEntryWhenTheReportIsNoLongerDraft() throws Exception {
+        UUID id = UUID.randomUUID();
+        putEntry(tenantA, "capocantiere", id, body(reportA, resourceA, activityA, "8", "0"))
+                .andExpect(status().isOk());
+
+        mvc.perform(post("/api/daily-reports/" + reportA + "/submit").with(TestJwt.user(tenantA, "capocantiere")))
+                .andExpect(status().isOk());
+
+        putEntry(tenantA, "capocantiere", id, body(reportA, resourceA, activityA, "6", "0"))
+                .andExpect(status().isConflict());
+        deleteEntry(tenantA, "capocantiere", id).andExpect(status().isConflict());
+        // Nemmeno una riga nuova si può aggiungere a un rapportino non più DRAFT.
+        putEntry(tenantA, "capocantiere", UUID.randomUUID(), body(reportA, resourceA, activityA, "4", "0"))
+                .andExpect(status().isConflict());
     }
 }

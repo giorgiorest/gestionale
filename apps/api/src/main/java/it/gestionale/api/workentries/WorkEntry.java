@@ -16,7 +16,9 @@ import jakarta.persistence.Version;
  * commessa del rapportino. L'id è generato dal client (UUID v7).
  *
  * <p>Il totale ore della UI è derivato da queste righe, non un campo salvato. Lo snapshot del
- * costo manodopera alla chiusura del rapportino è un incremento successivo (#51), non qui.
+ * costo manodopera alla chiusura del rapportino ({@code WorkEntryCostSnapshot}, #51) congela
+ * questi valori: non modificabile tramite nessun endpoint ordinario una volta che il rapportino
+ * non è più DRAFT (vedi {@code WorkEntryService.upsert}/{@code delete}).
  *
  * <p>Stessa cancellazione logica e blocco ottimistico di {@code Customer} (ADR 0018).
  */

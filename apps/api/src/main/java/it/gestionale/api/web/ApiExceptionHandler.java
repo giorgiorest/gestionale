@@ -4,6 +4,7 @@ import it.gestionale.api.ai.AiQuotaExceededException;
 import it.gestionale.api.ai.AiUnavailableException;
 import it.gestionale.api.commesse.UnknownCustomerException;
 import it.gestionale.api.dailyreports.DailyReportNotFoundException;
+import it.gestionale.api.dailyreports.InvalidDailyReportStateException;
 import it.gestionale.api.dailyreports.UnknownCommessaReferenceException;
 import it.gestionale.api.licensing.FeatureNotEnabledException;
 import it.gestionale.api.licensing.InvalidLicenseException;
@@ -96,6 +97,12 @@ public class ApiExceptionHandler {
     @ExceptionHandler(UnknownCommessaReferenceException.class)
     ProblemDetail unknownCommessaReference(UnknownCommessaReferenceException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    /** Transizione di stato non valida sul rapportino, o scrittura bloccata perché non è DRAFT. */
+    @ExceptionHandler(InvalidDailyReportStateException.class)
+    ProblemDetail invalidDailyReportState(InvalidDailyReportStateException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage());
     }
 
     @ExceptionHandler(UnknownWorkEntryReferenceException.class)

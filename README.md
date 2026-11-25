@@ -50,8 +50,8 @@ gestionale/
 | `commesse/`  | commesse (cantieri): entità centrale del prodotto ([ADR 0012](docs/decisioni/0012-verticale-edilizia.md)), con cliente (`customerId`, chiave esterna vera) e stato (`pianificata`, `in_corso`, `sospesa`, `conclusa`) |
 | `resourceassignments/` | assegnazione di una risorsa a una commessa, con periodo di validità e ruolo *contestuale a quella commessa* (distinto dal ruolo applicativo della persona) |
 | `workactivities/` | lavorazioni di una commessa (es. "Armatura pilastri"), riutilizzate dal rapportino per classificare le ore; `code` univoco per commessa, `parentId` opzionale per la gerarchia (WBS) |
-| `dailyreports/` | testata del rapportino giornaliero (meteo, note, stato); un solo rapportino per commessa/data nell'MVP; questa storia crea/apre/salva solo lo stato `draft` (le transizioni `submit`/`close` sono un incremento successivo) |
-| `workentries/` | righe di ore del rapportino: risorsa, lavorazione (della stessa commessa) e ore/straordinario; il totale è derivato in UI, non salvato; lo snapshot del costo manodopera alla chiusura è un incremento successivo |
+| `dailyreports/` | testata del rapportino giornaliero (meteo, note, stato); un solo rapportino per commessa/data nell'MVP; workflow `draft → submitted → closed` con endpoint dedicati (`POST .../submit`, `.../close`, non un `PATCH` sullo stato — ADR 0019); non modificabile da nessun endpoint ordinario fuori da `draft` |
+| `workentries/` | righe di ore del rapportino: risorsa, lavorazione (della stessa commessa) e ore/straordinario; il totale è derivato in UI, non salvato; non modificabili fuori da `draft`; alla chiusura, `WorkEntryCostSnapshot` congela il costo manodopera (tariffa da `ResourceAssignment.hourlyCostOverride`, NULL se assente — ADR 0019) |
 | `notifications/` | notifiche e comunicazioni ai dipendenti, presa visione, rubrica, invio email (`EmailDispatcher`) |
 | `ai/`        | `AiProvider`, `AiTool`, `NoopAiProvider` (503), quota mensile, `POST /api/ai/chat` |
 | `demo/`      | `DemoTenantSeeder` con `reset()` |
@@ -284,7 +284,7 @@ e menu laterale. Scelta e alternative: [ADR 0006](docs/decisioni/0006-interfacci
 | `work-activities:read` — consultare le lavorazioni delle commesse | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | |
 | `work-activities:write` — creare e modificare le lavorazioni delle commesse | ✓ | ✓ | | ✓ | | | |
 | `daily-reports:read` — consultare i rapportini giornalieri | ✓ | ✓ | ✓ | ✓ | ✓ | | |
-| `daily-reports:write` — creare e modificare la testata di un rapportino (sempre in bozza) | ✓ | ✓ | | ✓ | | | |
+| `daily-reports:write` — creare e modificare la testata di un rapportino in bozza, e inviarlo/chiuderlo (`submit`/`close`, ADR 0019) | ✓ | ✓ | | ✓ | | | |
 | `work-entries:read` — consultare le ore registrate nei rapportini | ✓ | ✓ | ✓ | ✓ | ✓ | | |
 | `work-entries:write` — registrare e modificare le ore nei rapportini | ✓ | ✓ | | ✓ | | | |
 

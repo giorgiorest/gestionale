@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import it.gestionale.api.commesse.CommessaRepository;
 import it.gestionale.api.tenancy.TenantContext;
+import it.gestionale.api.workentries.WorkEntryService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,11 +17,14 @@ public class DailyReportService {
 
     private final DailyReportRepository reports;
     private final CommessaRepository commesse;
+    private final WorkEntryService workEntries;
     private final Clock clock;
 
-    public DailyReportService(DailyReportRepository reports, CommessaRepository commesse, Clock clock) {
+    public DailyReportService(DailyReportRepository reports, CommessaRepository commesse,
+                              WorkEntryService workEntries, Clock clock) {
         this.reports = reports;
         this.commesse = commesse;
+        this.workEntries = workEntries;
         this.clock = clock;
     }
 
@@ -54,6 +58,10 @@ public class DailyReportService {
         UUID tenantId = TenantContext.require();
         UUID commessaId = input.commessaId();
         Optional<DailyReport> existing = reports.findByIdAndTenantId(id, tenantId);
+        // Un rapportino non più DRAFT non è modificabile da questo endpoint ordinario (#51): solo
+        // submit/close possono farlo cambiare stato. Un id nuovo è sempre DRAFT, niente da
+        // controllare.
+        existing.ifPresent(DailyReport::requireDraft);
         // Come per commesse.customer_id: si valida solo alla creazione o quando il riferimento
         // cambia davvero, così un record già collegato resta aggiornabile anche se la commessa è
         // stata cancellata logicamente nel frattempo per altri motivi.
@@ -74,12 +82,52 @@ public class DailyReportService {
     /**
      * Cancellazione logica, idempotente: il record resta come tombstone per la sincronizzazione.
      * Un id sconosciuto (o di un altro tenant) non è un errore: la outbox deve poter svuotarsi.
+     * Un rapportino non più DRAFT non si può cancellare da qui (#51); un rapportino già
+     * cancellato resta sempre DRAFT (si può cancellare solo da quello stato), quindi il controllo
+     * si salta per non rompere la re-invio idempotente dalla outbox.
      */
     @Transactional
     public void delete(UUID id, String actorUserId) {
-        reports.findByIdAndTenantId(id, TenantContext.require())
-                .ifPresent(report -> report.markDeleted(actorUserId, clock.instant()));
+        reports.findByIdAndTenantId(id, TenantContext.require()).ifPresent(report -> {
+            if (!report.isDeleted()) {
+                report.requireDraft();
+            }
+            report.markDeleted(actorUserId, clock.instant());
+        });
         reports.flush();
+    }
+
+    /**
+     * DRAFT → SUBMITTED. Non idempotente (vedi {@link DailyReport#submit}): un secondo invio
+     * fallisce con 409, invece di essere un no-op silenzioso — è la base del test di concorrenza
+     * della storia #51.
+     */
+    @Transactional
+    public DailyReportDto submit(UUID id, String actorUserId) {
+        DailyReport report = requireActive(id);
+        report.submit(actorUserId, clock.instant());
+        reports.flush();
+        return DailyReportDto.from(report);
+    }
+
+    /**
+     * SUBMITTED → CLOSED, con lo snapshot del costo manodopera delle righe di ore nella stessa
+     * transazione: se la transizione fallisce (stato sbagliato, o conflitto di versione al
+     * flush), nessuno snapshot viene scritto.
+     */
+    @Transactional
+    public DailyReportDto close(UUID id, String actorUserId) {
+        DailyReport report = requireActive(id);
+        report.close(actorUserId, clock.instant());
+        workEntries.snapshotCostsForClose(report);
+        reports.flush();
+        return DailyReportDto.from(report);
+    }
+
+    private DailyReport requireActive(UUID id) {
+        return reports.findByIdAndTenantId(id, TenantContext.require())
+                .filter(r -> !r.isDeleted())
+                .orElseThrow(DailyReportNotFoundException::new);
     }
 
     /** Difesa in profondità: la commessa deve essere un'anagrafica attiva dello stesso tenant. */

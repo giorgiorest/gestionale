@@ -36,4 +36,20 @@ public interface ResourceAssignmentRepository extends JpaRepository<ResourceAssi
             """)
     boolean existsValidAssignment(@Param("resourceId") UUID resourceId, @Param("commessaId") UUID commessaId,
             @Param("date") LocalDate date, @Param("tenantId") UUID tenantId);
+
+    /**
+     * Le assegnazioni valide (vedi {@link #existsValidAssignment}), più recenti prima: usato da
+     * {@code WorkEntryService} alla chiusura del rapportino per leggere la tariffa oraria da
+     * congelare nello snapshot del costo (#51). Più di una assegnazione valida sulla stessa
+     * commessa/data non dovrebbe succedere, ma l'ordinamento rende deterministica la scelta.
+     */
+    @Query("""
+            select a from ResourceAssignment a
+            where a.resourceId = :resourceId and a.commessaId = :commessaId and a.tenantId = :tenantId
+              and a.active = true and a.deletedAt is null
+              and a.validFrom <= :date and (a.validTo is null or a.validTo >= :date)
+            order by a.validFrom desc
+            """)
+    List<ResourceAssignment> findValidAssignments(@Param("resourceId") UUID resourceId,
+            @Param("commessaId") UUID commessaId, @Param("date") LocalDate date, @Param("tenantId") UUID tenantId);
 }

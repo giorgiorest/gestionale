@@ -9,8 +9,9 @@ import jakarta.validation.constraints.Size;
 
 /**
  * Rappresentazione di un rapportino nell'API. {@code status} è una stringa, non l'enum
- * {@link DailyReportStatus}, come per {@code CommessaStato}. Non è nell'{@link Input}: questa
- * storia non lo fa mai cambiare da {@code DRAFT} (le transizioni sono un incremento successivo).
+ * {@link DailyReportStatus}, come per {@code CommessaStato}. Non è nell'{@link Input}: il
+ * workflow {@code DRAFT → SUBMITTED → CLOSED} (#51) passa solo da {@code POST .../submit} e
+ * {@code .../close}, non da questo upsert.
  *
  * @param version versione del record per il blocco ottimistico
  */

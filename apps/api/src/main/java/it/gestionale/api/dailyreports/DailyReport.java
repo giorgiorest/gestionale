@@ -15,9 +15,9 @@ import jakarta.persistence.Version;
  * Testata del rapportino giornaliero di una commessa: un solo rapportino operativo per
  * commessa/data nell'MVP (ADR-Rapportino). L'id è generato dal client (UUID v7).
  *
- * <p>Questa storia crea/apre/salva solo lo stato {@link DailyReportStatus#DRAFT}: {@code
- * submittedAt} e {@code closedAt} sono già colonne per le transizioni di un incremento
- * successivo, ma nessun codice qui le imposta.
+ * <p>Il workflow {@code DRAFT → SUBMITTED → CLOSED} (GitHub #51, ADR 0019) passa solo da
+ * {@link #submit} e {@link #close}: non c'è un setter libero dello stato, ed {@link #update} non
+ * lo tocca mai, nemmeno quando il rapportino torna attivo dopo una cancellazione logica.
  *
  * <p>Stessa cancellazione logica e blocco ottimistico di {@code Customer} (ADR 0018).
  */
@@ -114,6 +114,46 @@ public class DailyReport {
 
     public boolean isDeleted() {
         return deletedAt != null;
+    }
+
+    /**
+     * Blocca ogni scrittura ordinaria (testata o righe di ore) quando il rapportino non è più
+     * DRAFT: nessun endpoint diverso da {@code submit}/{@code close} può farlo uscire da questo
+     * stato o modificarlo una volta uscito.
+     */
+    public void requireDraft() {
+        if (status != DailyReportStatus.DRAFT) {
+            throw new InvalidDailyReportStateException(
+                    "Il rapportino non è più in bozza (stato attuale: " + status + "): non è modificabile");
+        }
+    }
+
+    /**
+     * DRAFT → SUBMITTED. Non idempotente: un secondo invio su un rapportino già inviato (o
+     * chiuso) è un conflitto, non un no-op — a differenza di {@code update}/{@code markDeleted},
+     * così due invii concorrenti non possono entrambi avere successo in silenzio.
+     */
+    public void submit(String actorUserId, Instant at) {
+        if (status != DailyReportStatus.DRAFT) {
+            throw new InvalidDailyReportStateException(
+                    "Il rapportino non è in bozza (stato attuale: " + status + "): non può essere inviato");
+        }
+        this.status = DailyReportStatus.SUBMITTED;
+        this.submittedAt = at;
+        this.updatedBy = actorUserId;
+        this.updatedAt = at;
+    }
+
+    /** SUBMITTED → CLOSED. Stessa non-idempotenza di {@link #submit}. */
+    public void close(String actorUserId, Instant at) {
+        if (status != DailyReportStatus.SUBMITTED) {
+            throw new InvalidDailyReportStateException(
+                    "Il rapportino non è stato inviato (stato attuale: " + status + "): non può essere chiuso");
+        }
+        this.status = DailyReportStatus.CLOSED;
+        this.closedAt = at;
+        this.updatedBy = actorUserId;
+        this.updatedAt = at;
     }
 
     public UUID getId() {

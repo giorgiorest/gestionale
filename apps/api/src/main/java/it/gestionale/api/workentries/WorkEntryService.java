@@ -1,5 +1,6 @@
 package it.gestionale.api.workentries;
 
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.UUID;
 
 import it.gestionale.api.dailyreports.DailyReport;
 import it.gestionale.api.dailyreports.DailyReportRepository;
+import it.gestionale.api.resourceassignments.ResourceAssignment;
 import it.gestionale.api.resourceassignments.ResourceAssignmentRepository;
 import it.gestionale.api.resources.ResourceRepository;
 import it.gestionale.api.tenancy.TenantContext;
@@ -23,16 +25,19 @@ public class WorkEntryService {
     private final ResourceRepository resources;
     private final WorkActivityRepository activities;
     private final ResourceAssignmentRepository assignments;
+    private final WorkEntryCostSnapshotRepository costSnapshots;
     private final Clock clock;
 
     public WorkEntryService(WorkEntryRepository entries, DailyReportRepository dailyReports,
                             ResourceRepository resources, WorkActivityRepository activities,
-                            ResourceAssignmentRepository assignments, Clock clock) {
+                            ResourceAssignmentRepository assignments,
+                            WorkEntryCostSnapshotRepository costSnapshots, Clock clock) {
         this.entries = entries;
         this.dailyReports = dailyReports;
         this.resources = resources;
         this.activities = activities;
         this.assignments = assignments;
+        this.costSnapshots = costSnapshots;
         this.clock = clock;
     }
 
@@ -69,6 +74,9 @@ public class WorkEntryService {
         boolean workActivityChanged = existing.map(e -> !e.getWorkActivityId().equals(workActivityId)).orElse(true);
 
         DailyReport report = requireValidDailyReport(dailyReportId, tenantId, dailyReportChanged);
+        // Un rapportino non più DRAFT non si può modificare nemmeno nelle sue righe (#51), anche
+        // quando il riferimento al rapportino non cambia.
+        report.requireDraft();
         if (resourceChanged) {
             requireValidResource(resourceId, tenantId);
         }
@@ -94,12 +102,54 @@ public class WorkEntryService {
     /**
      * Cancellazione logica, idempotente: il record resta come tombstone per la sincronizzazione.
      * Un id sconosciuto (o di un altro tenant) non è un errore: la outbox deve poter svuotarsi.
+     * Una riga di un rapportino non più DRAFT non si può cancellare da qui (#51); una riga già
+     * cancellata non fa il controllo, per non rompere il re-invio idempotente dalla outbox.
      */
     @Transactional
     public void delete(UUID id, String actorUserId) {
-        entries.findByIdAndTenantId(id, TenantContext.require())
-                .ifPresent(entry -> entry.markDeleted(actorUserId, clock.instant()));
+        UUID tenantId = TenantContext.require();
+        entries.findByIdAndTenantId(id, tenantId).ifPresent(entry -> {
+            if (!entry.isDeleted()) {
+                dailyReports.findByIdAndTenantId(entry.getDailyReportId(), tenantId)
+                        .ifPresent(DailyReport::requireDraft);
+            }
+            entry.markDeleted(actorUserId, clock.instant());
+        });
         entries.flush();
+    }
+
+    /**
+     * Snapshot del costo manodopera delle righe attive del rapportino, chiamato da
+     * {@code DailyReportService.close()} nella stessa transazione della chiusura (#51): se quella
+     * transazione va in rollback, anche questi inserimenti lo fanno. La tariffa oraria viene
+     * dall'assegnazione valida della risorsa sulla commessa/data del rapportino (la stessa che
+     * {@link #requireValidAssignment} ha già validato quando le righe sono state create); se
+     * l'assegnazione non ha {@code hourlyCostOverride} — e su {@code Resource} non esiste ancora
+     * una tariffa standard di fallback — il costo di quella riga resta sconosciuto (NULL), non
+     * zero: è una scelta di prodotto non ancora presa, non va inventata qui. Lo straordinario usa
+     * la stessa tariffa delle ore normali: non esiste ancora una maggiorazione definita.
+     */
+    @Transactional
+    public void snapshotCostsForClose(DailyReport report) {
+        UUID tenantId = TenantContext.require();
+        List<WorkEntry> activeEntries = entries
+                .findByDailyReportIdAndTenantIdAndDeletedAtIsNullOrderByCreatedAtAsc(report.getId(), tenantId);
+        List<WorkEntryCostSnapshot> snapshots = activeEntries.stream()
+                .map(entry -> snapshotFor(report, entry, tenantId))
+                .toList();
+        costSnapshots.saveAll(snapshots);
+        costSnapshots.flush();
+    }
+
+    private WorkEntryCostSnapshot snapshotFor(DailyReport report, WorkEntry entry, UUID tenantId) {
+        BigDecimal hourlyCost = assignments
+                .findValidAssignments(entry.getResourceId(), report.getCommessaId(), report.getDate(), tenantId)
+                .stream().findFirst().map(ResourceAssignment::getHourlyCostOverride).orElse(null);
+        BigDecimal laborCost = hourlyCost == null ? null
+                : entry.getHours().add(entry.getOvertimeHours()).multiply(hourlyCost);
+        return new WorkEntryCostSnapshot(UUID.randomUUID(), tenantId, report.getId(), entry.getId(),
+                entry.getResourceId(), entry.getWorkActivityId(), entry.getHours(), entry.getOvertimeHours(),
+                hourlyCost, laborCost);
     }
 
     /** Il rapportino deve essere un'anagrafica attiva dello stesso tenant, sempre restituita per il suo id/data. */
