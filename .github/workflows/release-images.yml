@@ -28,9 +28,11 @@ permissions:
 
 jobs:
   desktop:
+    if: ${{ false }}
     uses: ./.github/workflows/ci-desktop.yml
 
   android:
+    if: ${{ false }}
     uses: ./.github/workflows/android.yml
     # Chiave di firma dell'APK (ANDROID_KEYSTORE_BASE64 e compagni).
     secrets: inherit
