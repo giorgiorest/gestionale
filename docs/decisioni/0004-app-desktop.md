@@ -53,6 +53,17 @@ La web app esiste già (Angular; oggi con Angular Material, ADR 0006) e deve res
   esterno (un servizio in più da gestire, e un dominio terzo da dichiarare nell'informativa).
 - Resta da fare: firma del codice (SmartScreen) e aggiornamenti automatici dell'app.
 
+## Aggiornamento — cache per contenuto (novembre 2026)
+
+- `ci-desktop.yml` e `android.yml` cachano l'installer/APK con una chiave calcolata sul contenuto
+  di `apps/web`, `apps/desktop` e del workflow stesso (`hashFiles`), non sul commit. Un rilascio
+  che non tocca quei percorsi (es. solo `apps/api`) riusa il pacchetto già costruito invece di
+  ricompilarlo: più rapido, e niente build Windows/Android doppia.
+- La chiave per contenuto, non per commit, resta corretta anche in un ritorno indietro: un commit
+  precedente con lo stesso contenuto di `apps/web`/`apps/desktop` ritrova la stessa voce di cache.
+- Non cambia nulla sopra: resta un solo workflow (*Release immagini*), un solo deploy, stessa
+  immagine web con gli installer dentro.
+
 ## Alternative scartate
 
 - **Electron**: installer e memoria molto più pesanti, nessun vantaggio per una UI web esistente.

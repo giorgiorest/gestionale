@@ -7,6 +7,9 @@ name: Release immagini
 # L'immagine web contiene anche i pacchetti dell'app dello stesso commit (pagina /app-desktop):
 # gli installer Windows e l'APK Android. Se una delle due build fallisce le immagini escono
 # comunque: senza installer se manca il desktop, con la sola parte Windows se manca l'APK.
+# Build desktop/Android con cache per contenuto (ci-desktop.yml, android.yml): se un rilascio non
+# tocca apps/web né apps/desktop riusano l'installer/APK già costruito invece di ricompilarlo,
+# quindi un rilascio solo-backend è rapido quanto l'immagine API, senza una pipeline separata.
 #
 # Alla fine:
 #   - job "approvazione": apre l'issue «Rilascio pronto» e aspetta un commento /deploy (o /annulla)
