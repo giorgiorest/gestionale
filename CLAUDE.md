@@ -108,6 +108,9 @@ cd apps/web && npm run build -- --configuration production
 
 ## Lavorare in modo efficiente in questo repository
 
+- **Spesa minima, resa massima**: a parità di affidabilità, scegli sempre l'opzione più economica
+  (in token, tempo, chiamate). Non duplicare lavoro già fatto in sessione, non rileggere file già
+  letti, non rilanciare una build o un test già passati senza un motivo concreto per dubitarne.
 - **Una pull request = una voce di `docs/roadmap.md` = una sessione.** Se non ci sta, va spezzata
   nella roadmap prima di iniziare.
 - **Non cercare dove sta una cosa**: usa la mappa qui sopra e i percorsi indicati nel prompt.
@@ -117,7 +120,12 @@ cd apps/web && npm run build -- --configuration production
   Vale per build, test e log dei container.
 - **Prima il piano** sulle voci grandi, poi il codice.
 - **Chiusura di ogni PR**: `/code-review` (livello `medium`; `high` o più solo su RLS, permessi,
-  allegati, fatturazione e pagamenti), poi `/simplify`; `/security-review` sulle voci marcate 🔐
+  allegati, fatturazione e pagamenti), poi `/simplify` — con i 4 agenti in parallelo che
+  `/simplify` prevede — sulla **prima stesura** di una voce di roadmap. Su una correzione
+  successiva alla stessa voce (un bug trovato dopo, un fix a un fix), `/code-review` e `/simplify`
+  restano obbligatori ma in un solo passaggio, senza sub-agenti: quattro agenti su un diff piccolo
+  costano molto più di quanto trovino. Resta il livello pieno con sub-agenti quando la correzione
+  tocca RLS, permessi, allegati, fatturazione o pagamenti. `/security-review` sulle voci marcate 🔐
   nella roadmap.
 - Dopo aver aperto la PR, **iscriviti alla sua attività** per correggere i fallimenti della CI
   quando arrivano, senza attendere né ricontrollare a vuoto.
