@@ -16,6 +16,17 @@ fornitori, commesse, documenti/fatturazione). Le voci qui sotto **presuppongono*
 > GitHub [#40](https://github.com/giorgiorest/gestionale/issues/40)–[#45](https://github.com/giorgiorest/gestionale/issues/45)
 > (R0–R5), non più le vecchie voci. Il resto di questo file (Fasi A estensioni, B–H) è stato a sua
 > volta trasformato in epiche/storie GitHub (#61–#113), elencate nelle intestazioni di fase sotto.
+>
+> **Aggiornamento (25/11/2026)**: una nuova estrazione delle stringhe dall'artifact "CivilBeefy
+> Beta" (il fetch diretto della pagina non bastava, essendo una SPA client-side) ha rivelato voci
+> non emerse nella prima analisi: eventi contrattuali dell'appalto (riserve, accordi bonari,
+> sospensioni, varianti, fideiussioni/polizze, casellario fornitori, ordini di servizio,
+> corrispondenza/PEC), diventati la nuova **Fase I** sotto, e una lista in economia collegata al SAL
+> (F.7). Epica Fase I e storie: [#130](https://github.com/giorgiorest/gestionale/issues/130)–[#139](https://github.com/giorgiorest/gestionale/issues/139).
+>
+> **Ordine di lavoro**: [docs/ordine-esecuzione.md](ordine-esecuzione.md) incrocia questo file con
+> `docs/roadmap.md` e il piano tecnico per un ordine consigliato (onde parallelizzabili,
+> dipendenze tra fasi).
 
 - **Commesse/cantieri** (`docs/roadmap.md` 3.1): ogni voce "di cantiere" si aggancia a una commessa.
 - **Fornitori** base (`docs/roadmap.md` 2.2): le voci della Fase E la estendono, non la duplicano.
@@ -57,7 +68,7 @@ Voci A.5 e successive in [Epica GitHub #61](https://github.com/giorgiorest/gesti
 | A.6 | Ferie e malattia: richieste e relativa approvazione — [#70](https://github.com/giorgiorest/gestionale/issues/70) | da assegnare | ⬜ |
 | A.7 | ➡️ **Superata** da GitHub [#47](https://github.com/giorgiorest/gestionale/issues/47) (Resource Assignment): periodi di validità e ruolo contestuale, più solido del semplice flag impegna/rilascia | — | ➡️ |
 | A.8 | Subappalto e cottimo: ditte esterne con personale e mezzi associati al cantiere — [#71](https://github.com/giorgiorest/gestionale/issues/71) | da assegnare | ⬜ |
-| A.9 | 🔐 Scheda anagrafica estesa del personale (contratto, IBAN, documenti e relative scadenze), visibile solo a manager/amministrativo — [#73](https://github.com/giorgiorest/gestionale/issues/73) | da assegnare | ⬜ |
+| A.9 | 🔐 Scheda anagrafica estesa del personale (contratto, IBAN, taglie DPI/divisa, documenti e relative scadenze), visibile solo a manager/amministrativo — [#73](https://github.com/giorgiorest/gestionale/issues/73) | da assegnare | ⬜ |
 | A.10 | 🔐 Corsi di formazione sicurezza: catalogo (RSPP, ASPP, preposto, PLE, gru, DPI, ecc.), scadenze calcolate, upload attestati — [#74](https://github.com/giorgiorest/gestionale/issues/74) | da assegnare | ⬜ |
 | A.11 | 🔐 Lettura automatica AI degli attestati (foto/PDF → corso e data riconosciuti) — [#75](https://github.com/giorgiorest/gestionale/issues/75) | — | ⬜ |
 | A.12 | Cruscotto scadenze personale (documenti + corsi) con filtri per orizzonte temporale (scadute/30/60/90 gg) — [#72](https://github.com/giorgiorest/gestionale/issues/72) | — | ⬜ |
@@ -69,7 +80,7 @@ Voci A.5 e successive in [Epica GitHub #61](https://github.com/giorgiorest/gesti
 
 | PR | Contenuto | Migr. | Stato |
 |----|-----------|-------|-------|
-| B.1 | Anagrafica attrezzature/mezzi: inventario di cantiere, parco di proprietà — [#76](https://github.com/giorgiorest/gestionale/issues/76) | da assegnare | ⬜ |
+| B.1 | Anagrafica attrezzature/mezzi: inventario di cantiere, parco di proprietà, import da Excel — [#76](https://github.com/giorgiorest/gestionale/issues/76) | da assegnare | ⬜ |
 | B.2 | Ore di utilizzo attrezzature per cantiere, con conferma del capocantiere — [#77](https://github.com/giorgiorest/gestionale/issues/77) | — | ⬜ |
 | B.3 | Noleggi e acquisti di attrezzature — [#78](https://github.com/giorgiorest/gestionale/issues/78) | da assegnare | ⬜ |
 | B.4 | Segnalazioni di guasti o problemi sulle attrezzature — [#79](https://github.com/giorgiorest/gestionale/issues/79) | da assegnare | ⬜ |
@@ -130,6 +141,7 @@ condiviso sui costi, non duplicato. F.5: AI sui documenti, **decisione aperta** 
 | F.4 | 🔐 SAL dei subappaltatori: stato da confermare/confermato con blocco, log eventi, allegati — [#102](https://github.com/giorgiorest/gestionale/issues/102) | da assegnare | ⬜ |
 | F.5 | 🔐 Lettura automatica AI di SAL e registro di contabilità (PDF/Excel/Word/foto) — [#103](https://github.com/giorgiorest/gestionale/issues/103) | — | ⬜ |
 | F.6 | Vista SAL per ditta subappaltatrice — [#104](https://github.com/giorgiorest/gestionale/issues/104) | — | ⬜ |
+| F.7 | Lista in economia collegata a un SAL — [#139](https://github.com/giorgiorest/gestionale/issues/139) | da assegnare | ⬜ |
 
 ## Fase G — Pianificazione (Gantt/WBS)
 
@@ -160,6 +172,23 @@ essere il modello sotto queste tre viste specifiche.
 | H.1 | Foto di cantiere organizzate per settimana — [#111](https://github.com/giorgiorest/gestionale/issues/111) | da assegnare | ⬜ |
 | H.2 | 🔐 Contrattualistica — [#112](https://github.com/giorgiorest/gestionale/issues/112) | da assegnare | ⬜ |
 | H.3 | Stazione appaltante — [#113](https://github.com/giorgiorest/gestionale/issues/113) | — | ⬜ |
+
+## Fase I — Vicende contrattuali dell'appalto
+
+[Epica GitHub #130](https://github.com/giorgiorest/gestionale/issues/130). Complementare a F
+(contabilità/SAL) e H (archivio documentale): qui stanno gli eventi legali/contrattuali
+dell'esecuzione, non i costi né l'archivio generico.
+
+| PR | Contenuto | Migr. | Stato |
+|----|-----------|-------|-------|
+| I.1 | Riserve iscritte dall'impresa: numero, oggetto, importo richiesto, documenti — [#131](https://github.com/giorgiorest/gestionale/issues/131) | da assegnare | ⬜ |
+| I.2 | Accordi bonari che compongono una o più riserve — [#132](https://github.com/giorgiorest/gestionale/issues/132) | da assegnare | ⬜ |
+| I.3 | Sospensioni e riprese dei lavori — [#133](https://github.com/giorgiorest/gestionale/issues/133) | da assegnare | ⬜ |
+| I.4 | Varianti e perizie — [#134](https://github.com/giorgiorest/gestionale/issues/134) | da assegnare | ⬜ |
+| I.5 | 🔐 Fideiussioni e polizze (fideiussione definitiva, polizza CAR, lettera di impegno) con scadenze — [#135](https://github.com/giorgiorest/gestionale/issues/135) | da assegnare | ⬜ |
+| I.6 | 🔐 Casellario e carichi pendenti dei fornitori/subappaltatori (esito, data verifica) — [#136](https://github.com/giorgiorest/gestionale/issues/136) | da assegnare | ⬜ |
+| I.7 | Ordini di servizio della stazione appaltante — [#137](https://github.com/giorgiorest/gestionale/issues/137) | da assegnare | ⬜ |
+| I.8 | 🔐 Corrispondenza e PEC del cantiere/contratto — [#138](https://github.com/giorgiorest/gestionale/issues/138) | da assegnare | ⬜ |
 
 ---
 

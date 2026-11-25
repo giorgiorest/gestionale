@@ -25,6 +25,10 @@ qui prima di cominciare.
 Stato: ⬜ da fare · 🟨 in corso · ✅ fatto · ⏸️ in attesa di una decisione esterna.
 🔐 = passa da `/security-review`. La colonna *Migr.* è il numero Flyway **previsto**: è un
 promemoria contro le collisioni, non una prenotazione ([ADR 0013](decisioni/0013-numerazione-migrazioni.md)).
+[docs/ordine-esecuzione.md](ordine-esecuzione.md) incrocia questo file con `roadmap-alex.md` per
+un ordine di lavoro consigliato (onde parallelizzabili, dipendenze tra fasi): non è una fonte di
+verità sullo stato, solo un suggerimento di sequenza.
+
 [docs/roadmap-alex.md](roadmap-alex.md) affianca questo file (epiche GitHub, a partire da
 [#40](https://github.com/giorgiorest/gestionale/issues/40)) e **condivide la stessa sequenza di
 migrazioni**: i numeri qui sotto possono quindi essere già presi da una voce di quel file prima
