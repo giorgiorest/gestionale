@@ -25,6 +25,7 @@ function fakeDb() {
     resources: fakeTable(),
     commesse: fakeTable(),
     resourceAssignments: fakeTable(),
+    workActivities: fakeTable(),
     notifications: fakeTable(),
     syncState: fakeTable(),
     meta: fakeTable(),
