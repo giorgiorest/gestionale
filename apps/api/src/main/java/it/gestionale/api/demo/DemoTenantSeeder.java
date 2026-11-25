@@ -14,6 +14,8 @@ import it.gestionale.api.licensing.LicenseRepository;
 import it.gestionale.api.notifications.Audience;
 import it.gestionale.api.notifications.NewNotification;
 import it.gestionale.api.notifications.NotificationService;
+import it.gestionale.api.resources.Resource;
+import it.gestionale.api.resources.ResourceRepository;
 import it.gestionale.api.tenancy.Tenant;
 import it.gestionale.api.tenancy.TenantContext;
 import it.gestionale.api.tenancy.TenantKind;
@@ -46,16 +48,19 @@ public class DemoTenantSeeder implements ApplicationRunner {
     private final TenantRepository tenants;
     private final LicenseRepository licenses;
     private final CustomerRepository customers;
+    private final ResourceRepository resources;
     private final NotificationService notifications;
     private final JdbcTemplate jdbc;
     private final TransactionTemplate tx;
     private final Clock clock;
 
     public DemoTenantSeeder(TenantRepository tenants, LicenseRepository licenses, CustomerRepository customers,
-                            NotificationService notifications, JdbcTemplate jdbc, TransactionTemplate tx, Clock clock) {
+                            ResourceRepository resources, NotificationService notifications, JdbcTemplate jdbc,
+                            TransactionTemplate tx, Clock clock) {
         this.tenants = tenants;
         this.licenses = licenses;
         this.customers = customers;
+        this.resources = resources;
         this.notifications = notifications;
         this.jdbc = jdbc;
         this.tx = tx;
@@ -83,8 +88,10 @@ public class DemoTenantSeeder implements ApplicationRunner {
             }
             jdbc.update("DELETE FROM notifications WHERE tenant_id = ?", DEMO_TENANT_ID);
             customers.deleteByTenantId(DEMO_TENANT_ID);
+            resources.deleteByTenantId(DEMO_TENANT_ID);
             licenses.deleteByTenantId(DEMO_TENANT_ID);
             customers.flush();
+            resources.flush();
             licenses.flush();
             insertSampleData();
             log.info("Tenant demo ripristinato");
@@ -100,8 +107,12 @@ public class DemoTenantSeeder implements ApplicationRunner {
                 new Customer(UUID.randomUUID(), DEMO_TENANT_ID, "Rossi S.r.l.", "info@rossi.example", null),
                 new Customer(UUID.randomUUID(), DEMO_TENANT_ID, "Bianchi & Figli", "amministrazione@bianchi.example", null),
                 new Customer(UUID.randomUUID(), DEMO_TENANT_ID, "Verdi S.p.A.", null, null)));
-        // Scrive subito tenant, licenza e clienti: la notifica (JDBC) li referenzia.
+        Resource capo = resources.save(
+                new Resource(UUID.randomUUID(), DEMO_TENANT_ID, "Luca", "Ferrari", null, null, null));
+        resources.save(new Resource(UUID.randomUUID(), DEMO_TENANT_ID, "Marco", "Bruno", null, capo.getId(), null));
+        // Scrive subito tenant, licenza, clienti e risorse: la notifica (JDBC) li referenzia.
         customers.flush();
+        resources.flush();
         // Comunicazione con presa visione a tutta l'azienda: chi accede dopo la riceve comunque.
         notifications.send(new NewNotification(UUID.randomUUID(), NewNotification.ANNOUNCEMENT, "announcement",
                 "Benvenuto in Civil Beefy",

@@ -1,0 +1,172 @@
+package it.gestionale.api.resources;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.Set;
+import java.util.UUID;
+
+import it.gestionale.api.AbstractIntegrationTest;
+import it.gestionale.api.TestData;
+import it.gestionale.api.TestJwt;
+import it.gestionale.api.licensing.LicenseRepository;
+import it.gestionale.api.tenancy.TenantContext;
+import it.gestionale.api.tenancy.TenantRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.transaction.support.TransactionTemplate;
+
+@AutoConfigureMockMvc
+class ResourceControllerTest extends AbstractIntegrationTest {
+
+    @Autowired
+    MockMvc mvc;
+    @Autowired
+    TransactionTemplate tx;
+    @Autowired
+    TenantRepository tenants;
+    @Autowired
+    LicenseRepository licenses;
+    @Autowired
+    ResourceRepository resources;
+
+    UUID tenantA;
+    UUID tenantB;
+
+    @BeforeEach
+    void setUp() {
+        tenantA = TestData.createTenant(tx, tenants, licenses, "base", Set.of(), 0);
+        tenantB = TestData.createTenant(tx, tenants, licenses, "base", Set.of(), 0);
+    }
+
+    private ResultActions putResource(UUID tenant, String role, UUID id, String json) throws Exception {
+        return mvc.perform(put("/api/resources/" + id).with(TestJwt.user(tenant, role))
+                .contentType(MediaType.APPLICATION_JSON).content(json));
+    }
+
+    private ResultActions deleteResource(UUID tenant, String role, UUID id) throws Exception {
+        return mvc.perform(delete("/api/resources/" + id).with(TestJwt.user(tenant, role)));
+    }
+
+    private Resource row(UUID tenant, UUID id) {
+        return TenantContext.callAs(tenant, () -> resources.findByIdAndTenantId(id, tenant)).orElseThrow();
+    }
+
+    @Test
+    void capocantiereCreatesAndUpdatesIdempotently() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        putResource(tenantA, "capocantiere", id, "{\"firstName\":\"Mario\",\"lastName\":\"Verdi\"}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id.toString()))
+                .andExpect(jsonPath("$.version").value(0));
+        // Reinvio dalla outbox: stesso id, nessun duplicato.
+        putResource(tenantA, "capocantiere", id, "{\"firstName\":\"Mario\",\"lastName\":\"Verdi\"}")
+                .andExpect(status().isOk());
+        putResource(tenantA, "capocantiere", id, "{\"firstName\":\"Mario\",\"lastName\":\"Bianchi\"}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lastName").value("Bianchi"))
+                .andExpect(jsonPath("$.version").value(2));
+
+        mvc.perform(get("/api/resources").with(TestJwt.user(tenantA, "operaio")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].lastName").value("Bianchi"));
+    }
+
+    @Test
+    void deleteIsLogicalAndIdempotent() throws Exception {
+        UUID id = UUID.randomUUID();
+        putResource(tenantA, "capocantiere", id, "{\"firstName\":\"Da\",\"lastName\":\"Cancellare\"}")
+                .andExpect(status().isOk());
+
+        deleteResource(tenantA, "capocantiere", id).andExpect(status().isNoContent());
+
+        mvc.perform(get("/api/resources").with(TestJwt.user(tenantA, "caposquadra")))
+                .andExpect(jsonPath("$.length()").value(0));
+        Resource deleted = row(tenantA, id);
+        assertThat(deleted.isDeleted()).isTrue();
+
+        // Reinvio dalla outbox: nessun errore, nessun cambiamento.
+        deleteResource(tenantA, "capocantiere", id).andExpect(status().isNoContent());
+        assertThat(row(tenantA, id).getDeletedAt()).isEqualTo(deleted.getDeletedAt());
+
+        // Id mai esistito: la outbox deve poter svuotarsi comunque.
+        deleteResource(tenantA, "capocantiere", UUID.randomUUID()).andExpect(status().isNoContent());
+    }
+
+    @Test
+    void operaioCannotWrite() throws Exception {
+        putResource(tenantA, "operaio", UUID.randomUUID(), "{\"firstName\":\"X\",\"lastName\":\"Y\"}")
+                .andExpect(status().isForbidden());
+        deleteResource(tenantA, "operaio", UUID.randomUUID()).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void resourcesOfAnotherTenantAreNeitherVisibleNorOverwritable() throws Exception {
+        UUID id = UUID.randomUUID();
+        putResource(tenantA, "capocantiere", id, "{\"firstName\":\"Anna\",\"lastName\":\"Di A\"}")
+                .andExpect(status().isOk());
+
+        mvc.perform(get("/api/resources").with(TestJwt.user(tenantB, "admin")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+        // Stesso id da un altro tenant: la riga non è visibile e l'inserimento va in conflitto.
+        putResource(tenantB, "admin", id, "{\"firstName\":\"Furto\",\"lastName\":\"Furto\"}")
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void teamLeadMustBeAnActiveResourceOfTheSameTenant() throws Exception {
+        UUID unknown = UUID.randomUUID();
+        putResource(tenantA, "capocantiere", UUID.randomUUID(),
+                "{\"firstName\":\"Mario\",\"lastName\":\"Verdi\",\"teamLeadId\":\"" + unknown + "\"}")
+                .andExpect(status().isBadRequest());
+
+        UUID leadOfB = UUID.randomUUID();
+        putResource(tenantB, "admin", leadOfB, "{\"firstName\":\"Capo\",\"lastName\":\"Di B\"}")
+                .andExpect(status().isOk());
+        putResource(tenantA, "capocantiere", UUID.randomUUID(),
+                "{\"firstName\":\"Mario\",\"lastName\":\"Verdi\",\"teamLeadId\":\"" + leadOfB + "\"}")
+                .andExpect(status().isBadRequest());
+
+        UUID leadOfA = UUID.randomUUID();
+        putResource(tenantA, "capocantiere", leadOfA, "{\"firstName\":\"Capo\",\"lastName\":\"Di A\"}")
+                .andExpect(status().isOk());
+        UUID id = UUID.randomUUID();
+        putResource(tenantA, "capocantiere", id,
+                "{\"firstName\":\"Mario\",\"lastName\":\"Verdi\",\"teamLeadId\":\"" + leadOfA + "\"}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.teamLeadId").value(leadOfA.toString()));
+    }
+
+    @Test
+    void teamLeadCannotCreateACycle() throws Exception {
+        UUID a = UUID.randomUUID();
+        UUID b = UUID.randomUUID();
+        putResource(tenantA, "capocantiere", a, "{\"firstName\":\"A\",\"lastName\":\"A\"}").andExpect(status().isOk());
+        putResource(tenantA, "capocantiere", b,
+                "{\"firstName\":\"B\",\"lastName\":\"B\",\"teamLeadId\":\"" + a + "\"}")
+                .andExpect(status().isOk());
+
+        // A diventerebbe capo squadra di B, che è già capo squadra di A: ciclo di 2.
+        putResource(tenantA, "capocantiere", a,
+                "{\"firstName\":\"A\",\"lastName\":\"A\",\"teamLeadId\":\"" + b + "\"}")
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void rejectsInvalidInput() throws Exception {
+        putResource(tenantA, "capocantiere", UUID.randomUUID(), "{\"firstName\":\" \",\"lastName\":\"Verdi\"}")
+                .andExpect(status().isBadRequest());
+    }
+}

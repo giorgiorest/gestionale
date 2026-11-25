@@ -114,9 +114,11 @@ Dettagli e motivazioni (anche per la rivendita): [ADR 0003](decisioni/0003-ident
   `gestionale-web`, nessun segreto nell'app); il token viaggia come `Authorization: Bearer`.
 - L'API valida firma, issuer e audience (`gestionale-api`) e legge solo claim neutri:
   `sub`, `preferred_username`, `name`, `email`, `tenant_id`, `roles`.
-- **Profilazione**: in Keycloak si assegnano ruoli (`admin`, `operator`, `viewer`); il backend
-  li traduce in permessi (`customers:read`, `customers:write`, `assistant:use`, `users:manage`)
-  controllati con `@PreAuthorize`. `GET /api/me` restituisce profilo, tenant, ruoli e permessi.
+- **Profilazione**: in Keycloak si assegnano ruoli d'azienda (`admin`, `operator`, `viewer`) e di
+  cantiere (`capocantiere`, `caposquadra`, `operaio`, `amministrativo`, `docs/roadmap-alex.md`); il
+  backend li traduce in permessi (`customers:read`, `customers:write`, `resources:read`,
+  `resources:write`, `assistant:use`, `users:manage`) controllati con `@PreAuthorize`. `GET /api/me`
+  restituisce profilo, tenant, ruoli e permessi.
 - Accesso a una funzione = **ruolo** dell'utente (permesso) **e** **piano** del tenant (entitlement).
 - L'attributo `tenant_id` lo modificano solo gli amministratori di Keycloak.
 

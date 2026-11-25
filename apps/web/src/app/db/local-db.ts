@@ -29,6 +29,17 @@ export interface LocalCustomer {
   updatedAt: string;
 }
 
+/** Copia locale di una risorsa (stesso schema dell'API). */
+export interface LocalResource {
+  id: string;
+  tenantId: string;
+  firstName: string;
+  lastName: string;
+  userId: string | null;
+  teamLeadId: string | null;
+  updatedAt: string;
+}
+
 /** Copia locale di una notifica dell'utente (stesso schema di GET /api/notifications). */
 export interface LocalNotification {
   id: string;
@@ -68,6 +79,7 @@ export class LocalDb extends Dexie {
   notifications!: Table<LocalNotification, string>;
   syncState!: Table<SyncState, string>;
   meta!: Table<LocalMeta, string>;
+  resources!: Table<LocalResource, string>;
 
   // Nota: in Dexie si dichiarano solo chiave primaria e indici; i campi non indicizzati
   // (es. OutboxEntry.lastError) si aggiungono senza nuova versione.
@@ -85,6 +97,10 @@ export class LocalDb extends Dexie {
     // v3: proprietario dei dati locali.
     this.version(3).stores({
       meta: 'key',
+    });
+    // v4: risorse (roadmap-alex.md 2.3).
+    this.version(4).stores({
+      resources: 'id, tenantId, teamLeadId, updatedAt',
     });
   }
 }

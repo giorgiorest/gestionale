@@ -17,16 +17,16 @@ public enum Role {
     /** Consultazione: sola lettura. */
     VIEWER("viewer", EnumSet.of(Permission.CUSTOMERS_READ)),
 
-    // Ruoli di cantiere (docs/roadmap-alex.md): scaffolding senza permessi propri finché non esiste
-    // la funzione da proteggere; ogni PR che la introduce aggiunge qui i Permission giusti.
-    /** Capocantiere: verifica e conferma il lavoro delle squadre sul cantiere. */
-    CAPOCANTIERE("capocantiere", EnumSet.noneOf(Permission.class)),
+    // Ruoli di cantiere (docs/roadmap-alex.md): ogni PR che introduce una funzione di cantiere
+    // aggiunge qui i Permission giusti ai ruoli giusti.
+    /** Capocantiere: verifica e conferma il lavoro delle squadre sul cantiere, gestisce il personale. */
+    CAPOCANTIERE("capocantiere", EnumSet.of(Permission.RESOURCES_READ, Permission.RESOURCES_WRITE)),
     /** Caposquadra: coordina la propria squadra sul cantiere. */
-    CAPOSQUADRA("caposquadra", EnumSet.noneOf(Permission.class)),
+    CAPOSQUADRA("caposquadra", EnumSet.of(Permission.RESOURCES_READ)),
     /** Operaio: lavora sul cantiere (ore, rapportini). */
-    OPERAIO("operaio", EnumSet.noneOf(Permission.class)),
+    OPERAIO("operaio", EnumSet.of(Permission.RESOURCES_READ)),
     /** Amministrativo: personale d'ufficio con accesso limitato (materiali, personale, attrezzature, fornitori, archivio), mai a rapportini, contabilità o pianificazione. */
-    AMMINISTRATIVO("amministrativo", EnumSet.noneOf(Permission.class));
+    AMMINISTRATIVO("amministrativo", EnumSet.of(Permission.RESOURCES_READ, Permission.RESOURCES_WRITE));
 
     private final String code;
     private final Set<Permission> permissions;

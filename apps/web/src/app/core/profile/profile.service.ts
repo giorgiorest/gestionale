@@ -32,6 +32,8 @@ export const PERMISSION_LABELS: Record<string, string> = {
   'assistant:use': "Usare l'assistente",
   'notifications:send': 'Inviare comunicazioni ai dipendenti',
   'users:manage': 'Gestire gli utenti',
+  'resources:read': 'Consultare le risorse',
+  'resources:write': 'Creare e modificare le risorse',
 };
 
 /**
