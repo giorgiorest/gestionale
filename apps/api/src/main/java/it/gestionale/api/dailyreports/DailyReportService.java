@@ -6,7 +6,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import it.gestionale.api.auth.Role;
+import it.gestionale.api.commesse.Commessa;
 import it.gestionale.api.commesse.CommessaRepository;
+import it.gestionale.api.notifications.Audience;
+import it.gestionale.api.notifications.NewNotification;
+import it.gestionale.api.notifications.NotificationService;
 import it.gestionale.api.tenancy.TenantContext;
 import it.gestionale.api.workentries.WorkEntryService;
 import org.springframework.stereotype.Service;
@@ -18,13 +23,15 @@ public class DailyReportService {
     private final DailyReportRepository reports;
     private final CommessaRepository commesse;
     private final WorkEntryService workEntries;
+    private final NotificationService notifications;
     private final Clock clock;
 
     public DailyReportService(DailyReportRepository reports, CommessaRepository commesse,
-                              WorkEntryService workEntries, Clock clock) {
+                              WorkEntryService workEntries, NotificationService notifications, Clock clock) {
         this.reports = reports;
         this.commesse = commesse;
         this.workEntries = workEntries;
+        this.notifications = notifications;
         this.clock = clock;
     }
 
@@ -100,20 +107,22 @@ public class DailyReportService {
     /**
      * DRAFT → SUBMITTED. Non idempotente (vedi {@link DailyReport#submit}): un secondo invio
      * fallisce con 409, invece di essere un no-op silenzioso — è la base del test di concorrenza
-     * della storia #51.
+     * della storia #51. Notifica il manager (#54): deve verificarlo e chiuderlo.
      */
     @Transactional
     public DailyReportDto submit(UUID id, String actorUserId) {
         DailyReport report = requireActive(id);
         report.submit(actorUserId, clock.instant());
         reports.flush();
+        notifyManager("daily-reports.submitted", "Rapportino inviato", report,
+                "è stato inviato ed è pronto per la verifica");
         return DailyReportDto.from(report);
     }
 
     /**
      * SUBMITTED → CLOSED, con lo snapshot del costo manodopera delle righe di ore nella stessa
      * transazione: se la transizione fallisce (stato sbagliato, o conflitto di versione al
-     * flush), nessuno snapshot viene scritto.
+     * flush), nessuno snapshot viene scritto. Notifica il manager (#54).
      */
     @Transactional
     public DailyReportDto close(UUID id, String actorUserId) {
@@ -121,7 +130,22 @@ public class DailyReportService {
         report.close(actorUserId, clock.instant());
         workEntries.snapshotCostsForClose(report);
         reports.flush();
+        notifyManager("daily-reports.closed", "Rapportino chiuso", report, "è stato chiuso");
         return DailyReportDto.from(report);
+    }
+
+    /**
+     * Avvisa chi gestisce l'azienda ({@code admin}, #54): è anche il ruolo di manager/proprietà
+     * (vedi {@code Role.ADMIN}). Sempre con {@link NotificationService#send}, mai un insert
+     * diretto.
+     */
+    private void notifyManager(String type, String title, DailyReport report, String verb) {
+        String commessaName = commesse.findByIdAndTenantId(report.getCommessaId(), TenantContext.require())
+                .map(Commessa::getNome)
+                .orElse("commessa " + report.getCommessaId());
+        notifications.send(NewNotification.system(type, title + ": " + commessaName,
+                "Il rapportino del " + report.getDate() + " per la commessa \"" + commessaName + "\" " + verb + ".",
+                "/commesse", Audience.role(Role.ADMIN.code()), false, false));
     }
 
     private DailyReport requireActive(UUID id) {

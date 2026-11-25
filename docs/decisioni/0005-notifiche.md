@@ -66,6 +66,12 @@ ha una seconda policy che la rende visibile solo a una connessione che dichiara
 `app.worker = 'email-dispatcher'` (`WorkerContext`). Le tabelle di dominio restano filtrate
 solo per tenant: il dispatcher non vede notifiche né utenti, solo la coda email.
 
+Stesso schema per il controllo del rapportino mancante (#54, `MissingDailyReportWatchdog`): un
+worker dedicato (`daily-report-watchdog`) ha una policy di sola lettura sulla sola tabella
+`tenants`, per elencare le aziende attive. Le commesse e i rapportini restano filtrati per
+tenant: il controllo gira un'azienda alla volta nel suo contesto (`TenantContext`), non con la
+RLS disattivata.
+
 ### Permessi
 
 - Ogni utente vede e aggiorna solo le proprie notifiche.
