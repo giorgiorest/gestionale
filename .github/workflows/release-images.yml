@@ -20,6 +20,8 @@ name: Release immagini
 on:
   push:
     branches: [main]
+    # Un commit che tocca solo la documentazione non cambia nulla da costruire o pubblicare.
+    paths-ignore: ['docs/**']
   workflow_dispatch:
 
 permissions:
