@@ -13,13 +13,14 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Rapportini giornalieri (solo testata, DRAFT) delle commesse del tenant corrente. */
+/** Rapportini giornalieri delle commesse del tenant corrente: testata e workflow (#51). */
 @RestController
 public class DailyReportController {
 
@@ -61,5 +62,25 @@ public class DailyReportController {
     @PreAuthorize("hasAuthority('daily-reports:write')")
     public void delete(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
         service.delete(id, jwt.getSubject());
+    }
+
+    /**
+     * DRAFT → SUBMITTED. Azione dedicata, non un {@code PATCH} sullo stato (ADR 0019). Stesso
+     * permesso di {@code daily-reports:write}: la tabella dei permessi della storia #51 coincide
+     * con chi oggi ha già scrittura sulla testata (admin/operator/capocantiere), quindi un
+     * permesso dedicato non aggiungerebbe un controllo diverso, solo un codice in più da
+     * mantenere.
+     */
+    @PostMapping("/api/daily-reports/{id}/submit")
+    @PreAuthorize("hasAuthority('daily-reports:write')")
+    public DailyReportDto submit(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+        return service.submit(id, jwt.getSubject());
+    }
+
+    /** SUBMITTED → CLOSED, con lo snapshot del costo manodopera. Stesso permesso di {@link #submit}. */
+    @PostMapping("/api/daily-reports/{id}/close")
+    @PreAuthorize("hasAuthority('daily-reports:write')")
+    public DailyReportDto close(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+        return service.close(id, jwt.getSubject());
     }
 }
