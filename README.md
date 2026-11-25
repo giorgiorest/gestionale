@@ -274,7 +274,7 @@ e menu laterale. Scelta e alternative: [ADR 0006](docs/decisioni/0006-interfacci
 | `resources:read` — consultare le risorse e le squadre | ✓ | | | ✓ | ✓ | ✓ | ✓ |
 | `resources:write` — creare, modificare e cancellare le risorse | ✓ | | | ✓ | | | ✓ |
 | `commesse:read` — consultare le commesse | ✓ | | | ✓ | ✓ | ✓ | ✓ |
-| `commesse:write` — creare, modificare e cancellare le commesse | ✓ | | | | | | ✓ |
+| `commesse:write` — creare, modificare e cancellare le commesse | ✓ | | | ✓ | | | ✓ |
 
 I ruoli di cantiere sono scaffolding (`docs/roadmap-alex.md`): i permessi sopra sono quelli già
 costruiti; le altre funzioni di cantiere li aggiungeranno via via.
