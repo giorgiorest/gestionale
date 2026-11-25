@@ -15,7 +15,8 @@ import jakarta.persistence.Version;
  * <p>{@code userId} collega la risorsa alla rubrica {@code app_users} (claim {@code sub}), ma non
  * è una chiave esterna: {@code app_users} si popola solo al primo accesso, quindi una risorsa può
  * esistere prima che la persona abbia mai effettuato il login. {@code teamLeadId} è la risorsa di
- * cui questa persona fa parte della squadra ("capo squadra").
+ * cui questa persona fa parte della squadra ("capo squadra"); le squadre sono a un solo livello
+ * (verificato in {@code ResourceService}): un capo squadra non può a sua volta avere un capo squadra.
  *
  * <p>Stessa cancellazione logica e blocco ottimistico di {@code Customer} (ADR 0018).
  */

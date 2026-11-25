@@ -20,8 +20,8 @@ public interface ResourceRepository extends JpaRepository<Resource, UUID> {
     /** Anche se cancellata. Il filtro per tenant è difesa in profondità: la RLS già protegge. */
     Optional<Resource> findByIdAndTenantId(UUID id, UUID tenantId);
 
-    /** Il capo squadra indicato deve essere una risorsa attiva dello stesso tenant. */
-    boolean existsByIdAndTenantIdAndDeletedAtIsNull(UUID id, UUID tenantId);
+    /** Vero se la risorsa è già capo squadra di qualcuno: non può anche diventare membro. */
+    boolean existsByTeamLeadIdAndTenantIdAndDeletedAtIsNull(UUID teamLeadId, UUID tenantId);
 
     /** Cancellazione fisica, usata solo dal ripristino del tenant demo. */
     void deleteByTenantId(UUID tenantId);

@@ -150,17 +150,25 @@ class ResourceControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void teamLeadCannotCreateACycle() throws Exception {
+    void teamsAreOnlyOneLevelDeep() throws Exception {
         UUID a = UUID.randomUUID();
         UUID b = UUID.randomUUID();
+        UUID c = UUID.randomUUID();
         putResource(tenantA, "capocantiere", a, "{\"firstName\":\"A\",\"lastName\":\"A\"}").andExpect(status().isOk());
         putResource(tenantA, "capocantiere", b,
                 "{\"firstName\":\"B\",\"lastName\":\"B\",\"teamLeadId\":\"" + a + "\"}")
                 .andExpect(status().isOk());
 
-        // A diventerebbe capo squadra di B, che è già capo squadra di A: ciclo di 2.
+        // B è già membro della squadra di A: non può a sua volta avere un capo squadra proprio.
+        putResource(tenantA, "capocantiere", c,
+                "{\"firstName\":\"C\",\"lastName\":\"C\",\"teamLeadId\":\"" + b + "\"}")
+                .andExpect(status().isBadRequest());
+
+        // A è già capo squadra (di B): non può diventare membro di un'altra squadra.
+        UUID d = UUID.randomUUID();
+        putResource(tenantA, "capocantiere", d, "{\"firstName\":\"D\",\"lastName\":\"D\"}").andExpect(status().isOk());
         putResource(tenantA, "capocantiere", a,
-                "{\"firstName\":\"A\",\"lastName\":\"A\",\"teamLeadId\":\"" + b + "\"}")
+                "{\"firstName\":\"A\",\"lastName\":\"A\",\"teamLeadId\":\"" + d + "\"}")
                 .andExpect(status().isBadRequest());
     }
 

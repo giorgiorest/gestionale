@@ -36,6 +36,10 @@ public class ResourceService {
         UUID tenantId = TenantContext.require();
         String firstName = input.firstName().trim();
         String lastName = input.lastName().trim();
+        // Non validato: un userId che non corrisponde a nessuna riga di app_users è legittimo quanto
+        // un errore di digitazione (un neoassunto non ha ancora effettuato il primo accesso), e i due
+        // casi non si possono distinguere. La RLS impedisce comunque che possa mai risolversi a una
+        // persona di un altro tenant.
         String userId = blankToNull(input.userId());
         UUID teamLeadId = requireValidTeamLead(input.teamLeadId(), id, tenantId);
         Resource resource = resources.findByIdAndTenantId(id, tenantId)
@@ -61,31 +65,22 @@ public class ResourceService {
     }
 
     /**
-     * Difesa in profondità: il capo squadra deve essere una risorsa attiva dello stesso tenant, non
-     * se stessa, e non deve risalire fino a {@code id} (altrimenti la squadra sarebbe circolare).
+     * Le squadre di cantiere sono a un solo livello (capo e membri, mai catene): il capo squadra deve
+     * essere una risorsa attiva dello stesso tenant, non se stessa, non a sua volta membro di
+     * un'altra squadra, e chi diventa membro non deve già avere una propria squadra. Così un ciclo
+     * non è mai rappresentabile (a differenza di una catena libera, dove impedirlo richiederebbe di
+     * risalirla a ogni scrittura, con il rischio di corse tra scritture concorrenti).
      */
     private UUID requireValidTeamLead(UUID teamLeadId, UUID id, UUID tenantId) {
         if (teamLeadId == null) {
             return null;
         }
-        if (teamLeadId.equals(id) || !resources.existsByIdAndTenantIdAndDeletedAtIsNull(teamLeadId, tenantId)
-                || createsCycle(teamLeadId, id, tenantId)) {
+        Resource lead = teamLeadId.equals(id) ? null : resources.findByIdAndTenantId(teamLeadId, tenantId)
+                .filter(r -> !r.isDeleted() && r.getTeamLeadId() == null).orElse(null);
+        if (lead == null || resources.existsByTeamLeadIdAndTenantIdAndDeletedAtIsNull(id, tenantId)) {
             throw new UnknownTeamLeadException("Capo squadra non valido: " + teamLeadId);
         }
         return teamLeadId;
-    }
-
-    /** Risale la catena dei capi squadra da {@code candidateLead}: tornare a {@code id} sarebbe un ciclo. */
-    private boolean createsCycle(UUID candidateLead, UUID id, UUID tenantId) {
-        long maxHops = resources.count();
-        UUID current = candidateLead;
-        for (long hops = 0; current != null && hops <= maxHops; hops++) {
-            if (current.equals(id)) {
-                return true;
-            }
-            current = resources.findByIdAndTenantId(current, tenantId).map(Resource::getTeamLeadId).orElse(null);
-        }
-        return false;
     }
 
     private static String blankToNull(String value) {

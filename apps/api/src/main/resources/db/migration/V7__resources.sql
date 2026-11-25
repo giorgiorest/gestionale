@@ -8,6 +8,9 @@
 --            team_lead_id: la risorsa di cui questa persona fa parte della squadra
 --            ("capo squadra"); un riferimento alla stessa tabella, verificato per
 --            tenant dal servizio (il vincolo di chiave esterna non conosce la RLS).
+--            Le squadre sono a un solo livello: un capo squadra non può a sua volta
+--            avere un capo squadra (anche questo verificato dal servizio, non dal
+--            database), così un ciclo non è mai rappresentabile.
 -- =====================================================================
 
 CREATE TABLE resources (

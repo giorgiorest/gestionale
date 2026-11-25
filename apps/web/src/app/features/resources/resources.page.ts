@@ -172,6 +172,8 @@ export class ResourcesPage {
       ? all.filter((r) => `${r.lastName} ${r.firstName}`.toLowerCase().includes(q))
       : all;
   });
+  /** Per nome per id, ricalcolata solo quando cambia l'elenco: evita una scansione per riga. */
+  private readonly byId = computed(() => new Map(this.service.resources().map((r) => [r.id, r])));
   firstName = '';
   lastName = '';
   teamLeadId: string | null = null;
@@ -184,7 +186,7 @@ export class ResourcesPage {
     if (!teamLeadId) {
       return null;
     }
-    const lead = this.service.resources().find((r) => r.id === teamLeadId);
+    const lead = this.byId().get(teamLeadId);
     return lead ? `${lead.lastName} ${lead.firstName}` : null;
   }
 
