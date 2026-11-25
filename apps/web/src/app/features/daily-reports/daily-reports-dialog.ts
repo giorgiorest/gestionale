@@ -9,6 +9,7 @@ import { MatTableModule } from '@angular/material/table';
 import { HasPermissionDirective } from '../../core/profile/has-permission.directive';
 import { openConfirm } from '../../shared/confirm-dialog';
 import { LocalDailyReport } from '../../db/local-db';
+import { WorkEntriesDialog } from '../work-entries/work-entries-dialog';
 import { DailyReportsService } from './daily-reports.service';
 
 /** Dati per aprire la gestione dei rapportini di una commessa. */
@@ -74,6 +75,15 @@ export interface DailyReportsDialogData {
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef aria-label="Azioni"></th>
           <td mat-cell *matCellDef="let r" class="actions">
+            <button
+              mat-icon-button
+              type="button"
+              *appHasPermission="'work-entries:read'"
+              aria-label="Ore del rapportino"
+              (click)="openWorkEntries(r)"
+            >
+              <mat-icon>schedule</mat-icon>
+            </button>
             <button
               mat-icon-button
               type="button"
@@ -161,6 +171,18 @@ export class DailyReportsDialog {
     this.date = report.date;
     this.weather = report.weather ?? '';
     this.notes = report.notes ?? '';
+  }
+
+  openWorkEntries(report: LocalDailyReport): void {
+    this.dialog.open(WorkEntriesDialog, {
+      data: {
+        dailyReportId: report.id,
+        commessaId: this.data.commessaId,
+        commessaNome: this.data.commessaNome,
+        reportDate: report.date,
+      },
+      width: '900px',
+    });
   }
 
   cancelEdit(): void {

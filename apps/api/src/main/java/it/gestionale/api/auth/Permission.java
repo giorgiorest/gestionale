@@ -19,7 +19,9 @@ public enum Permission {
     WORK_ACTIVITIES_READ("work-activities:read"),
     WORK_ACTIVITIES_WRITE("work-activities:write"),
     DAILY_REPORTS_READ("daily-reports:read"),
-    DAILY_REPORTS_WRITE("daily-reports:write");
+    DAILY_REPORTS_WRITE("daily-reports:write"),
+    WORK_ENTRIES_READ("work-entries:read"),
+    WORK_ENTRIES_WRITE("work-entries:write");
 
     private final String code;
 
