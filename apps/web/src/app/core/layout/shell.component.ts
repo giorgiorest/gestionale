@@ -33,6 +33,8 @@ interface NavItem {
 const NAV: NavItem[] = [
   { label: 'Home', icon: 'home', link: '/', exact: true },
   { label: 'Clienti', icon: 'groups', link: '/clienti', permission: 'customers:read' },
+  { label: 'Commesse', icon: 'foundation', link: '/commesse', permission: 'commesse:read' },
+  { label: 'Risorse', icon: 'engineering', link: '/risorse', permission: 'resources:read' },
   { label: 'Notifiche', icon: 'notifications', link: '/notifiche' },
   { label: 'Comunicazioni', icon: 'campaign', link: '/comunicazioni', permission: 'notifications:send' },
   { label: 'Assistente', icon: 'smart_toy', link: '/assistente', permission: 'assistant:use', feature: 'aiAssistant' },

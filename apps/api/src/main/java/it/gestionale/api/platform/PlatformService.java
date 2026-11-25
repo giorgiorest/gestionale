@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import it.gestionale.api.auth.Role;
 import it.gestionale.api.licensing.Features;
 import it.gestionale.api.licensing.License;
 import it.gestionale.api.licensing.LicenseRepository;
@@ -173,6 +174,7 @@ public class PlatformService {
     }
 
     public UserWithPassword createUser(UUID tenantId, NewUserInput input, PlatformAdmin admin) {
+        requireValidRole(input.role());
         License license = asPlatform(() -> {
             requireTenant(tenantId);
             return currentLicense(tenantId);
@@ -194,6 +196,9 @@ public class PlatformService {
     }
 
     public TenantUser updateUser(UUID tenantId, String userId, UserUpdate update, PlatformAdmin admin) {
+        if (update.role() != null) {
+            requireValidRole(update.role());
+        }
         asPlatform(() -> requireTenant(tenantId));
         TenantUser user = identity.updateUser(tenantId, userId, update.enabled(), update.role());
         Map<String, Object> details = new LinkedHashMap<>();
@@ -283,6 +288,12 @@ public class PlatformService {
     private static void validateValidity(Instant validFrom, Instant validUntil) {
         if (validUntil != null && !validUntil.isAfter(validFrom)) {
             throw new PlatformException(HttpStatus.BAD_REQUEST, "La scadenza deve essere successiva all'inizio della licenza");
+        }
+    }
+
+    private static void requireValidRole(String role) {
+        if (Role.fromCode(role).isEmpty()) {
+            throw new PlatformException(HttpStatus.BAD_REQUEST, "Ruolo non valido: " + role);
         }
     }
 

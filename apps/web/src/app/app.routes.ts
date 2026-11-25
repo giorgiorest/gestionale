@@ -51,6 +51,16 @@ export const routes: Routes = [
         loadComponent: () => import('./features/customers/customers.page').then((m) => m.CustomersPage),
       },
       {
+        path: 'risorse',
+        canActivate: [permissionGuard('resources:read')],
+        loadComponent: () => import('./features/resources/resources.page').then((m) => m.ResourcesPage),
+      },
+      {
+        path: 'commesse',
+        canActivate: [permissionGuard('commesse:read')],
+        loadComponent: () => import('./features/commesse/commesse.page').then((m) => m.CommessePage),
+      },
+      {
         path: 'notifiche',
         loadComponent: () => import('./features/notifications/notifications.page').then((m) => m.NotificationsPage),
       },

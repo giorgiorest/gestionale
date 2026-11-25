@@ -55,14 +55,16 @@ public final class PlatformDtos {
                                @NotBlank @Pattern(regexp = "active|suspended") String status) {
     }
 
+    /** {@code role}: un codice valido per {@link it.gestionale.api.auth.Role}, verificato in {@code PlatformService}. */
     public record NewUserInput(@NotBlank @Pattern(regexp = USERNAME) String username,
                                @NotBlank @Email @Size(max = 255) String email,
                                @NotBlank @Size(max = 100) String firstName,
                                @NotBlank @Size(max = 100) String lastName,
-                               @NotBlank @Pattern(regexp = "admin|operator|viewer") String role) {
+                               @NotBlank String role) {
     }
 
-    public record UserUpdate(Boolean enabled, @Pattern(regexp = "admin|operator|viewer") String role) {
+    /** {@code role}, se presente: un codice valido per {@link it.gestionale.api.auth.Role}, verificato in {@code PlatformService}. */
+    public record UserUpdate(Boolean enabled, String role) {
     }
 
     /** Risposta di creazione o reset: la password provvisoria si mostra una sola volta e non viene salvata. */

@@ -62,7 +62,7 @@ debito da pagare moltiplicato per il numero di entità.
 |----|-----------|-------|-------|
 | 2.1 | Anagrafica clienti completa: ragione sociale, P.IVA, codice fiscale, indirizzo, PEC, codice destinatario SDI, condizioni di pagamento | V8 | ⬜ |
 | 2.2 | Fornitori, sullo stesso schema | V9 | ⬜ |
-| 2.3 | Risorse e squadre (dipendenti che compilano i rapportini), collegate alla rubrica `app_users` | V10 | ⬜ |
+| 2.3 | Risorse e squadre (dipendenti che compilano i rapportini), collegate alla rubrica `app_users` | V7 | ✅ |
 | 2.4 | 🔐 Allegati lato backend: tabella con RLS, archivio compatibile S3, URL firmati, MinIO in sviluppo ([ADR 0016](decisioni/0016-archivio-allegati.md)) | V11 | ⬜ |
 | 2.5 | Allegati lato client: caricamento offline, foto dal telefono, cache selettiva, svuotamento all'uscita | — | ⬜ |
 
@@ -72,7 +72,7 @@ debito da pagare moltiplicato per il numero di entità.
 
 | PR | Contenuto | Migr. | Stato |
 |----|-----------|-------|-------|
-| 3.1 | Commesse/cantieri: modello, stati, anagrafica, collegamento al cliente | V12 | ⬜ |
+| 3.1 | Commesse/cantieri: modello, stati, anagrafica, collegamento al cliente | V8 | ✅ |
 | 3.2 | Rapportino giornaliero lato backend: ore per persona, materiali, note, allegati | V13 | ⬜ |
 | 3.3 | Rapportino sul telefono: interfaccia per schermo piccolo, compilazione offline, foto | — | ⬜ |
 | 3.4 | Firma grafometrica sul rapportino (canvas, immagine allegata, impronta e orario) | — | ⬜ |

@@ -12,7 +12,8 @@ Come si amministra un'installazione di Civil Beefy: aziende clienti (tenant), li
 ```
 Keycloak (realm "gestionale")                 Database (PostgreSQL)
   utente ──── attributo tenant_id ─────────▶  tenants (azienda)  ──▶ licenses (piano, funzioni)
-        └──── ruoli: admin / operator / viewer       └──▶ dati dell'azienda (clienti, notifiche…)
+        └──── ruoli: admin / operator / viewer              └──▶ dati dell'azienda (clienti, notifiche…)
+               e di cantiere: capocantiere / caposquadra / operaio / amministrativo
 ```
 
 - **Una sola installazione** serve più aziende: ogni utente appartiene a un'azienda tramite
@@ -42,7 +43,8 @@ assegna da solo). A mano, nella console di Keycloak:
 2. Scheda **Attributes**: `tenant_id` = l'id dell'azienda (vedi «Aziende» sotto). **Save**.
    Senza `tenant_id` l'utente entra ma non vede dati.
 3. Scheda **Role mapping → Assign role → Filter by realm roles**: scegli **un** ruolo tra `admin`,
-   `operator`, `viewer`. **Assign**.
+   `operator`, `viewer` (ruoli d'azienda) oppure `capocantiere`, `caposquadra`, `operaio`,
+   `amministrativo` (ruoli di cantiere). **Assign**.
 4. Scheda **Credentials → Set password**: password provvisoria con **Temporary** attivo: al primo
    accesso l'utente la cambia.
    In alternativa, con l'SMTP configurato in *Realm settings → Email*: scheda **Details → Credential
@@ -64,13 +66,19 @@ assegna da solo). A mano, nella console di Keycloak:
 
 | Ruolo | Etichetta nell'app | Permessi |
 |-------|--------------------|----------|
-| `admin` | Amministratore | tutto: clienti, comunicazioni ai dipendenti, assistente, gestione utenti |
+| `admin` | Amministratore | tutto: clienti, comunicazioni ai dipendenti, assistente, gestione utenti. È anche il manager/proprietà dell'azienda |
 | `operator` | Operatore | consultare e modificare i clienti, usare l'assistente |
 | `viewer` | Consultazione | consultare i clienti |
+| `capocantiere` | Capocantiere | ruolo di cantiere: verifica e conferma il lavoro delle squadre |
+| `caposquadra` | Caposquadra | ruolo di cantiere: coordina la propria squadra |
+| `operaio` | Operaio | ruolo di cantiere: lavora sul cantiere, inserisce ore e rapportini |
+| `amministrativo` | Amministrativo | ruolo di cantiere, accesso limitato: materiali, personale, attrezzature, fornitori, archivio — mai rapportini, contabilità o pianificazione |
 
 I permessi esatti di ogni ruolo sono in `Role` (backend, `apps/api/.../auth/Role.java`): Keycloak
 assegna solo il ruolo, il significato lo decide l'applicazione (così il provider di identità resta
-sostituibile).
+sostituibile). I quattro ruoli di cantiere sono scaffolding senza permessi propri finché non esiste
+la funzione da proteggere: ogni voce di `docs/roadmap-alex.md` che introduce un endpoint nuovo
+aggiunge i `Permission` giusti ai ruoli giusti.
 
 ### Aggiungere un nuovo ruolo
 

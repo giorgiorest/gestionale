@@ -19,6 +19,10 @@ export const ROLE_LABELS: Record<string, string> = {
   admin: 'Amministratore',
   operator: 'Operatore',
   viewer: 'Consultazione',
+  capocantiere: 'Capocantiere',
+  caposquadra: 'Caposquadra',
+  operaio: 'Operaio',
+  amministrativo: 'Amministrativo',
 };
 
 /** Etichette dei permessi. */
@@ -28,6 +32,10 @@ export const PERMISSION_LABELS: Record<string, string> = {
   'assistant:use': "Usare l'assistente",
   'notifications:send': 'Inviare comunicazioni ai dipendenti',
   'users:manage': 'Gestire gli utenti',
+  'resources:read': 'Consultare le risorse',
+  'resources:write': 'Creare e modificare le risorse',
+  'commesse:read': 'Consultare le commesse',
+  'commesse:write': 'Creare e modificare le commesse',
 };
 
 /**

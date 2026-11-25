@@ -40,6 +40,22 @@
       {
         "name": "viewer",
         "description": "Consultazione: sola lettura"
+      },
+      {
+        "name": "capocantiere",
+        "description": "Capocantiere: verifica e conferma il lavoro delle squadre sul cantiere"
+      },
+      {
+        "name": "caposquadra",
+        "description": "Caposquadra: coordina la propria squadra sul cantiere"
+      },
+      {
+        "name": "operaio",
+        "description": "Operaio: lavora sul cantiere"
+      },
+      {
+        "name": "amministrativo",
+        "description": "Amministrativo: accesso limitato (materiali, personale, attrezzature, fornitori, archivio)"
       }
     ]
   },

@@ -1,0 +1,89 @@
+package it.gestionale.api.resources;
+
+import java.time.Clock;
+import java.util.List;
+import java.util.UUID;
+
+import it.gestionale.api.tenancy.TenantContext;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class ResourceService {
+
+    private final ResourceRepository resources;
+    private final Clock clock;
+
+    public ResourceService(ResourceRepository resources, Clock clock) {
+        this.resources = resources;
+        this.clock = clock;
+    }
+
+    /** Risorse attive del tenant, ordinate per cognome e nome: i record cancellati non compaiono. */
+    @Transactional(readOnly = true)
+    public List<ResourceDto> list() {
+        return resources.findByTenantIdAndDeletedAtIsNullOrderByLastNameAscFirstNameAsc(TenantContext.require())
+                .stream().map(ResourceDto::from).toList();
+    }
+
+    /**
+     * Crea o aggiorna la risorsa con l'id indicato (generato dal client).
+     * Idempotente: reinviare la stessa operazione dalla outbox produce lo stesso risultato.
+     * Una risorsa cancellata logicamente torna attiva (vedi {@link Resource#update}).
+     */
+    @Transactional
+    public ResourceDto upsert(UUID id, ResourceDto.Input input, String actorUserId) {
+        UUID tenantId = TenantContext.require();
+        String firstName = input.firstName().trim();
+        String lastName = input.lastName().trim();
+        // Non validato: un userId che non corrisponde a nessuna riga di app_users è legittimo quanto
+        // un errore di digitazione (un neoassunto non ha ancora effettuato il primo accesso), e i due
+        // casi non si possono distinguere. La RLS impedisce comunque che possa mai risolversi a una
+        // persona di un altro tenant.
+        String userId = blankToNull(input.userId());
+        UUID teamLeadId = requireValidTeamLead(input.teamLeadId(), id, tenantId);
+        Resource resource = resources.findByIdAndTenantId(id, tenantId)
+                .map(existing -> {
+                    existing.update(firstName, lastName, userId, teamLeadId, actorUserId, clock.instant());
+                    return existing;
+                })
+                .orElseGet(() -> resources.save(
+                        new Resource(id, tenantId, firstName, lastName, userId, teamLeadId, actorUserId)));
+        resources.flush();
+        return ResourceDto.from(resource);
+    }
+
+    /**
+     * Cancellazione logica, idempotente: il record resta come tombstone per la sincronizzazione.
+     * Un id sconosciuto (o di un altro tenant) non è un errore: la outbox deve poter svuotarsi.
+     */
+    @Transactional
+    public void delete(UUID id, String actorUserId) {
+        resources.findByIdAndTenantId(id, TenantContext.require())
+                .ifPresent(resource -> resource.markDeleted(actorUserId, clock.instant()));
+        resources.flush();
+    }
+
+    /**
+     * Le squadre di cantiere sono a un solo livello (capo e membri, mai catene): il capo squadra deve
+     * essere una risorsa attiva dello stesso tenant, non se stessa, non a sua volta membro di
+     * un'altra squadra, e chi diventa membro non deve già avere una propria squadra. Così un ciclo
+     * non è mai rappresentabile (a differenza di una catena libera, dove impedirlo richiederebbe di
+     * risalirla a ogni scrittura, con il rischio di corse tra scritture concorrenti).
+     */
+    private UUID requireValidTeamLead(UUID teamLeadId, UUID id, UUID tenantId) {
+        if (teamLeadId == null) {
+            return null;
+        }
+        Resource lead = teamLeadId.equals(id) ? null : resources.findByIdAndTenantId(teamLeadId, tenantId)
+                .filter(r -> !r.isDeleted() && r.getTeamLeadId() == null).orElse(null);
+        if (lead == null || resources.existsByTeamLeadIdAndTenantIdAndDeletedAtIsNull(id, tenantId)) {
+            throw new UnknownTeamLeadException("Capo squadra non valido: " + teamLeadId);
+        }
+        return teamLeadId;
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+}

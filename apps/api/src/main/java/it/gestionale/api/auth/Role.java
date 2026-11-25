@@ -10,12 +10,28 @@ import java.util.Set;
  * così cambiare cosa può fare un ruolo non richiede di toccare Keycloak.
  */
 public enum Role {
-    /** Amministratore del tenant: tutte le funzioni. */
+    /** Amministratore del tenant: tutte le funzioni. È anche il ruolo di manager/proprietà dell'azienda. */
     ADMIN("admin", EnumSet.allOf(Permission.class)),
     /** Operatore: lavora sui dati e usa l'assistente. */
     OPERATOR("operator", EnumSet.of(Permission.CUSTOMERS_READ, Permission.CUSTOMERS_WRITE, Permission.ASSISTANT_USE)),
     /** Consultazione: sola lettura. */
-    VIEWER("viewer", EnumSet.of(Permission.CUSTOMERS_READ));
+    VIEWER("viewer", EnumSet.of(Permission.CUSTOMERS_READ)),
+
+    // Ruoli di cantiere (docs/roadmap-alex.md): ogni PR che introduce una funzione di cantiere
+    // aggiunge qui i Permission giusti ai ruoli giusti.
+    /**
+     * Capocantiere: verifica e conferma il lavoro delle squadre sul cantiere, gestisce il
+     * personale e la propria commessa (anche lo stato: è lui a saperla in corso o conclusa).
+     */
+    CAPOCANTIERE("capocantiere", EnumSet.of(Permission.RESOURCES_READ, Permission.RESOURCES_WRITE,
+            Permission.COMMESSE_READ, Permission.COMMESSE_WRITE)),
+    /** Caposquadra: coordina la propria squadra sul cantiere. */
+    CAPOSQUADRA("caposquadra", EnumSet.of(Permission.RESOURCES_READ, Permission.COMMESSE_READ)),
+    /** Operaio: lavora sul cantiere (ore, rapportini). */
+    OPERAIO("operaio", EnumSet.of(Permission.RESOURCES_READ, Permission.COMMESSE_READ)),
+    /** Amministrativo: personale d'ufficio con accesso limitato (materiali, personale, attrezzature, fornitori, archivio), mai a rapportini, contabilità o pianificazione. */
+    AMMINISTRATIVO("amministrativo", EnumSet.of(Permission.RESOURCES_READ, Permission.RESOURCES_WRITE,
+            Permission.COMMESSE_READ, Permission.COMMESSE_WRITE));
 
     private final String code;
     private final Set<Permission> permissions;
