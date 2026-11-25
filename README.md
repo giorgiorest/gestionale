@@ -52,6 +52,7 @@ gestionale/
 | `workactivities/` | lavorazioni di una commessa (es. "Armatura pilastri"), riutilizzate dal rapportino per classificare le ore; `code` univoco per commessa, `parentId` opzionale per la gerarchia (WBS) |
 | `dailyreports/` | testata del rapportino giornaliero (meteo, note, stato); un solo rapportino per commessa/data nell'MVP; workflow `draft → submitted → closed` con endpoint dedicati (`POST .../submit`, `.../close`, non un `PATCH` sullo stato — ADR 0019); non modificabile da nessun endpoint ordinario fuori da `draft` |
 | `workentries/` | righe di ore del rapportino: risorsa, lavorazione (della stessa commessa) e ore/straordinario; il totale è derivato in UI, non salvato; non modificabili fuori da `draft`; alla chiusura, `WorkEntryCostSnapshot` congela il costo manodopera (tariffa da `ResourceAssignment.hourlyCostOverride`, NULL se assente — ADR 0019) |
+| `hoursreport/` | cruscotto ore di una commessa (`GET /api/commesse/{id}/reports/hours?from=&to=`, #52): tre viste (settimanale, mensile per risorsa, per lavorazione) da un'unica aggregazione per giorno/risorsa/lavorazione fatta in query; permesso riusato (`work-entries:read`), nessuna migrazione ([ADR 0020](docs/decisioni/0020-endpoint-di-report.md)) |
 | `notifications/` | notifiche e comunicazioni ai dipendenti, presa visione, rubrica, invio email (`EmailDispatcher`) |
 | `ai/`        | `AiProvider`, `AiTool`, `NoopAiProvider` (503), quota mensile, `POST /api/ai/chat` |
 | `demo/`      | `DemoTenantSeeder` con `reset()` |
@@ -68,7 +69,7 @@ gestionale/
 | `core/sync`                | outbox: `enqueue`, `flush` (invio al server), `pullChanges` (da fare) |
 | `core/notifications`       | notifiche dell'utente, campanella con contatore |
 | `db/`                      | `LocalDb` (Dexie): `outbox`, `customers`, `resources`, `commesse`, `resourceAssignments`, `workActivities`, `dailyReports`, `workEntries`, `syncState` |
-| `features/`                | `auth` (accesso), `server` (app desktop), `home`, `profile`, `customers`, `resources`, `commesse`, `resource-assignments`, `work-activities`, `daily-reports`, `work-entries`, `notifications`, `announcements` (comunicazioni), `assistant` |
+| `features/`                | `auth` (accesso), `server` (app desktop), `home`, `profile`, `customers`, `resources`, `commesse`, `resource-assignments`, `work-activities`, `daily-reports`, `work-entries`, `hours-report` (cruscotto ore, nessuna copia locale: è un report, non un'entità sincronizzata), `notifications`, `announcements` (comunicazioni), `assistant` |
 | `shared/`                  | utilità (UUID v7) |
 
 ## Prerequisiti

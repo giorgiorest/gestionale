@@ -16,6 +16,7 @@ import { SyncService } from '../../core/sync/sync.service';
 import { LocalCommessa } from '../../db/local-db';
 import { openConfirm } from '../../shared/confirm-dialog';
 import { DailyReportsDialog } from '../daily-reports/daily-reports-dialog';
+import { HoursReportDialog } from '../hours-report/hours-report-dialog';
 import { ResourceAssignmentsDialog } from '../resource-assignments/resource-assignments-dialog';
 import { WorkActivitiesDialog } from '../work-activities/work-activities-dialog';
 import { COMMESSA_STATI, CommesseService } from './commesse.service';
@@ -26,6 +27,7 @@ const ROW_ACTION_PERMISSIONS = [
   'resource-assignments:read',
   'work-activities:read',
   'daily-reports:read',
+  'work-entries:read',
 ] as const;
 
 /** Commesse (cantieri): elenco con stato e cliente, inserimento rapido. */
@@ -140,6 +142,16 @@ const ROW_ACTION_PERMISSIONS = [
                 <button
                   mat-icon-button
                   type="button"
+                  *appHasPermission="'work-entries:read'"
+                  aria-label="Cruscotto ore della commessa"
+                  matTooltip="Cruscotto ore"
+                  (click)="openHoursReport(c)"
+                >
+                  <mat-icon>query_stats</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
                   *appHasPermission="'commesse:write'"
                   aria-label="Cancella la commessa"
                   matTooltip="Cancella"
@@ -244,6 +256,13 @@ export class CommessePage {
 
   openDailyReports(commessa: LocalCommessa): void {
     this.dialog.open(DailyReportsDialog, {
+      data: { commessaId: commessa.id, commessaNome: commessa.nome },
+      width: '820px',
+    });
+  }
+
+  openHoursReport(commessa: LocalCommessa): void {
+    this.dialog.open(HoursReportDialog, {
       data: { commessaId: commessa.id, commessaNome: commessa.nome },
       width: '820px',
     });
