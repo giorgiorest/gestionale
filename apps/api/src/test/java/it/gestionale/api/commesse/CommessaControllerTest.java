@@ -116,10 +116,23 @@ class CommessaControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void capocantiereCannotWrite() throws Exception {
-        putCommessa(tenantA, "capocantiere", UUID.randomUUID(),
+    void operaioCannotWrite() throws Exception {
+        putCommessa(tenantA, "operaio", UUID.randomUUID(),
                 "{\"customerId\":\"" + customerA + "\",\"nome\":\"X\",\"stato\":\"pianificata\"}")
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void capocantiereCanUpdateTheStatoOfTheCommessa() throws Exception {
+        UUID id = UUID.randomUUID();
+        putCommessa(tenantA, "amministrativo", id,
+                "{\"customerId\":\"" + customerA + "\",\"nome\":\"Tetto\",\"stato\":\"pianificata\"}")
+                .andExpect(status().isOk());
+
+        putCommessa(tenantA, "capocantiere", id,
+                "{\"customerId\":\"" + customerA + "\",\"nome\":\"Tetto\",\"stato\":\"in_corso\"}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.stato").value("in_corso"));
     }
 
     @Test
@@ -149,6 +162,29 @@ class CommessaControllerTest extends AbstractIntegrationTest {
                 s -> customers.save(new Customer(customerB, tenantB, "Cliente B", null, null))));
         putCommessa(tenantA, "amministrativo", UUID.randomUUID(),
                 "{\"customerId\":\"" + customerB + "\",\"nome\":\"X\",\"stato\":\"pianificata\"}")
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void aCustomerDeletedAfterwardsDoesNotBlockFurtherUpdatesToItsCommesse() throws Exception {
+        UUID id = UUID.randomUUID();
+        putCommessa(tenantA, "amministrativo", id,
+                "{\"customerId\":\"" + customerA + "\",\"nome\":\"Tetto\",\"stato\":\"pianificata\"}")
+                .andExpect(status().isOk());
+
+        // Il cliente se ne va a metà cantiere: la commessa resta, collegata a un cliente cancellato.
+        mvc.perform(delete("/api/customers/" + customerA).with(TestJwt.user(tenantA, "admin")))
+                .andExpect(status().isNoContent());
+
+        // Chiudere il cantiere (stesso cliente, non cambia) deve restare possibile.
+        putCommessa(tenantA, "capocantiere", id,
+                "{\"customerId\":\"" + customerA + "\",\"nome\":\"Tetto\",\"stato\":\"conclusa\"}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.stato").value("conclusa"));
+
+        // Una nuova commessa non può invece agganciarsi a un cliente già cancellato.
+        putCommessa(tenantA, "amministrativo", UUID.randomUUID(),
+                "{\"customerId\":\"" + customerA + "\",\"nome\":\"Altra\",\"stato\":\"pianificata\"}")
                 .andExpect(status().isBadRequest());
     }
 

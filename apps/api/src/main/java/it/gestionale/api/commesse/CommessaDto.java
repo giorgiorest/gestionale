@@ -18,13 +18,12 @@ import jakarta.validation.constraints.Size;
 public record CommessaDto(UUID id, UUID customerId, String nome, String indirizzo, String stato, long version,
                           Instant updatedAt) {
 
+    private static final CommessaStatoConverter STATO = new CommessaStatoConverter();
+
     static CommessaDto from(Commessa commessa) {
         return new CommessaDto(commessa.getId(), commessa.getCustomerId(), commessa.getNome(),
-                commessa.getIndirizzo(), code(commessa.getStato()), commessa.getVersion(), commessa.getUpdatedAt());
-    }
-
-    static String code(CommessaStato stato) {
-        return stato.name().toLowerCase(java.util.Locale.ROOT);
+                commessa.getIndirizzo(), STATO.convertToDatabaseColumn(commessa.getStato()), commessa.getVersion(),
+                commessa.getUpdatedAt());
     }
 
     /** Dati in ingresso per creare o aggiornare una commessa. */

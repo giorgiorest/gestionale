@@ -46,8 +46,9 @@ export class CommesseService {
 
   /** Invia le modifiche in sospeso, poi aggiorna la copia locale dal server (o la usa se offline). */
   async load(): Promise<void> {
-    const tenantId = (await this.profile.load())?.tenant?.id ?? null;
-    await this.sync.flush();
+    // flush() non dipende dal profilo (lavora solo sulla outbox locale): in parallelo, non in coda.
+    const [profile] = await Promise.all([this.profile.load(), this.sync.flush()]);
+    const tenantId = profile?.tenant?.id ?? null;
     try {
       const remote = await firstValueFrom(this.http.get<CommessaDto[]>(`${this.apiUrl}/${ENTITY}`));
       const [pending, local] = await Promise.all([

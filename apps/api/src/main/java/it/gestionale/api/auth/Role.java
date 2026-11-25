@@ -19,8 +19,12 @@ public enum Role {
 
     // Ruoli di cantiere (docs/roadmap-alex.md): ogni PR che introduce una funzione di cantiere
     // aggiunge qui i Permission giusti ai ruoli giusti.
-    /** Capocantiere: verifica e conferma il lavoro delle squadre sul cantiere, gestisce il personale. */
-    CAPOCANTIERE("capocantiere", EnumSet.of(Permission.RESOURCES_READ, Permission.RESOURCES_WRITE, Permission.COMMESSE_READ)),
+    /**
+     * Capocantiere: verifica e conferma il lavoro delle squadre sul cantiere, gestisce il
+     * personale e la propria commessa (anche lo stato: è lui a saperla in corso o conclusa).
+     */
+    CAPOCANTIERE("capocantiere", EnumSet.of(Permission.RESOURCES_READ, Permission.RESOURCES_WRITE,
+            Permission.COMMESSE_READ, Permission.COMMESSE_WRITE)),
     /** Caposquadra: coordina la propria squadra sul cantiere. */
     CAPOSQUADRA("caposquadra", EnumSet.of(Permission.RESOURCES_READ, Permission.COMMESSE_READ)),
     /** Operaio: lavora sul cantiere (ore, rapportini). */

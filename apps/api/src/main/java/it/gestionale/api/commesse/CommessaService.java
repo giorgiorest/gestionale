@@ -2,6 +2,8 @@ package it.gestionale.api.commesse;
 
 import java.time.Clock;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 
 import it.gestionale.api.customers.CustomerRepository;
@@ -37,14 +39,21 @@ public class CommessaService {
     @Transactional
     public CommessaDto upsert(UUID id, CommessaDto.Input input, String actorUserId) {
         UUID tenantId = TenantContext.require();
-        UUID customerId = requireValidCustomer(input.customerId(), tenantId);
+        UUID customerId = input.customerId();
+        Optional<Commessa> existing = commesse.findByIdAndTenantId(id, tenantId);
+        // Un cliente già collegato resta valido anche se cancellato logicamente nel frattempo: non
+        // deve bloccare un aggiornamento (es. chiudere lo stato) che non lo riguarda. Si valida solo
+        // alla creazione o quando il cliente cambia davvero.
+        if (existing.map(Commessa::getCustomerId).map(c -> !c.equals(customerId)).orElse(true)) {
+            requireValidCustomer(customerId, tenantId);
+        }
         String nome = input.nome().trim();
         String indirizzo = input.indirizzo() == null || input.indirizzo().isBlank() ? null : input.indirizzo().trim();
-        CommessaStato stato = CommessaStato.valueOf(input.stato().toUpperCase(java.util.Locale.ROOT));
-        Commessa commessa = commesse.findByIdAndTenantId(id, tenantId)
-                .map(existing -> {
-                    existing.update(customerId, nome, indirizzo, stato, actorUserId, clock.instant());
-                    return existing;
+        CommessaStato stato = CommessaStato.valueOf(input.stato().toUpperCase(Locale.ROOT));
+        Commessa commessa = existing
+                .map(c -> {
+                    c.update(customerId, nome, indirizzo, stato, actorUserId, clock.instant());
+                    return c;
                 })
                 .orElseGet(() -> commesse.save(
                         new Commessa(id, tenantId, customerId, nome, indirizzo, stato, actorUserId)));
@@ -64,11 +73,10 @@ public class CommessaService {
     }
 
     /** Difesa in profondità: il cliente deve essere un'anagrafica attiva dello stesso tenant. */
-    private UUID requireValidCustomer(UUID customerId, UUID tenantId) {
+    private void requireValidCustomer(UUID customerId, UUID tenantId) {
         boolean active = customers.findByIdAndTenantId(customerId, tenantId).map(c -> !c.isDeleted()).orElse(false);
         if (!active) {
             throw new UnknownCustomerException("Cliente non valido: " + customerId);
         }
-        return customerId;
     }
 }

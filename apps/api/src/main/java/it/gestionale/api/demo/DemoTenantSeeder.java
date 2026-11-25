@@ -96,10 +96,9 @@ public class DemoTenantSeeder implements ApplicationRunner {
             customers.deleteByTenantId(DEMO_TENANT_ID);
             resources.deleteByTenantId(DEMO_TENANT_ID);
             licenses.deleteByTenantId(DEMO_TENANT_ID);
+            // Le repository condividono la stessa sessione JPA: un solo flush scrive tutte le
+            // cancellazioni pendenti, qualunque repository lo chiami.
             commesse.flush();
-            customers.flush();
-            resources.flush();
-            licenses.flush();
             insertSampleData();
             log.info("Tenant demo ripristinato");
         }));
@@ -109,21 +108,23 @@ public class DemoTenantSeeder implements ApplicationRunner {
         Instant now = clock.instant();
         licenses.save(new License(UUID.randomUUID(), DEMO_TENANT_ID, "demo", 5,
                 Set.of(Features.AI_ASSISTANT), 50, now, null));
-        // createdBy null: i dati di esempio non li ha scritti un utente.
-        Customer rossi = customers.save(
-                new Customer(UUID.randomUUID(), DEMO_TENANT_ID, "Rossi S.r.l.", "info@rossi.example", null));
+        // createdBy null: i dati di esempio non li ha scritti un utente. Gli id sono generati qui
+        // (come farebbe il client vero) e riusati subito sotto: non serve un save intermedio solo
+        // per rileggerli, un unico saveAll per tabella basta.
+        UUID rossiId = UUID.randomUUID();
+        UUID capoId = UUID.randomUUID();
         customers.saveAll(List.of(
+                new Customer(rossiId, DEMO_TENANT_ID, "Rossi S.r.l.", "info@rossi.example", null),
                 new Customer(UUID.randomUUID(), DEMO_TENANT_ID, "Bianchi & Figli", "amministrazione@bianchi.example", null),
                 new Customer(UUID.randomUUID(), DEMO_TENANT_ID, "Verdi S.p.A.", null, null)));
-        Resource capo = resources.save(
-                new Resource(UUID.randomUUID(), DEMO_TENANT_ID, "Luca", "Ferrari", null, null, null));
-        resources.save(new Resource(UUID.randomUUID(), DEMO_TENANT_ID, "Marco", "Bruno", null, capo.getId(), null));
-        // Scrive subito tenant, licenza, clienti e risorse: la commessa (sotto) e la notifica (JDBC) li referenziano.
-        customers.flush();
-        resources.flush();
-        commesse.save(new Commessa(UUID.randomUUID(), DEMO_TENANT_ID, rossi.getId(),
-                "Ristrutturazione tetto - Via Roma 12", "Via Roma 12, Tivoli (RM)", CommessaStato.IN_CORSO, null));
+        resources.saveAll(List.of(
+                new Resource(capoId, DEMO_TENANT_ID, "Luca", "Ferrari", null, null, null),
+                new Resource(UUID.randomUUID(), DEMO_TENANT_ID, "Marco", "Bruno", null, capoId, null)));
+        // Scrive subito clienti e risorse: la commessa (FK vera verso customers) li referenzia, e le
+        // repository condividono la stessa sessione JPA, quindi un solo flush basta.
         commesse.flush();
+        commesse.save(new Commessa(UUID.randomUUID(), DEMO_TENANT_ID, rossiId,
+                "Ristrutturazione tetto - Via Roma 12", "Via Roma 12, Tivoli (RM)", CommessaStato.IN_CORSO, null));
         // Comunicazione con presa visione a tutta l'azienda: chi accede dopo la riceve comunque.
         notifications.send(new NewNotification(UUID.randomUUID(), NewNotification.ANNOUNCEMENT, "announcement",
                 "Benvenuto in Civil Beefy",
