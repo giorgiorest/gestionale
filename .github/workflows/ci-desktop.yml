@@ -24,6 +24,15 @@ jobs:
   windows:
     runs-on: windows-latest
     steps:
+      # core.autocrlf del runner Windows normalizza i fine riga durante il checkout: deve essere
+      # disattivato PRIMA del checkout (agisce lì, non dopo), altrimenti un cambio dell'immagine
+      # del runner potrebbe silenziosamente cambiare i byte estratti a parità di contenuto Git, e
+      # con essi la chiave di cache sotto (nessun rischio: solo una ricompilazione non necessaria).
+      - run: git config --global core.autocrlf false
+      # Deve restare subito dopo: la chiave sotto si basa sull'hash dei file appena estratti da
+      # git, non su quello che una build potrebbe scrivere (node_modules, target/, output di
+      # Tauri) dentro apps/web/** o apps/desktop/**. Uno step che scrive lì prima di questo
+      # invaliderebbe silenziosamente la garanzia "decide il contenuto, non il commit" di ADR 0004.
       - uses: actions/checkout@v7
       - id: cache
         uses: actions/cache@v4

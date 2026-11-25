@@ -38,13 +38,35 @@ jobs:
   apk:
     runs-on: ubuntu-latest
     steps:
+      # Deve restare il primo step dopo il checkout: la chiave sotto si basa sull'hash dei file
+      # appena estratti da git, non su quello che una build potrebbe scrivere (node_modules,
+      # target/, output di Gradle) dentro apps/web/** o apps/desktop/**. Uno step che scrive lì
+      # prima di questo invaliderebbe silenziosamente la garanzia "decide il contenuto, non il
+      # commit" di ADR 0004.
       - uses: actions/checkout@v7
+
+      # Impronta dei segreti di firma (non i segreti stessi: solo il loro hash) da includere nella
+      # chiave di cache. Senza questo, ruotare la chiave di firma (es. dopo una compromissione)
+      # senza toccare apps/web o apps/desktop lascerebbe la cache valida: l'APK già firmato con la
+      # chiave VECCHIA verrebbe ripubblicato, perché "Chiave di firma" e "Verifica che l'APK sia
+      # firmato" sono anch'essi saltati su cache-hit, e apksigner verify controlla solo la
+      # coerenza interna dell'APK, non che corrisponda ai segreti attuali.
+      - name: Impronta dei segreti di firma
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$ANDROID_KEYSTORE_BASE64$ANDROID_KEYSTORE_PASSWORD$ANDROID_KEY_ALIAS$ANDROID_KEY_PASSWORD" \
+            | sha256sum | cut -d ' ' -f1 > android-signing-fingerprint.txt
 
       - id: cache
         uses: actions/cache@v4
         with:
           path: apps/desktop/src-tauri/gen/android/app/build/outputs/apk/**/release/*.apk
-          key: android-apk-${{ hashFiles('apps/web/**', 'apps/desktop/**', '.github/workflows/android.yml') }}
+          key: android-apk-${{ hashFiles('apps/web/**', 'apps/desktop/**', '.github/workflows/android.yml', 'android-signing-fingerprint.txt') }}
 
       # Java 21 come apps/api (ci-api.yml): è la versione con cui girano Gradle 9 e il
       # plugin Android generato da Tauri.
@@ -188,7 +210,10 @@ jobs:
           path: apps/desktop/src-tauri/gen/android/app/build/outputs/apk/**/release/*.apk
           if-no-files-found: error
 
-      # La chiave non deve sopravvivere al job nemmeno sui runner self-hosted.
+      # La chiave non deve sopravvivere al job nemmeno sui runner self-hosted. L'impronta non è
+      # un segreto (è un hash, non invertibile), ma non ha motivo di restare in giro.
       - name: Rimuovi la chiave di firma
         if: always()
-        run: rm -f apps/desktop/src-tauri/gen/android/release.keystore apps/desktop/src-tauri/gen/android/key.properties
+        run: |
+          rm -f apps/desktop/src-tauri/gen/android/release.keystore apps/desktop/src-tauri/gen/android/key.properties
+          rm -f android-signing-fingerprint.txt
