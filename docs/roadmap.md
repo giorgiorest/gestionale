@@ -79,7 +79,7 @@ debito da pagare moltiplicato per il numero di entità.
 | PR | Contenuto | Migr. | Stato |
 |----|-----------|-------|-------|
 | 3.1 | Commesse/cantieri: modello, stati, anagrafica, collegamento al cliente | V8 | ✅ |
-| 3.2 | Rapportino giornaliero lato backend: ore per persona, materiali, note, allegati — la testata (data, meteo, note, stato) è già costruita in GitHub [#49](https://github.com/giorgiorest/gestionale/issues/49) (`DailyReport`); resta ore/materiali/allegati | da verificare | 🟨 |
+| 3.2 | Rapportino giornaliero lato backend: ore per persona, materiali, note, allegati — la testata è già costruita in GitHub [#49](https://github.com/giorgiorest/gestionale/issues/49) (`DailyReport`), le righe di ore in [#50](https://github.com/giorgiorest/gestionale/issues/50) (`WorkEntry`); resta materiali/allegati | V12 | 🟨 |
 | 3.3 | Rapportino sul telefono: interfaccia per schermo piccolo, compilazione offline, foto | — | ⬜ |
 | 3.4 | Firma grafometrica sul rapportino (canvas, immagine allegata, impronta e orario) | — | ⬜ |
 | 3.5 | Riepiloghi: ore per commessa, per persona, per periodo; export | — | ⬜ |

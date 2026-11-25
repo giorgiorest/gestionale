@@ -42,6 +42,8 @@ export const PERMISSION_LABELS: Record<string, string> = {
   'work-activities:write': 'Creare e modificare le lavorazioni delle commesse',
   'daily-reports:read': 'Consultare i rapportini giornalieri',
   'daily-reports:write': 'Creare e modificare i rapportini giornalieri',
+  'work-entries:read': 'Consultare le ore registrate nei rapportini',
+  'work-entries:write': 'Registrare e modificare le ore nei rapportini',
 };
 
 /**

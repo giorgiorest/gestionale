@@ -119,7 +119,8 @@ Dettagli e motivazioni (anche per la rivendita): [ADR 0003](decisioni/0003-ident
   backend li traduce in permessi (`customers:read`, `customers:write`, `resources:read`,
   `resources:write`, `commesse:read`, `commesse:write`, `resource-assignments:read`,
   `resource-assignments:write`, `work-activities:read`, `work-activities:write`,
-  `daily-reports:read`, `daily-reports:write`, `assistant:use`, `users:manage`) controllati con
+  `daily-reports:read`, `daily-reports:write`, `work-entries:read`, `work-entries:write`,
+  `assistant:use`, `users:manage`) controllati con
   `@PreAuthorize`. `GET /api/me` restituisce profilo, tenant, ruoli
   e permessi.
 - Accesso a una funzione = **ruolo** dell'utente (permesso) **e** **piano** del tenant (entitlement).

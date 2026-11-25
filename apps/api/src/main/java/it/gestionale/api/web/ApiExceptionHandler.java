@@ -13,6 +13,7 @@ import it.gestionale.api.resourceassignments.UnknownAssignmentReferenceException
 import it.gestionale.api.resources.UnknownTeamLeadException;
 import it.gestionale.api.tenancy.MissingTenantException;
 import it.gestionale.api.workactivities.UnknownWorkActivityReferenceException;
+import it.gestionale.api.workentries.UnknownWorkEntryReferenceException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
@@ -94,6 +95,11 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(UnknownCommessaReferenceException.class)
     ProblemDetail unknownCommessaReference(UnknownCommessaReferenceException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler(UnknownWorkEntryReferenceException.class)
+    ProblemDetail unknownWorkEntryReference(UnknownWorkEntryReferenceException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 

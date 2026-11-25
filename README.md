@@ -51,6 +51,7 @@ gestionale/
 | `resourceassignments/` | assegnazione di una risorsa a una commessa, con periodo di validità e ruolo *contestuale a quella commessa* (distinto dal ruolo applicativo della persona) |
 | `workactivities/` | lavorazioni di una commessa (es. "Armatura pilastri"), riutilizzate dal rapportino per classificare le ore; `code` univoco per commessa, `parentId` opzionale per la gerarchia (WBS) |
 | `dailyreports/` | testata del rapportino giornaliero (meteo, note, stato); un solo rapportino per commessa/data nell'MVP; questa storia crea/apre/salva solo lo stato `draft` (le transizioni `submit`/`close` sono un incremento successivo) |
+| `workentries/` | righe di ore del rapportino: risorsa, lavorazione (della stessa commessa) e ore/straordinario; il totale è derivato in UI, non salvato; lo snapshot del costo manodopera alla chiusura è un incremento successivo |
 | `notifications/` | notifiche e comunicazioni ai dipendenti, presa visione, rubrica, invio email (`EmailDispatcher`) |
 | `ai/`        | `AiProvider`, `AiTool`, `NoopAiProvider` (503), quota mensile, `POST /api/ai/chat` |
 | `demo/`      | `DemoTenantSeeder` con `reset()` |
@@ -66,8 +67,8 @@ gestionale/
 | `core/entitlements`        | funzionalità del piano, `*appHasFeature`, `featureGuard` |
 | `core/sync`                | outbox: `enqueue`, `flush` (invio al server), `pullChanges` (da fare) |
 | `core/notifications`       | notifiche dell'utente, campanella con contatore |
-| `db/`                      | `LocalDb` (Dexie): `outbox`, `customers`, `resources`, `commesse`, `resourceAssignments`, `workActivities`, `dailyReports`, `syncState` |
-| `features/`                | `auth` (accesso), `server` (app desktop), `home`, `profile`, `customers`, `resources`, `commesse`, `resource-assignments`, `work-activities`, `daily-reports`, `notifications`, `announcements` (comunicazioni), `assistant` |
+| `db/`                      | `LocalDb` (Dexie): `outbox`, `customers`, `resources`, `commesse`, `resourceAssignments`, `workActivities`, `dailyReports`, `workEntries`, `syncState` |
+| `features/`                | `auth` (accesso), `server` (app desktop), `home`, `profile`, `customers`, `resources`, `commesse`, `resource-assignments`, `work-activities`, `daily-reports`, `work-entries`, `notifications`, `announcements` (comunicazioni), `assistant` |
 | `shared/`                  | utilità (UUID v7) |
 
 ## Prerequisiti
@@ -284,11 +285,16 @@ e menu laterale. Scelta e alternative: [ADR 0006](docs/decisioni/0006-interfacci
 | `work-activities:write` — creare e modificare le lavorazioni delle commesse | ✓ | ✓ | | ✓ | | | |
 | `daily-reports:read` — consultare i rapportini giornalieri | ✓ | ✓ | ✓ | ✓ | ✓ | | |
 | `daily-reports:write` — creare e modificare la testata di un rapportino (sempre in bozza) | ✓ | ✓ | | ✓ | | | |
+| `work-entries:read` — consultare le ore registrate nei rapportini | ✓ | ✓ | ✓ | ✓ | ✓ | | |
+| `work-entries:write` — registrare e modificare le ore nei rapportini | ✓ | ✓ | | ✓ | | | |
 
 `operator` e `viewer` hanno anche `resources:read` e `commesse:read` solo per raggiungere la pagina
 e popolare l'elenco da cui si gestiscono le assegnazioni, le lavorazioni e i rapportini (tab
 "Risorse", "Lavorazioni" e "Rapportini" della commessa): senza, i permessi su
-`resource-assignments`, `work-activities` e `daily-reports` sarebbero irraggiungibili dalla UI.
+`resource-assignments`, `work-activities`, `daily-reports` e `work-entries` sarebbero
+irraggiungibili dalla UI. `operaio` non ha ancora `work-entries` (nessuna delle due): il piano lo
+marca "proprie righe", cioè scrittura limitata alle righe della propria risorsa, una scelta di
+prodotto non ancora presa (vedi commento su `Role.OPERAIO`).
 Il piano vorrebbe `caposquadra` anche in scrittura su `daily-reports`, ma limitata alla propria
 squadra: quel controllo non esiste ancora (va incrociato con `resource-assignments`), quindi per
 ora `caposquadra` ha solo lettura, non la scrittura piena di `capocantiere` (vedi `Role.CAPOSQUADRA`).

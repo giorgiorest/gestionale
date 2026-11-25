@@ -38,7 +38,7 @@ export class LocalDataService {
     return this.db.outbox.count();
   }
 
-  /** Cancella tutti i dati locali (clienti, risorse, commesse, assegnazioni, lavorazioni, rapportini, notifiche, modifiche in attesa, stato della sincronizzazione). */
+  /** Cancella tutti i dati locali (clienti, risorse, commesse, assegnazioni, lavorazioni, rapportini, righe di ore, notifiche, modifiche in attesa, stato della sincronizzazione). */
   async clear(): Promise<void> {
     const tables = [
       this.db.outbox,
@@ -48,6 +48,7 @@ export class LocalDataService {
       this.db.resourceAssignments,
       this.db.workActivities,
       this.db.dailyReports,
+      this.db.workEntries,
       this.db.notifications,
       this.db.syncState,
       this.db.meta,

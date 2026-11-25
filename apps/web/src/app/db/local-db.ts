@@ -93,6 +93,19 @@ export interface LocalDailyReport {
   updatedAt: string;
 }
 
+/** Copia locale di una riga di ore di un rapportino (stesso schema dell'API). */
+export interface LocalWorkEntry {
+  id: string;
+  tenantId: string;
+  dailyReportId: string;
+  resourceId: string;
+  workActivityId: string;
+  hours: number;
+  overtimeHours: number;
+  notes: string | null;
+  updatedAt: string;
+}
+
 /** Copia locale di una notifica dell'utente (stesso schema di GET /api/notifications). */
 export interface LocalNotification {
   id: string;
@@ -137,6 +150,7 @@ export class LocalDb extends Dexie {
   resourceAssignments!: Table<LocalResourceAssignment, string>;
   workActivities!: Table<LocalWorkActivity, string>;
   dailyReports!: Table<LocalDailyReport, string>;
+  workEntries!: Table<LocalWorkEntry, string>;
 
   // Nota: in Dexie si dichiarano solo chiave primaria e indici; i campi non indicizzati
   // (es. OutboxEntry.lastError) si aggiungono senza nuova versione.
@@ -174,6 +188,10 @@ export class LocalDb extends Dexie {
     // v8: testata del rapportino giornaliero (GitHub #49).
     this.version(8).stores({
       dailyReports: 'id, tenantId, commessaId, date, updatedAt',
+    });
+    // v9: righe di ore del rapportino (GitHub #50).
+    this.version(9).stores({
+      workEntries: 'id, tenantId, dailyReportId, resourceId, workActivityId, updatedAt',
     });
   }
 }
