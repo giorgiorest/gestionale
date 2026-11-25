@@ -47,6 +47,7 @@ gestionale/
 | `licensing/` | `Entitlements`, `EntitlementService`, `LicenseVerifier` (licenze offline Ed25519), `GET /api/entitlements` |
 | `customers/` | anagrafica clienti: `GET /api/customers`, `PUT /api/customers/{id}` e `DELETE /api/customers/{id}` (idempotenti; la cancellazione è logica, [ADR 0018](docs/decisioni/0018-cancellazione-logica.md)) |
 | `resources/` | risorse e squadre (dipendenti che compilano i rapportini): stesso schema di `customers/`, collegate opzionalmente alla rubrica `app_users` (`userId`) e tra loro (`teamLeadId`, "fa parte della squadra di") |
+| `commesse/`  | commesse (cantieri): entità centrale del prodotto ([ADR 0012](docs/decisioni/0012-verticale-edilizia.md)), con cliente (`customerId`, chiave esterna vera) e stato (`pianificata`, `in_corso`, `sospesa`, `conclusa`) |
 | `notifications/` | notifiche e comunicazioni ai dipendenti, presa visione, rubrica, invio email (`EmailDispatcher`) |
 | `ai/`        | `AiProvider`, `AiTool`, `NoopAiProvider` (503), quota mensile, `POST /api/ai/chat` |
 | `demo/`      | `DemoTenantSeeder` con `reset()` |
@@ -62,8 +63,8 @@ gestionale/
 | `core/entitlements`        | funzionalità del piano, `*appHasFeature`, `featureGuard` |
 | `core/sync`                | outbox: `enqueue`, `flush` (invio al server), `pullChanges` (da fare) |
 | `core/notifications`       | notifiche dell'utente, campanella con contatore |
-| `db/`                      | `LocalDb` (Dexie): `outbox`, `customers`, `resources`, `syncState` |
-| `features/`                | `auth` (accesso), `server` (app desktop), `home`, `profile`, `customers`, `resources`, `notifications`, `announcements` (comunicazioni), `assistant` |
+| `db/`                      | `LocalDb` (Dexie): `outbox`, `customers`, `resources`, `commesse`, `syncState` |
+| `features/`                | `auth` (accesso), `server` (app desktop), `home`, `profile`, `customers`, `resources`, `commesse`, `notifications`, `announcements` (comunicazioni), `assistant` |
 | `shared/`                  | utilità (UUID v7) |
 
 ## Prerequisiti
@@ -272,6 +273,8 @@ e menu laterale. Scelta e alternative: [ADR 0006](docs/decisioni/0006-interfacci
 | `users:manage` — gestire gli utenti (area da realizzare) | ✓ | | | | | | |
 | `resources:read` — consultare le risorse e le squadre | ✓ | | | ✓ | ✓ | ✓ | ✓ |
 | `resources:write` — creare, modificare e cancellare le risorse | ✓ | | | ✓ | | | ✓ |
+| `commesse:read` — consultare le commesse | ✓ | | | ✓ | ✓ | ✓ | ✓ |
+| `commesse:write` — creare, modificare e cancellare le commesse | ✓ | | | | | | ✓ |
 
 I ruoli di cantiere sono scaffolding (`docs/roadmap-alex.md`): i permessi sopra sono quelli già
 costruiti; le altre funzioni di cantiere li aggiungeranno via via.

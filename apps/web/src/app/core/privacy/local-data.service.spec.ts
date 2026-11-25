@@ -23,6 +23,7 @@ function fakeDb() {
     outbox: fakeTable(),
     customers: fakeTable(),
     resources: fakeTable(),
+    commesse: fakeTable(),
     notifications: fakeTable(),
     syncState: fakeTable(),
     meta: fakeTable(),

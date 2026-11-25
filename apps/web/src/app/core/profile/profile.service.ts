@@ -34,6 +34,8 @@ export const PERMISSION_LABELS: Record<string, string> = {
   'users:manage': 'Gestire gli utenti',
   'resources:read': 'Consultare le risorse',
   'resources:write': 'Creare e modificare le risorse',
+  'commesse:read': 'Consultare le commesse',
+  'commesse:write': 'Creare e modificare le commesse',
 };
 
 /**

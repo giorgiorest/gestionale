@@ -72,7 +72,7 @@ debito da pagare moltiplicato per il numero di entità.
 
 | PR | Contenuto | Migr. | Stato |
 |----|-----------|-------|-------|
-| 3.1 | Commesse/cantieri: modello, stati, anagrafica, collegamento al cliente | V12 | ⬜ |
+| 3.1 | Commesse/cantieri: modello, stati, anagrafica, collegamento al cliente | V8 | ✅ |
 | 3.2 | Rapportino giornaliero lato backend: ore per persona, materiali, note, allegati | V13 | ⬜ |
 | 3.3 | Rapportino sul telefono: interfaccia per schermo piccolo, compilazione offline, foto | — | ⬜ |
 | 3.4 | Firma grafometrica sul rapportino (canvas, immagine allegata, impronta e orario) | — | ⬜ |

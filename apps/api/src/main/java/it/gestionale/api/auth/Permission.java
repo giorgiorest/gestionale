@@ -11,7 +11,9 @@ public enum Permission {
     NOTIFICATIONS_SEND("notifications:send"),
     USERS_MANAGE("users:manage"),
     RESOURCES_READ("resources:read"),
-    RESOURCES_WRITE("resources:write");
+    RESOURCES_WRITE("resources:write"),
+    COMMESSE_READ("commesse:read"),
+    COMMESSE_WRITE("commesse:write");
 
     private final String code;
 
