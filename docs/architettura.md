@@ -117,8 +117,9 @@ Dettagli e motivazioni (anche per la rivendita): [ADR 0003](decisioni/0003-ident
 - **Profilazione**: in Keycloak si assegnano ruoli d'azienda (`admin`, `operator`, `viewer`) e di
   cantiere (`capocantiere`, `caposquadra`, `operaio`, `amministrativo`, `docs/roadmap-alex.md`); il
   backend li traduce in permessi (`customers:read`, `customers:write`, `resources:read`,
-  `resources:write`, `commesse:read`, `commesse:write`, `assistant:use`, `users:manage`) controllati
-  con `@PreAuthorize`. `GET /api/me` restituisce profilo, tenant, ruoli e permessi.
+  `resources:write`, `commesse:read`, `commesse:write`, `resource-assignments:read`,
+  `resource-assignments:write`, `assistant:use`, `users:manage`) controllati con `@PreAuthorize`.
+  `GET /api/me` restituisce profilo, tenant, ruoli e permessi.
 - Accesso a una funzione = **ruolo** dell'utente (permesso) **e** **piano** del tenant (entitlement).
 - L'attributo `tenant_id` lo modificano solo gli amministratori di Keycloak.
 

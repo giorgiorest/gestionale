@@ -36,6 +36,8 @@ export const PERMISSION_LABELS: Record<string, string> = {
   'resources:write': 'Creare e modificare le risorse',
   'commesse:read': 'Consultare le commesse',
   'commesse:write': 'Creare e modificare le commesse',
+  'resource-assignments:read': 'Consultare le assegnazioni di risorse alle commesse',
+  'resource-assignments:write': 'Assegnare e rimuovere risorse dalle commesse',
 };
 
 /**

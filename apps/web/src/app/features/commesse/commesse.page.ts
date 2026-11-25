@@ -15,6 +15,7 @@ import { ProfileService } from '../../core/profile/profile.service';
 import { SyncService } from '../../core/sync/sync.service';
 import { LocalCommessa } from '../../db/local-db';
 import { openConfirm } from '../../shared/confirm-dialog';
+import { ResourceAssignmentsDialog } from '../resource-assignments/resource-assignments-dialog';
 import { COMMESSA_STATI, CommesseService } from './commesse.service';
 
 /** Commesse (cantieri): elenco con stato e cliente, inserimento rapido. */
@@ -99,6 +100,17 @@ import { COMMESSA_STATI, CommesseService } from './commesse.service';
                 <button
                   mat-icon-button
                   type="button"
+                  *appHasPermission="'resource-assignments:read'"
+                  aria-label="Risorse della commessa"
+                  matTooltip="Risorse"
+                  (click)="openResources(c)"
+                >
+                  <mat-icon>groups</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
+                  *appHasPermission="'commesse:write'"
                   aria-label="Cancella la commessa"
                   matTooltip="Cancella"
                   [disabled]="removing() === c.id"
@@ -162,7 +174,9 @@ export class CommessePage {
   readonly removing = signal<string | null>(null);
   readonly filter = signal('');
   readonly columns = computed(() =>
-    this.profile.hasPermission('commesse:write') ? ['nome', 'customer', 'stato', 'actions'] : ['nome', 'customer', 'stato'],
+    this.profile.hasPermission('commesse:write') || this.profile.hasPermission('resource-assignments:read')
+      ? ['nome', 'customer', 'stato', 'actions']
+      : ['nome', 'customer', 'stato'],
   );
   readonly rows = computed(() => {
     const q = this.filter().trim().toLowerCase();
@@ -182,6 +196,13 @@ export class CommessePage {
 
   customerName(customerId: string): string {
     return this.customersById().get(customerId)?.name ?? 'Cliente non trovato';
+  }
+
+  openResources(commessa: LocalCommessa): void {
+    this.dialog.open(ResourceAssignmentsDialog, {
+      data: { commessaId: commessa.id, commessaNome: commessa.nome },
+      width: '720px',
+    });
   }
 
   statoLabel(stato: string): string {

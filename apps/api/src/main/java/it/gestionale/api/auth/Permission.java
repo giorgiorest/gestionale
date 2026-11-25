@@ -13,7 +13,9 @@ public enum Permission {
     RESOURCES_READ("resources:read"),
     RESOURCES_WRITE("resources:write"),
     COMMESSE_READ("commesse:read"),
-    COMMESSE_WRITE("commesse:write");
+    COMMESSE_WRITE("commesse:write"),
+    RESOURCE_ASSIGNMENTS_READ("resource-assignments:read"),
+    RESOURCE_ASSIGNMENTS_WRITE("resource-assignments:write");
 
     private final String code;
 

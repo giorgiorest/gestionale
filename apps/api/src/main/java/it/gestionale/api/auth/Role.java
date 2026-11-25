@@ -12,10 +12,18 @@ import java.util.Set;
 public enum Role {
     /** Amministratore del tenant: tutte le funzioni. È anche il ruolo di manager/proprietà dell'azienda. */
     ADMIN("admin", EnumSet.allOf(Permission.class)),
-    /** Operatore: lavora sui dati e usa l'assistente. */
-    OPERATOR("operator", EnumSet.of(Permission.CUSTOMERS_READ, Permission.CUSTOMERS_WRITE, Permission.ASSISTANT_USE)),
-    /** Consultazione: sola lettura. */
-    VIEWER("viewer", EnumSet.of(Permission.CUSTOMERS_READ)),
+    /**
+     * Operatore: lavora sui dati e usa l'assistente. {@code commesse:read} e {@code resources:read}
+     * sono qui solo perché senza vedere le commesse e le risorse esistenti, il permesso su
+     * {@code resource-assignments} sarebbe irraggiungibile dalla UI (tab "Risorse" della commessa):
+     * non è la pagina delle risorse o delle commesse a essere concessa, solo la loro lettura.
+     */
+    OPERATOR("operator", EnumSet.of(Permission.CUSTOMERS_READ, Permission.CUSTOMERS_WRITE, Permission.ASSISTANT_USE,
+            Permission.RESOURCES_READ, Permission.COMMESSE_READ, Permission.RESOURCE_ASSIGNMENTS_READ,
+            Permission.RESOURCE_ASSIGNMENTS_WRITE)),
+    /** Consultazione: sola lettura. {@code resources:read}/{@code commesse:read} per lo stesso motivo di {@code OPERATOR}. */
+    VIEWER("viewer", EnumSet.of(Permission.CUSTOMERS_READ, Permission.RESOURCES_READ, Permission.COMMESSE_READ,
+            Permission.RESOURCE_ASSIGNMENTS_READ)),
 
     // Ruoli di cantiere (docs/roadmap-alex.md): ogni PR che introduce una funzione di cantiere
     // aggiunge qui i Permission giusti ai ruoli giusti.
@@ -24,11 +32,14 @@ public enum Role {
      * personale e la propria commessa (anche lo stato: è lui a saperla in corso o conclusa).
      */
     CAPOCANTIERE("capocantiere", EnumSet.of(Permission.RESOURCES_READ, Permission.RESOURCES_WRITE,
-            Permission.COMMESSE_READ, Permission.COMMESSE_WRITE)),
+            Permission.COMMESSE_READ, Permission.COMMESSE_WRITE, Permission.RESOURCE_ASSIGNMENTS_READ,
+            Permission.RESOURCE_ASSIGNMENTS_WRITE)),
     /** Caposquadra: coordina la propria squadra sul cantiere. */
-    CAPOSQUADRA("caposquadra", EnumSet.of(Permission.RESOURCES_READ, Permission.COMMESSE_READ)),
+    CAPOSQUADRA("caposquadra", EnumSet.of(Permission.RESOURCES_READ, Permission.COMMESSE_READ,
+            Permission.RESOURCE_ASSIGNMENTS_READ)),
     /** Operaio: lavora sul cantiere (ore, rapportini). */
-    OPERAIO("operaio", EnumSet.of(Permission.RESOURCES_READ, Permission.COMMESSE_READ)),
+    OPERAIO("operaio", EnumSet.of(Permission.RESOURCES_READ, Permission.COMMESSE_READ,
+            Permission.RESOURCE_ASSIGNMENTS_READ)),
     /** Amministrativo: personale d'ufficio con accesso limitato (materiali, personale, attrezzature, fornitori, archivio), mai a rapportini, contabilità o pianificazione. */
     AMMINISTRATIVO("amministrativo", EnumSet.of(Permission.RESOURCES_READ, Permission.RESOURCES_WRITE,
             Permission.COMMESSE_READ, Permission.COMMESSE_WRITE));

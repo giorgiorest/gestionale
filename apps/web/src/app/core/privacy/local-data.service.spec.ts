@@ -24,6 +24,7 @@ function fakeDb() {
     customers: fakeTable(),
     resources: fakeTable(),
     commesse: fakeTable(),
+    resourceAssignments: fakeTable(),
     notifications: fakeTable(),
     syncState: fakeTable(),
     meta: fakeTable(),

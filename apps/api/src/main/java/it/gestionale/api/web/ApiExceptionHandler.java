@@ -7,6 +7,7 @@ import it.gestionale.api.licensing.FeatureNotEnabledException;
 import it.gestionale.api.licensing.InvalidLicenseException;
 import it.gestionale.api.notifications.NotificationNotFoundException;
 import it.gestionale.api.notifications.UnknownRecipientException;
+import it.gestionale.api.resourceassignments.UnknownAssignmentReferenceException;
 import it.gestionale.api.resources.UnknownTeamLeadException;
 import it.gestionale.api.tenancy.MissingTenantException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -65,6 +66,11 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(UnknownCustomerException.class)
     ProblemDetail unknownCustomer(UnknownCustomerException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler(UnknownAssignmentReferenceException.class)
+    ProblemDetail unknownAssignmentReference(UnknownAssignmentReferenceException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
