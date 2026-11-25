@@ -21,7 +21,9 @@ public enum Permission {
     DAILY_REPORTS_READ("daily-reports:read"),
     DAILY_REPORTS_WRITE("daily-reports:write"),
     WORK_ENTRIES_READ("work-entries:read"),
-    WORK_ENTRIES_WRITE("work-entries:write");
+    WORK_ENTRIES_WRITE("work-entries:write"),
+    LABOR_COST_READ("labor-cost:read"),
+    LABOR_COST_WRITE("labor-cost:write");
 
     private final String code;
 

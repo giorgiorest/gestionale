@@ -43,6 +43,23 @@ public class ResourceController {
     }
 
     /**
+     * Tariffa oraria base (#53): permesso dedicato {@code labor-cost:read/write}, non
+     * {@code resources:read/write} — vedi ADR 0021.
+     */
+    @GetMapping("/{id}/labor-cost")
+    @PreAuthorize("hasAuthority('labor-cost:read')")
+    public ResourceLaborCostDto laborCost(@PathVariable UUID id) {
+        return service.getLaborCost(id);
+    }
+
+    @PutMapping("/{id}/labor-cost")
+    @PreAuthorize("hasAuthority('labor-cost:write')")
+    public ResourceLaborCostDto updateLaborCost(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
+                                                @Valid @RequestBody ResourceLaborCostDto.Input input) {
+        return service.updateLaborCost(id, input, jwt.getSubject());
+    }
+
+    /**
      * Cancellazione logica, idempotente: risponde 204 anche se la risorsa non esiste o era già
      * cancellata, così una voce della outbox non resta bloccata in coda per sempre.
      */

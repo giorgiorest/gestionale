@@ -14,6 +14,7 @@ import it.gestionale.api.dailyreports.DailyReport;
 import it.gestionale.api.dailyreports.DailyReportRepository;
 import it.gestionale.api.resourceassignments.ResourceAssignment;
 import it.gestionale.api.resourceassignments.ResourceAssignmentRepository;
+import it.gestionale.api.resources.Resource;
 import it.gestionale.api.resources.ResourceRepository;
 import it.gestionale.api.tenancy.TenantContext;
 import it.gestionale.api.workactivities.WorkActivityRepository;
@@ -125,15 +126,18 @@ public class WorkEntryService {
      * Snapshot del costo manodopera delle righe attive del rapportino, chiamato da
      * {@code DailyReportService.close()} nella stessa transazione della chiusura (#51): se quella
      * transazione va in rollback, anche questi inserimenti lo fanno. La tariffa oraria viene
-     * dall'assegnazione valida della risorsa sulla commessa/data del rapportino (la stessa che
-     * {@link #requireValidAssignment} ha già validato quando le righe sono state create); se
-     * l'assegnazione non ha {@code hourlyCostOverride} — e su {@code Resource} non esiste ancora
-     * una tariffa standard di fallback — il costo di quella riga resta sconosciuto (NULL), non
-     * zero: è una scelta di prodotto non ancora presa, non va inventata qui. Lo straordinario usa
-     * la stessa tariffa delle ore normali: non esiste ancora una maggiorazione definita.
+     * prima dall'assegnazione valida della risorsa sulla commessa/data del rapportino (la stessa
+     * che {@link #requireValidAssignment} ha già validato quando le righe sono state create); se
+     * l'assegnazione non ha {@code hourlyCostOverride}, si ricade sulla tariffa oraria base della
+     * risorsa ({@code Resource.standardHourlyCost}, #53). Il costo di quella riga resta sconosciuto
+     * (NULL), non zero, solo se **nessuna delle due** esiste. Il fallback si applica una sola
+     * volta, qui: lo snapshot è immutabile, quindi un cambio successivo della tariffa (override o
+     * base) non lo altera mai — è così che il DoD ("il consuntivo chiuso non cambia se il costo
+     * cambia dopo") è soddisfatto per costruzione. Lo straordinario usa la stessa tariffa delle
+     * ore normali: non esiste ancora una maggiorazione definita.
      *
-     * <p>Le assegnazioni della commessa si leggono in una sola query (non una per riga): un
-     * rapportino con molte righe non deve costare una query per persona.
+     * <p>Le assegnazioni e le risorse della commessa si leggono in una sola query ciascuna (non
+     * una per riga): un rapportino con molte righe non deve costare una query per persona.
      */
     @Transactional
     public void snapshotCostsForClose(DailyReport report) {
@@ -144,21 +148,27 @@ public class WorkEntryService {
                 .findByCommessaIdAndTenantIdAndDeletedAtIsNullOrderByValidFromAsc(report.getCommessaId(), tenantId)
                 .stream().filter(ResourceAssignment::isActive)
                 .collect(Collectors.groupingBy(ResourceAssignment::getResourceId));
+        Map<UUID, Resource> resourcesById = resources
+                .findAllById(activeEntries.stream().map(WorkEntry::getResourceId).distinct().toList())
+                .stream().collect(Collectors.toMap(Resource::getId, r -> r));
         List<WorkEntryCostSnapshot> snapshots = activeEntries.stream()
-                .map(entry -> snapshotFor(report, entry, tenantId, assignmentsByResource))
+                .map(entry -> snapshotFor(report, entry, tenantId, assignmentsByResource, resourcesById))
                 .toList();
         costSnapshots.saveAll(snapshots);
         costSnapshots.flush();
     }
 
     private WorkEntryCostSnapshot snapshotFor(DailyReport report, WorkEntry entry, UUID tenantId,
-            Map<UUID, List<ResourceAssignment>> assignmentsByResource) {
+            Map<UUID, List<ResourceAssignment>> assignmentsByResource, Map<UUID, Resource> resourcesById) {
         LocalDate date = report.getDate();
-        BigDecimal hourlyCost = assignmentsByResource.getOrDefault(entry.getResourceId(), List.of()).stream()
+        BigDecimal assignmentOverride = assignmentsByResource.getOrDefault(entry.getResourceId(), List.of()).stream()
                 .filter(a -> !a.getValidFrom().isAfter(date) && (a.getValidTo() == null || !a.getValidTo().isBefore(date)))
                 .max(Comparator.comparing(ResourceAssignment::getValidFrom))
                 .map(ResourceAssignment::getHourlyCostOverride)
                 .orElse(null);
+        BigDecimal standardCost = Optional.ofNullable(resourcesById.get(entry.getResourceId()))
+                .map(Resource::getStandardHourlyCost).orElse(null);
+        BigDecimal hourlyCost = assignmentOverride != null ? assignmentOverride : standardCost;
         BigDecimal laborCost = hourlyCost == null ? null
                 : entry.getHours().add(entry.getOvertimeHours()).multiply(hourlyCost);
         return new WorkEntryCostSnapshot(UUID.randomUUID(), tenantId, report.getId(), entry.getId(),

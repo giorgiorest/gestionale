@@ -44,6 +44,8 @@ export const PERMISSION_LABELS: Record<string, string> = {
   'daily-reports:write': 'Creare e modificare i rapportini giornalieri',
   'work-entries:read': 'Consultare le ore registrate nei rapportini',
   'work-entries:write': 'Registrare e modificare le ore nei rapportini',
+  'labor-cost:read': 'Consultare il costo orario della manodopera',
+  'labor-cost:write': 'Impostare il costo orario della manodopera',
 };
 
 /**

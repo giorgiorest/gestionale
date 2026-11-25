@@ -7,11 +7,13 @@ import it.gestionale.api.dailyreports.DailyReportNotFoundException;
 import it.gestionale.api.dailyreports.InvalidDailyReportStateException;
 import it.gestionale.api.dailyreports.UnknownCommessaReferenceException;
 import it.gestionale.api.hoursreport.InvalidHoursReportRangeException;
+import it.gestionale.api.laborcostreport.InvalidLaborCostReportRangeException;
 import it.gestionale.api.licensing.FeatureNotEnabledException;
 import it.gestionale.api.licensing.InvalidLicenseException;
 import it.gestionale.api.notifications.NotificationNotFoundException;
 import it.gestionale.api.notifications.UnknownRecipientException;
 import it.gestionale.api.resourceassignments.UnknownAssignmentReferenceException;
+import it.gestionale.api.resources.UnknownResourceException;
 import it.gestionale.api.resources.UnknownTeamLeadException;
 import it.gestionale.api.tenancy.MissingTenantException;
 import it.gestionale.api.workactivities.UnknownWorkActivityReferenceException;
@@ -70,6 +72,11 @@ public class ApiExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
+    @ExceptionHandler(UnknownResourceException.class)
+    ProblemDetail unknownResource(UnknownResourceException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
+    }
+
     @ExceptionHandler(UnknownCustomerException.class)
     ProblemDetail unknownCustomer(UnknownCustomerException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
@@ -113,6 +120,11 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(InvalidHoursReportRangeException.class)
     ProblemDetail invalidHoursReportRange(InvalidHoursReportRangeException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidLaborCostReportRangeException.class)
+    ProblemDetail invalidLaborCostReportRange(InvalidLaborCostReportRangeException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 

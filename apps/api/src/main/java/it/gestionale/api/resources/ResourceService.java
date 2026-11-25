@@ -64,6 +64,31 @@ public class ResourceService {
         resources.flush();
     }
 
+    /** Tariffa oraria base della risorsa (#53), dietro il permesso dedicato {@code labor-cost:read}. */
+    @Transactional(readOnly = true)
+    public ResourceLaborCostDto getLaborCost(UUID id) {
+        return ResourceLaborCostDto.from(requireActiveResource(id));
+    }
+
+    /**
+     * Imposta la tariffa oraria base (#53), dietro il permesso dedicato {@code labor-cost:write}.
+     * Non idempotente in senso outbox (non è un'entità sincronizzata dal client): un id
+     * inesistente o di un altro tenant è un errore (404), non un no-op.
+     */
+    @Transactional
+    public ResourceLaborCostDto updateLaborCost(UUID id, ResourceLaborCostDto.Input input, String actorUserId) {
+        Resource resource = requireActiveResource(id);
+        resource.updateStandardHourlyCost(input.standardHourlyCost(), actorUserId, clock.instant());
+        resources.flush();
+        return ResourceLaborCostDto.from(resource);
+    }
+
+    private Resource requireActiveResource(UUID id) {
+        return resources.findByIdAndTenantId(id, TenantContext.require())
+                .filter(r -> !r.isDeleted())
+                .orElseThrow(() -> new UnknownResourceException("Risorsa non valida: " + id));
+    }
+
     /**
      * Le squadre di cantiere sono a un solo livello (capo e membri, mai catene): il capo squadra deve
      * essere una risorsa attiva dello stesso tenant, non se stessa, non a sua volta membro di
