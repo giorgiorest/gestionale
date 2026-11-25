@@ -27,8 +27,10 @@ import it.gestionale.api.tenancy.TenantRepository;
 import it.gestionale.api.workactivities.WorkActivity;
 import it.gestionale.api.workactivities.WorkActivityRepository;
 import it.gestionale.api.workactivities.WorkActivityStatus;
+import it.gestionale.api.workentries.WorkEntry;
 import it.gestionale.api.workentries.WorkEntryCostSnapshot;
 import it.gestionale.api.workentries.WorkEntryCostSnapshotRepository;
+import it.gestionale.api.workentries.WorkEntryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,9 +41,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * KPI costo manodopera (#53): legge {@code work_entry_cost_snapshots}, non le righe grezze — gli
- * snapshot sono inseriti direttamente (come già fa {@code HoursReportControllerTest} con le
- * {@code WorkEntry}), senza passare dal workflow submit/close, perché la query non torna a
- * verificare lo stato del rapportino (solo la sua esistenza/periodo/commessa).
+ * snapshot sono inseriti direttamente, senza passare dal workflow submit/close, perché la query
+ * non torna a verificare lo stato del rapportino (solo la sua esistenza/periodo/commessa). Serve
+ * comunque una {@code WorkEntry} reale per ogni snapshot: {@code work_entry_id} è una chiave
+ * esterna vera (V13), a differenza degli altri riferimenti di questo test.
  */
 @AutoConfigureMockMvc
 class LaborCostReportControllerTest extends AbstractIntegrationTest {
@@ -64,6 +67,8 @@ class LaborCostReportControllerTest extends AbstractIntegrationTest {
     WorkActivityRepository activities;
     @Autowired
     DailyReportRepository reports;
+    @Autowired
+    WorkEntryRepository workEntries;
     @Autowired
     WorkEntryCostSnapshotRepository snapshots;
 
@@ -100,19 +105,33 @@ class LaborCostReportControllerTest extends AbstractIntegrationTest {
                     "u-a"));
             reports.save(new DailyReport(reportFeb2, tenantA, commessaA, LocalDate.parse("2026-02-02"), null, null,
                     "u-a"));
+            // Il vincolo di chiave esterna di work_entry_cost_snapshots (V13) richiede una WorkEntry
+            // reale per ogni snapshot: non basta un id a caso come per gli altri riferimenti del test.
+            UUID entryJan5X = UUID.randomUUID();
+            UUID entryJan12X = UUID.randomUUID();
+            UUID entryJan5Y = UUID.randomUUID();
+            UUID entryFeb2X = UUID.randomUUID();
+            workEntries.save(new WorkEntry(entryJan5X, tenantA, reportJan5, resourceA, activityX,
+                    new BigDecimal("8"), BigDecimal.ZERO, null, "u-a"));
+            workEntries.save(new WorkEntry(entryJan12X, tenantA, reportJan12, resourceA, activityX,
+                    new BigDecimal("4"), BigDecimal.ZERO, null, "u-a"));
+            workEntries.save(new WorkEntry(entryJan5Y, tenantA, reportJan5, resourceA, activityY,
+                    new BigDecimal("6"), BigDecimal.ZERO, null, "u-a"));
+            workEntries.save(new WorkEntry(entryFeb2X, tenantA, reportFeb2, resourceA, activityX,
+                    new BigDecimal("5"), BigDecimal.ZERO, null, "u-a"));
             // activityX, 5/1: costo noto (8h a 20.00).
-            snapshots.save(new WorkEntryCostSnapshot(UUID.randomUUID(), tenantA, reportJan5, UUID.randomUUID(),
+            snapshots.save(new WorkEntryCostSnapshot(UUID.randomUUID(), tenantA, reportJan5, entryJan5X,
                     resourceA, activityX, new BigDecimal("8"), BigDecimal.ZERO, new BigDecimal("20.00"),
                     new BigDecimal("160.00")));
             // activityX, 12/1: costo sconosciuto (nessuna tariffa nota per quella riga).
-            snapshots.save(new WorkEntryCostSnapshot(UUID.randomUUID(), tenantA, reportJan12, UUID.randomUUID(),
+            snapshots.save(new WorkEntryCostSnapshot(UUID.randomUUID(), tenantA, reportJan12, entryJan12X,
                     resourceA, activityX, new BigDecimal("4"), BigDecimal.ZERO, null, null));
             // activityY, 5/1: costo noto (6h a 10.00).
-            snapshots.save(new WorkEntryCostSnapshot(UUID.randomUUID(), tenantA, reportJan5, UUID.randomUUID(),
+            snapshots.save(new WorkEntryCostSnapshot(UUID.randomUUID(), tenantA, reportJan5, entryJan5Y,
                     resourceA, activityY, new BigDecimal("6"), BigDecimal.ZERO, new BigDecimal("10.00"),
                     new BigDecimal("60.00")));
             // Fuori dall'intervallo interrogato (febbraio): non deve comparire.
-            snapshots.save(new WorkEntryCostSnapshot(UUID.randomUUID(), tenantA, reportFeb2, UUID.randomUUID(),
+            snapshots.save(new WorkEntryCostSnapshot(UUID.randomUUID(), tenantA, reportFeb2, entryFeb2X,
                     resourceA, activityX, new BigDecimal("5"), BigDecimal.ZERO, new BigDecimal("20.00"),
                     new BigDecimal("100.00")));
         }));
