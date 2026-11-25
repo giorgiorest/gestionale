@@ -16,6 +16,7 @@ import { SyncService } from '../../core/sync/sync.service';
 import { LocalCommessa } from '../../db/local-db';
 import { openConfirm } from '../../shared/confirm-dialog';
 import { ResourceAssignmentsDialog } from '../resource-assignments/resource-assignments-dialog';
+import { WorkActivitiesDialog } from '../work-activities/work-activities-dialog';
 import { COMMESSA_STATI, CommesseService } from './commesse.service';
 
 /** Commesse (cantieri): elenco con stato e cliente, inserimento rapido. */
@@ -110,6 +111,16 @@ import { COMMESSA_STATI, CommesseService } from './commesse.service';
                 <button
                   mat-icon-button
                   type="button"
+                  *appHasPermission="'work-activities:read'"
+                  aria-label="Lavorazioni della commessa"
+                  matTooltip="Lavorazioni"
+                  (click)="openWorkActivities(c)"
+                >
+                  <mat-icon>checklist</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
                   *appHasPermission="'commesse:write'"
                   aria-label="Cancella la commessa"
                   matTooltip="Cancella"
@@ -174,7 +185,9 @@ export class CommessePage {
   readonly removing = signal<string | null>(null);
   readonly filter = signal('');
   readonly columns = computed(() =>
-    this.profile.hasPermission('commesse:write') || this.profile.hasPermission('resource-assignments:read')
+    this.profile.hasPermission('commesse:write') ||
+    this.profile.hasPermission('resource-assignments:read') ||
+    this.profile.hasPermission('work-activities:read')
       ? ['nome', 'customer', 'stato', 'actions']
       : ['nome', 'customer', 'stato'],
   );
@@ -200,6 +213,13 @@ export class CommessePage {
 
   openResources(commessa: LocalCommessa): void {
     this.dialog.open(ResourceAssignmentsDialog, {
+      data: { commessaId: commessa.id, commessaNome: commessa.nome },
+      width: '720px',
+    });
+  }
+
+  openWorkActivities(commessa: LocalCommessa): void {
+    this.dialog.open(WorkActivitiesDialog, {
       data: { commessaId: commessa.id, commessaNome: commessa.nome },
       width: '720px',
     });

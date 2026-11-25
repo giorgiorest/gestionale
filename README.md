@@ -49,6 +49,7 @@ gestionale/
 | `resources/` | risorse e squadre (dipendenti che compilano i rapportini): stesso schema di `customers/`, collegate opzionalmente alla rubrica `app_users` (`userId`) e tra loro (`teamLeadId`, "fa parte della squadra di") |
 | `commesse/`  | commesse (cantieri): entità centrale del prodotto ([ADR 0012](docs/decisioni/0012-verticale-edilizia.md)), con cliente (`customerId`, chiave esterna vera) e stato (`pianificata`, `in_corso`, `sospesa`, `conclusa`) |
 | `resourceassignments/` | assegnazione di una risorsa a una commessa, con periodo di validità e ruolo *contestuale a quella commessa* (distinto dal ruolo applicativo della persona) |
+| `workactivities/` | lavorazioni di una commessa (es. "Armatura pilastri"), riutilizzate dal rapportino per classificare le ore; `code` univoco per commessa, `parentId` opzionale per la gerarchia (WBS) |
 | `notifications/` | notifiche e comunicazioni ai dipendenti, presa visione, rubrica, invio email (`EmailDispatcher`) |
 | `ai/`        | `AiProvider`, `AiTool`, `NoopAiProvider` (503), quota mensile, `POST /api/ai/chat` |
 | `demo/`      | `DemoTenantSeeder` con `reset()` |
@@ -64,8 +65,8 @@ gestionale/
 | `core/entitlements`        | funzionalità del piano, `*appHasFeature`, `featureGuard` |
 | `core/sync`                | outbox: `enqueue`, `flush` (invio al server), `pullChanges` (da fare) |
 | `core/notifications`       | notifiche dell'utente, campanella con contatore |
-| `db/`                      | `LocalDb` (Dexie): `outbox`, `customers`, `resources`, `commesse`, `resourceAssignments`, `syncState` |
-| `features/`                | `auth` (accesso), `server` (app desktop), `home`, `profile`, `customers`, `resources`, `commesse`, `resource-assignments`, `notifications`, `announcements` (comunicazioni), `assistant` |
+| `db/`                      | `LocalDb` (Dexie): `outbox`, `customers`, `resources`, `commesse`, `resourceAssignments`, `workActivities`, `syncState` |
+| `features/`                | `auth` (accesso), `server` (app desktop), `home`, `profile`, `customers`, `resources`, `commesse`, `resource-assignments`, `work-activities`, `notifications`, `announcements` (comunicazioni), `assistant` |
 | `shared/`                  | utilità (UUID v7) |
 
 ## Prerequisiti
@@ -278,10 +279,13 @@ e menu laterale. Scelta e alternative: [ADR 0006](docs/decisioni/0006-interfacci
 | `commesse:write` — creare, modificare e cancellare le commesse | ✓ | | | ✓ | | | ✓ |
 | `resource-assignments:read` — consultare le assegnazioni di risorse alle commesse | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | |
 | `resource-assignments:write` — assegnare e rimuovere risorse dalle commesse | ✓ | ✓ | | ✓ | | | |
+| `work-activities:read` — consultare le lavorazioni delle commesse | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| `work-activities:write` — creare e modificare le lavorazioni delle commesse | ✓ | ✓ | | ✓ | | | |
 
 `operator` e `viewer` hanno anche `resources:read` e `commesse:read` solo per raggiungere la pagina
-e popolare l'elenco da cui si gestiscono le assegnazioni (tab "Risorse" della commessa): senza,
-il permesso su `resource-assignments` sarebbe irraggiungibile dalla UI.
+e popolare l'elenco da cui si gestiscono le assegnazioni e le lavorazioni (tab "Risorse" e
+"Lavorazioni" della commessa): senza, i permessi su `resource-assignments` e `work-activities`
+sarebbero irraggiungibili dalla UI.
 
 I ruoli di cantiere sono scaffolding (`docs/roadmap-alex.md`): i permessi sopra sono quelli già
 costruiti; le altre funzioni di cantiere li aggiungeranno via via.

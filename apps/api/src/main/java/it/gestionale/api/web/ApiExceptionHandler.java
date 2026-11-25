@@ -10,6 +10,7 @@ import it.gestionale.api.notifications.UnknownRecipientException;
 import it.gestionale.api.resourceassignments.UnknownAssignmentReferenceException;
 import it.gestionale.api.resources.UnknownTeamLeadException;
 import it.gestionale.api.tenancy.MissingTenantException;
+import it.gestionale.api.workactivities.UnknownWorkActivityReferenceException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
@@ -71,6 +72,11 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(UnknownAssignmentReferenceException.class)
     ProblemDetail unknownAssignmentReference(UnknownAssignmentReferenceException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler(UnknownWorkActivityReferenceException.class)
+    ProblemDetail unknownWorkActivityReference(UnknownWorkActivityReferenceException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 

@@ -20,10 +20,11 @@ public enum Role {
      */
     OPERATOR("operator", EnumSet.of(Permission.CUSTOMERS_READ, Permission.CUSTOMERS_WRITE, Permission.ASSISTANT_USE,
             Permission.RESOURCES_READ, Permission.COMMESSE_READ, Permission.RESOURCE_ASSIGNMENTS_READ,
-            Permission.RESOURCE_ASSIGNMENTS_WRITE)),
+            Permission.RESOURCE_ASSIGNMENTS_WRITE, Permission.WORK_ACTIVITIES_READ,
+            Permission.WORK_ACTIVITIES_WRITE)),
     /** Consultazione: sola lettura. {@code resources:read}/{@code commesse:read} per lo stesso motivo di {@code OPERATOR}. */
     VIEWER("viewer", EnumSet.of(Permission.CUSTOMERS_READ, Permission.RESOURCES_READ, Permission.COMMESSE_READ,
-            Permission.RESOURCE_ASSIGNMENTS_READ)),
+            Permission.RESOURCE_ASSIGNMENTS_READ, Permission.WORK_ACTIVITIES_READ)),
 
     // Ruoli di cantiere (docs/roadmap-alex.md): ogni PR che introduce una funzione di cantiere
     // aggiunge qui i Permission giusti ai ruoli giusti.
@@ -33,13 +34,14 @@ public enum Role {
      */
     CAPOCANTIERE("capocantiere", EnumSet.of(Permission.RESOURCES_READ, Permission.RESOURCES_WRITE,
             Permission.COMMESSE_READ, Permission.COMMESSE_WRITE, Permission.RESOURCE_ASSIGNMENTS_READ,
-            Permission.RESOURCE_ASSIGNMENTS_WRITE)),
+            Permission.RESOURCE_ASSIGNMENTS_WRITE, Permission.WORK_ACTIVITIES_READ,
+            Permission.WORK_ACTIVITIES_WRITE)),
     /** Caposquadra: coordina la propria squadra sul cantiere. */
     CAPOSQUADRA("caposquadra", EnumSet.of(Permission.RESOURCES_READ, Permission.COMMESSE_READ,
-            Permission.RESOURCE_ASSIGNMENTS_READ)),
+            Permission.RESOURCE_ASSIGNMENTS_READ, Permission.WORK_ACTIVITIES_READ)),
     /** Operaio: lavora sul cantiere (ore, rapportini). */
     OPERAIO("operaio", EnumSet.of(Permission.RESOURCES_READ, Permission.COMMESSE_READ,
-            Permission.RESOURCE_ASSIGNMENTS_READ)),
+            Permission.RESOURCE_ASSIGNMENTS_READ, Permission.WORK_ACTIVITIES_READ)),
     /** Amministrativo: personale d'ufficio con accesso limitato (materiali, personale, attrezzature, fornitori, archivio), mai a rapportini, contabilità o pianificazione. */
     AMMINISTRATIVO("amministrativo", EnumSet.of(Permission.RESOURCES_READ, Permission.RESOURCES_WRITE,
             Permission.COMMESSE_READ, Permission.COMMESSE_WRITE));
