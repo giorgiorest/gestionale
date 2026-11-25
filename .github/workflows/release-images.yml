@@ -28,11 +28,11 @@ permissions:
 
 jobs:
   desktop:
-    if: ${{ false }}
+    if: ${{ vars.BUILD_DESKTOP == 'true' }}
     uses: ./.github/workflows/ci-desktop.yml
 
   android:
-    if: ${{ false }}
+    if: ${{ vars.BUILD_ANDROID == 'true' }}
     uses: ./.github/workflows/android.yml
     # Chiave di firma dell'APK (ANDROID_KEYSTORE_BASE64 e compagni).
     secrets: inherit
