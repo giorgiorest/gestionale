@@ -16,7 +16,6 @@ import { SyncService } from '../../core/sync/sync.service';
 import { LocalCommessa } from '../../db/local-db';
 import { openConfirm } from '../../shared/confirm-dialog';
 import { ResourceAssignmentsDialog } from '../resource-assignments/resource-assignments-dialog';
-import { ResourcesService } from '../resources/resources.service';
 import { COMMESSA_STATI, CommesseService } from './commesse.service';
 
 /** Commesse (cantieri): elenco con stato e cliente, inserimento rapido. */
@@ -168,7 +167,6 @@ import { COMMESSA_STATI, CommesseService } from './commesse.service';
 export class CommessePage {
   readonly service = inject(CommesseService);
   readonly customers = inject(CustomersService);
-  readonly resources = inject(ResourcesService);
   readonly sync = inject(SyncService);
   private readonly profile = inject(ProfileService);
   private readonly dialog = inject(MatDialog);
@@ -194,7 +192,6 @@ export class CommessePage {
   constructor() {
     void this.customers.load();
     void this.service.load();
-    void this.resources.load();
   }
 
   customerName(customerId: string): string {
@@ -203,7 +200,7 @@ export class CommessePage {
 
   openResources(commessa: LocalCommessa): void {
     this.dialog.open(ResourceAssignmentsDialog, {
-      data: { commessaId: commessa.id, commessaNome: commessa.nome, resources: this.resources.resources() },
+      data: { commessaId: commessa.id, commessaNome: commessa.nome },
       width: '720px',
     });
   }

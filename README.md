@@ -272,12 +272,16 @@ e menu laterale. Scelta e alternative: [ADR 0006](docs/decisioni/0006-interfacci
 | `assistant:use` — usare l'assistente (se incluso nel piano) | ✓ | ✓ | | | | | |
 | `notifications:send` — inviare comunicazioni ai dipendenti e vederne la presa visione | ✓ | | | | | | |
 | `users:manage` — gestire gli utenti (area da realizzare) | ✓ | | | | | | |
-| `resources:read` — consultare le risorse e le squadre | ✓ | | | ✓ | ✓ | ✓ | ✓ |
+| `resources:read` — consultare le risorse e le squadre | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `resources:write` — creare, modificare e cancellare le risorse | ✓ | | | ✓ | | | ✓ |
-| `commesse:read` — consultare le commesse | ✓ | | | ✓ | ✓ | ✓ | ✓ |
+| `commesse:read` — consultare le commesse | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `commesse:write` — creare, modificare e cancellare le commesse | ✓ | | | ✓ | | | ✓ |
 | `resource-assignments:read` — consultare le assegnazioni di risorse alle commesse | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | |
 | `resource-assignments:write` — assegnare e rimuovere risorse dalle commesse | ✓ | ✓ | | ✓ | | | |
+
+`operator` e `viewer` hanno anche `resources:read` e `commesse:read` solo per raggiungere la pagina
+e popolare l'elenco da cui si gestiscono le assegnazioni (tab "Risorse" della commessa): senza,
+il permesso su `resource-assignments` sarebbe irraggiungibile dalla UI.
 
 I ruoli di cantiere sono scaffolding (`docs/roadmap-alex.md`): i permessi sopra sono quelli già
 costruiti; le altre funzioni di cantiere li aggiungeranno via via.

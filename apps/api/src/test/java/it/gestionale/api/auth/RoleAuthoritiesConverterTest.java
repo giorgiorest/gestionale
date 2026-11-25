@@ -23,7 +23,8 @@ class RoleAuthoritiesConverterTest {
         var authorities = converter.convert(token(List.of("viewer", "default-roles-gestionale", "offline_access")));
 
         assertThat(authorities).extracting(GrantedAuthority::getAuthority)
-                .containsExactlyInAnyOrder("ROLE_viewer", "customers:read");
+                .containsExactlyInAnyOrder("ROLE_viewer", "customers:read", "resources:read", "commesse:read",
+                        "resource-assignments:read");
     }
 
     @Test

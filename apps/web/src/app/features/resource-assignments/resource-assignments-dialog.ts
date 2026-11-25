@@ -1,21 +1,21 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { HasPermissionDirective } from '../../core/profile/has-permission.directive';
-import { LocalResource } from '../../db/local-db';
+import { openConfirm } from '../../shared/confirm-dialog';
+import { ResourcesService } from '../resources/resources.service';
 import { ResourceAssignmentsService } from './resource-assignments.service';
 
 /** Dati per aprire la gestione delle risorse di una commessa. */
 export interface ResourceAssignmentsDialogData {
   commessaId: string;
   commessaNome: string;
-  resources: LocalResource[];
 }
 
 /**
@@ -42,7 +42,7 @@ export interface ResourceAssignmentsDialogData {
         <mat-form-field appearance="outline" subscriptSizing="dynamic" class="grow">
           <mat-label>Risorsa</mat-label>
           <mat-select name="resourceId" [(ngModel)]="resourceId" required>
-            @for (r of data.resources; track r.id) {
+            @for (r of resources.resources(); track r.id) {
               <mat-option [value]="r.id">{{ r.lastName }} {{ r.firstName }}</mat-option>
             }
           </mat-select>
@@ -128,6 +128,8 @@ export interface ResourceAssignmentsDialogData {
 export class ResourceAssignmentsDialog {
   readonly data = inject<ResourceAssignmentsDialogData>(MAT_DIALOG_DATA);
   readonly service = inject(ResourceAssignmentsService);
+  readonly resources = inject(ResourcesService);
+  private readonly dialog = inject(MatDialog);
   readonly saving = signal(false);
   readonly removing = signal<string | null>(null);
   readonly columns = ['resource', 'role', 'period', 'actions'];
@@ -138,10 +140,11 @@ export class ResourceAssignmentsDialog {
 
   constructor() {
     void this.service.load(this.data.commessaId);
+    void this.resources.load();
   }
 
   resourceName(resourceId: string): string {
-    const r = this.data.resources.find((x) => x.id === resourceId);
+    const r = this.resources.resources().find((x) => x.id === resourceId);
     return r ? `${r.lastName} ${r.firstName}` : 'Risorsa non trovata';
   }
 
@@ -162,6 +165,14 @@ export class ResourceAssignmentsDialog {
   }
 
   async remove(id: string): Promise<void> {
+    const ok = await openConfirm(this.dialog, {
+      title: "Rimuovere l'assegnazione?",
+      message: 'La risorsa non sarà più assegnata a questa commessa. La rimozione viene inviata al server appena è raggiungibile.',
+      confirm: 'Rimuovi',
+    });
+    if (!ok) {
+      return;
+    }
     this.removing.set(id);
     try {
       await this.service.remove(id, this.data.commessaId);
