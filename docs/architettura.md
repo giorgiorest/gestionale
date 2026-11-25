@@ -182,6 +182,13 @@ Dettagli: [ADR 0005](decisioni/0005-notifiche.md).
   e push (Web Push, desktop, mobile).
 - Il processo di invio email lavora per tutti i tenant con `app.worker = 'email-dispatcher'`:
   una policy RLS dedicata gli mostra solo la coda email.
+- Notifiche operative del rapportino (#54): al manager (ruolo `admin`), sempre via
+  `NotificationService.send`. Inviato/chiuso scattano dal workflow (`DailyReportService`); il
+  rapportino mancante (commessa in corso senza rapportino in una data) è un controllo periodico,
+  non un evento — `MissingDailyReportWatchdog`, una volta al giorno a fine giornata lavorativa,
+  configurabile (`gestionale.notifications.missing-daily-report.cron`). Gira per tutti i tenant con
+  `app.worker = 'daily-report-watchdog'` (policy dedicata solo su `tenants`, per elencare le
+  aziende attive): le tabelle di dominio restano filtrate per tenant, un'azienda alla volta.
 
 ## Multi-tenant
 

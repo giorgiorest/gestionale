@@ -9,9 +9,10 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * Configurazione delle notifiche.
  *
  * @param email invio delle notifiche via email
+ * @param missingDailyReport controllo periodico del rapportino mancante (#54)
  */
 @ConfigurationProperties("gestionale.notifications")
-public record NotificationProperties(@DefaultValue Email email) {
+public record NotificationProperties(@DefaultValue Email email, @DefaultValue MissingDailyReport missingDailyReport) {
 
     /**
      * @param enabled     se false le email non vengono accodate
@@ -27,5 +28,9 @@ public record NotificationProperties(@DefaultValue Email email) {
                         @DefaultValue("true") boolean includeBody,
                         @DefaultValue("30s") Duration pollInterval,
                         @DefaultValue("5") int maxAttempts) {
+    }
+
+    /** @param cron quando controllare le commesse in corso senza rapportino (default: ogni giorno alle 19) */
+    public record MissingDailyReport(@DefaultValue("0 0 19 * * *") String cron) {
     }
 }
