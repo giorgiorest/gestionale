@@ -23,6 +23,10 @@ fornitori, commesse, documenti/fatturazione). Le voci qui sotto **presuppongono*
 > sospensioni, varianti, fideiussioni/polizze, casellario fornitori, ordini di servizio,
 > corrispondenza/PEC), diventati la nuova **Fase I** sotto, e una lista in economia collegata al SAL
 > (F.7). Epica Fase I e storie: [#130](https://github.com/giorgiorest/gestionale/issues/130)–[#139](https://github.com/giorgiorest/gestionale/issues/139).
+>
+> **Ordine di lavoro**: [docs/ordine-esecuzione.md](ordine-esecuzione.md) incrocia questo file con
+> `docs/roadmap.md` e il piano tecnico per un ordine consigliato (onde parallelizzabili,
+> dipendenze tra fasi).
 
 - **Commesse/cantieri** (`docs/roadmap.md` 3.1): ogni voce "di cantiere" si aggancia a una commessa.
 - **Fornitori** base (`docs/roadmap.md` 2.2): le voci della Fase E la estendono, non la duplicano.
