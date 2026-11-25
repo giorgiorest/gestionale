@@ -15,9 +15,18 @@ import { ProfileService } from '../../core/profile/profile.service';
 import { SyncService } from '../../core/sync/sync.service';
 import { LocalCommessa } from '../../db/local-db';
 import { openConfirm } from '../../shared/confirm-dialog';
+import { DailyReportsDialog } from '../daily-reports/daily-reports-dialog';
 import { ResourceAssignmentsDialog } from '../resource-assignments/resource-assignments-dialog';
 import { WorkActivitiesDialog } from '../work-activities/work-activities-dialog';
 import { COMMESSA_STATI, CommesseService } from './commesse.service';
+
+/** Permessi che rendono visibile almeno un'azione sulla riga di una commessa. */
+const ROW_ACTION_PERMISSIONS = [
+  'commesse:write',
+  'resource-assignments:read',
+  'work-activities:read',
+  'daily-reports:read',
+] as const;
 
 /** Commesse (cantieri): elenco con stato e cliente, inserimento rapido. */
 @Component({
@@ -121,6 +130,16 @@ import { COMMESSA_STATI, CommesseService } from './commesse.service';
                 <button
                   mat-icon-button
                   type="button"
+                  *appHasPermission="'daily-reports:read'"
+                  aria-label="Rapportini della commessa"
+                  matTooltip="Rapportini"
+                  (click)="openDailyReports(c)"
+                >
+                  <mat-icon>assignment</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
                   *appHasPermission="'commesse:write'"
                   aria-label="Cancella la commessa"
                   matTooltip="Cancella"
@@ -185,9 +204,7 @@ export class CommessePage {
   readonly removing = signal<string | null>(null);
   readonly filter = signal('');
   readonly columns = computed(() =>
-    this.profile.hasPermission('commesse:write') ||
-    this.profile.hasPermission('resource-assignments:read') ||
-    this.profile.hasPermission('work-activities:read')
+    ROW_ACTION_PERMISSIONS.some((p) => this.profile.hasPermission(p))
       ? ['nome', 'customer', 'stato', 'actions']
       : ['nome', 'customer', 'stato'],
   );
@@ -222,6 +239,13 @@ export class CommessePage {
     this.dialog.open(WorkActivitiesDialog, {
       data: { commessaId: commessa.id, commessaNome: commessa.nome },
       width: '720px',
+    });
+  }
+
+  openDailyReports(commessa: LocalCommessa): void {
+    this.dialog.open(DailyReportsDialog, {
+      data: { commessaId: commessa.id, commessaNome: commessa.nome },
+      width: '820px',
     });
   }
 

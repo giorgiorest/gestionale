@@ -50,6 +50,7 @@ gestionale/
 | `commesse/`  | commesse (cantieri): entità centrale del prodotto ([ADR 0012](docs/decisioni/0012-verticale-edilizia.md)), con cliente (`customerId`, chiave esterna vera) e stato (`pianificata`, `in_corso`, `sospesa`, `conclusa`) |
 | `resourceassignments/` | assegnazione di una risorsa a una commessa, con periodo di validità e ruolo *contestuale a quella commessa* (distinto dal ruolo applicativo della persona) |
 | `workactivities/` | lavorazioni di una commessa (es. "Armatura pilastri"), riutilizzate dal rapportino per classificare le ore; `code` univoco per commessa, `parentId` opzionale per la gerarchia (WBS) |
+| `dailyreports/` | testata del rapportino giornaliero (meteo, note, stato); un solo rapportino per commessa/data nell'MVP; questa storia crea/apre/salva solo lo stato `draft` (le transizioni `submit`/`close` sono un incremento successivo) |
 | `notifications/` | notifiche e comunicazioni ai dipendenti, presa visione, rubrica, invio email (`EmailDispatcher`) |
 | `ai/`        | `AiProvider`, `AiTool`, `NoopAiProvider` (503), quota mensile, `POST /api/ai/chat` |
 | `demo/`      | `DemoTenantSeeder` con `reset()` |
@@ -65,8 +66,8 @@ gestionale/
 | `core/entitlements`        | funzionalità del piano, `*appHasFeature`, `featureGuard` |
 | `core/sync`                | outbox: `enqueue`, `flush` (invio al server), `pullChanges` (da fare) |
 | `core/notifications`       | notifiche dell'utente, campanella con contatore |
-| `db/`                      | `LocalDb` (Dexie): `outbox`, `customers`, `resources`, `commesse`, `resourceAssignments`, `workActivities`, `syncState` |
-| `features/`                | `auth` (accesso), `server` (app desktop), `home`, `profile`, `customers`, `resources`, `commesse`, `resource-assignments`, `work-activities`, `notifications`, `announcements` (comunicazioni), `assistant` |
+| `db/`                      | `LocalDb` (Dexie): `outbox`, `customers`, `resources`, `commesse`, `resourceAssignments`, `workActivities`, `dailyReports`, `syncState` |
+| `features/`                | `auth` (accesso), `server` (app desktop), `home`, `profile`, `customers`, `resources`, `commesse`, `resource-assignments`, `work-activities`, `daily-reports`, `notifications`, `announcements` (comunicazioni), `assistant` |
 | `shared/`                  | utilità (UUID v7) |
 
 ## Prerequisiti
@@ -281,11 +282,18 @@ e menu laterale. Scelta e alternative: [ADR 0006](docs/decisioni/0006-interfacci
 | `resource-assignments:write` — assegnare e rimuovere risorse dalle commesse | ✓ | ✓ | | ✓ | | | |
 | `work-activities:read` — consultare le lavorazioni delle commesse | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | |
 | `work-activities:write` — creare e modificare le lavorazioni delle commesse | ✓ | ✓ | | ✓ | | | |
+| `daily-reports:read` — consultare i rapportini giornalieri | ✓ | ✓ | ✓ | ✓ | ✓ | | |
+| `daily-reports:write` — creare e modificare la testata di un rapportino (sempre in bozza) | ✓ | ✓ | | ✓ | | | |
 
 `operator` e `viewer` hanno anche `resources:read` e `commesse:read` solo per raggiungere la pagina
-e popolare l'elenco da cui si gestiscono le assegnazioni e le lavorazioni (tab "Risorse" e
-"Lavorazioni" della commessa): senza, i permessi su `resource-assignments` e `work-activities`
-sarebbero irraggiungibili dalla UI.
+e popolare l'elenco da cui si gestiscono le assegnazioni, le lavorazioni e i rapportini (tab
+"Risorse", "Lavorazioni" e "Rapportini" della commessa): senza, i permessi su
+`resource-assignments`, `work-activities` e `daily-reports` sarebbero irraggiungibili dalla UI.
+Il piano vorrebbe `caposquadra` anche in scrittura su `daily-reports`, ma limitata alla propria
+squadra: quel controllo non esiste ancora (va incrociato con `resource-assignments`), quindi per
+ora `caposquadra` ha solo lettura, non la scrittura piena di `capocantiere` (vedi `Role.CAPOSQUADRA`).
+`caposquadra` ha `daily-reports:write` pieno: il piano lo vorrebbe limitato alla propria squadra,
+ma quella restrizione non è ancora applicata (vedi commento su `Role.CAPOSQUADRA`).
 
 I ruoli di cantiere sono scaffolding (`docs/roadmap-alex.md`): i permessi sopra sono quelli già
 costruiti; le altre funzioni di cantiere li aggiungeranno via via.

@@ -25,6 +25,12 @@ qui prima di cominciare.
 Stato: ⬜ da fare · 🟨 in corso · ✅ fatto · ⏸️ in attesa di una decisione esterna.
 🔐 = passa da `/security-review`. La colonna *Migr.* è il numero Flyway **previsto**: è un
 promemoria contro le collisioni, non una prenotazione ([ADR 0013](decisioni/0013-numerazione-migrazioni.md)).
+[docs/roadmap-alex.md](roadmap-alex.md) affianca questo file (epiche GitHub, a partire da
+[#40](https://github.com/giorgiorest/gestionale/issues/40)) e **condivide la stessa sequenza di
+migrazioni**: i numeri qui sotto possono quindi essere già presi da una voce di quel file prima
+che questa venga lavorata (es. V9–V11 sono già di `resource_assignments`, `work_activities`,
+`daily_reports`) — verifica sempre il numero più alto applicato su `main`, non fidarti del
+promemoria.
 
 ---
 
@@ -61,9 +67,9 @@ debito da pagare moltiplicato per il numero di entità.
 | PR | Contenuto | Migr. | Stato |
 |----|-----------|-------|-------|
 | 2.1 | Anagrafica clienti completa: ragione sociale, P.IVA, codice fiscale, indirizzo, PEC, codice destinatario SDI, condizioni di pagamento | V8 | ⬜ |
-| 2.2 | Fornitori, sullo stesso schema | V9 | ⬜ |
+| 2.2 | Fornitori, sullo stesso schema | da verificare | ⬜ |
 | 2.3 | Risorse e squadre (dipendenti che compilano i rapportini), collegate alla rubrica `app_users` | V7 | ✅ |
-| 2.4 | 🔐 Allegati lato backend: tabella con RLS, archivio compatibile S3, URL firmati, MinIO in sviluppo ([ADR 0016](decisioni/0016-archivio-allegati.md)) | V11 | ⬜ |
+| 2.4 | 🔐 Allegati lato backend: tabella con RLS, archivio compatibile S3, URL firmati, MinIO in sviluppo ([ADR 0016](decisioni/0016-archivio-allegati.md)) | da verificare | ⬜ |
 | 2.5 | Allegati lato client: caricamento offline, foto dal telefono, cache selettiva, svuotamento all'uscita | — | ⬜ |
 
 ## Fase 3 — Il cuore: commesse e rapportini
@@ -73,11 +79,11 @@ debito da pagare moltiplicato per il numero di entità.
 | PR | Contenuto | Migr. | Stato |
 |----|-----------|-------|-------|
 | 3.1 | Commesse/cantieri: modello, stati, anagrafica, collegamento al cliente | V8 | ✅ |
-| 3.2 | Rapportino giornaliero lato backend: ore per persona, materiali, note, allegati | V13 | ⬜ |
+| 3.2 | Rapportino giornaliero lato backend: ore per persona, materiali, note, allegati — la testata (data, meteo, note, stato) è già costruita in GitHub [#49](https://github.com/giorgiorest/gestionale/issues/49) (`DailyReport`); resta ore/materiali/allegati | da verificare | 🟨 |
 | 3.3 | Rapportino sul telefono: interfaccia per schermo piccolo, compilazione offline, foto | — | ⬜ |
 | 3.4 | Firma grafometrica sul rapportino (canvas, immagine allegata, impronta e orario) | — | ⬜ |
 | 3.5 | Riepiloghi: ore per commessa, per persona, per periodo; export | — | ⬜ |
-| 3.6 | Pianificazione squadre: calendario settimanale «chi va dove», sincronizzato sul telefono | V14 | ⬜ |
+| 3.6 | Pianificazione squadre: calendario settimanale «chi va dove», sincronizzato sul telefono | da verificare | ⬜ |
 
 ## Fase 4 — Documenti e fatturazione
 

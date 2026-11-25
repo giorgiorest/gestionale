@@ -3,6 +3,8 @@ package it.gestionale.api.web;
 import it.gestionale.api.ai.AiQuotaExceededException;
 import it.gestionale.api.ai.AiUnavailableException;
 import it.gestionale.api.commesse.UnknownCustomerException;
+import it.gestionale.api.dailyreports.DailyReportNotFoundException;
+import it.gestionale.api.dailyreports.UnknownCommessaReferenceException;
 import it.gestionale.api.licensing.FeatureNotEnabledException;
 import it.gestionale.api.licensing.InvalidLicenseException;
 import it.gestionale.api.notifications.NotificationNotFoundException;
@@ -83,6 +85,16 @@ public class ApiExceptionHandler {
     @ExceptionHandler(NotificationNotFoundException.class)
     ProblemDetail notificationNotFound(NotificationNotFoundException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
+    }
+
+    @ExceptionHandler(DailyReportNotFoundException.class)
+    ProblemDetail dailyReportNotFound(DailyReportNotFoundException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
+    }
+
+    @ExceptionHandler(UnknownCommessaReferenceException.class)
+    ProblemDetail unknownCommessaReference(UnknownCommessaReferenceException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
     @ExceptionHandler(it.gestionale.api.platform.PlatformException.class)
