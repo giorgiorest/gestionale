@@ -119,14 +119,20 @@ cd apps/web && npm run build -- --configuration production
 - **Output lungo su file**, non a schermo: `… > /tmp/out.log 2>&1; tail -30 /tmp/out.log`.
   Vale per build, test e log dei container.
 - **Prima il piano** sulle voci grandi, poi il codice.
-- **Chiusura di ogni PR**: `/code-review` (livello `medium`; `high` o più solo su RLS, permessi,
-  allegati, fatturazione e pagamenti), poi `/simplify` — con i 4 agenti in parallelo che
-  `/simplify` prevede — sulla **prima stesura** di una voce di roadmap. Su una correzione
-  successiva alla stessa voce (un bug trovato dopo, un fix a un fix), `/code-review` e `/simplify`
-  restano obbligatori ma in un solo passaggio, senza sub-agenti: quattro agenti su un diff piccolo
-  costano molto più di quanto trovino. Resta il livello pieno con sub-agenti quando la correzione
-  tocca RLS, permessi, allegati, fatturazione o pagamenti. `/security-review` sulle voci marcate 🔐
-  nella roadmap.
+- **Chiusura di ogni PR**: `/code-review` + `/simplify`, ma il livello con sub-agenti (4 per
+  `/simplify`, 8 angoli per `/code-review` `high`) è il **default più costoso, non quello
+  predefinito**. Fai tu stesso, in un solo passaggio e senza sub-agenti, la revisione di:
+  aggiungere permessi a ruoli già esistenti, copiare la struttura di un'entità già costruita
+  (`customers/`, `commesse/`, …), un fix a un fix. Il livello pieno con sub-agenti serve solo
+  quando la PR **introduce ex novo** RLS su una tabella nuova, allegati, fatturazione o pagamenti
+  — non quando li estende o li collega a qualcosa già esistente. `/security-review` sulle voci
+  marcate 🔐 nella roadmap.
+- **Una sessione, una storia**: non incatenare più storie nella stessa sessione — ogni storia
+  nuova in una sessione già lunga eredita tutta la cronologia precedente, anche quando non serve
+  più. Chiudi la sessione a PR aperta (o mersa) e aprine una nuova per la prossima voce.
+- **Log lunghi**: mai l'output intero in contesto. Scarica su file e usa `grep` per l'errore
+  specifico (es. `Caused by:`, `\[ERROR\]`); per un log CI già troppo grande per un tool, salvalo
+  su file e filtralo con `grep`/`sed`, non rileggerlo per intero.
 - Dopo aver aperto la PR, **iscriviti alla sua attività** per correggere i fallimenti della CI
   quando arrivano, senza attendere né ricontrollare a vuoto.
 
