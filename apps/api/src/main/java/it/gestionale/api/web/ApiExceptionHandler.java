@@ -6,6 +6,7 @@ import it.gestionale.api.commesse.UnknownCustomerException;
 import it.gestionale.api.dailyreports.DailyReportNotFoundException;
 import it.gestionale.api.dailyreports.InvalidDailyReportStateException;
 import it.gestionale.api.dailyreports.UnknownCommessaReferenceException;
+import it.gestionale.api.hoursreport.InvalidHoursReportRangeException;
 import it.gestionale.api.licensing.FeatureNotEnabledException;
 import it.gestionale.api.licensing.InvalidLicenseException;
 import it.gestionale.api.notifications.NotificationNotFoundException;
@@ -107,6 +108,11 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(UnknownWorkEntryReferenceException.class)
     ProblemDetail unknownWorkEntryReference(UnknownWorkEntryReferenceException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidHoursReportRangeException.class)
+    ProblemDetail invalidHoursReportRange(InvalidHoursReportRangeException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
