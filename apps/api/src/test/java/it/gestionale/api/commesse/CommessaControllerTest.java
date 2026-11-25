@@ -145,8 +145,13 @@ class CommessaControllerTest extends AbstractIntegrationTest {
         mvc.perform(get("/api/commesse").with(TestJwt.user(tenantB, "admin")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
+        // Il cliente del tentativo è di B (un attacco reale userebbe un proprio riferimento valido,
+        // non quello di A, invisibile a B): isola il conflitto sull'id da un eventuale 400 sul cliente.
+        UUID customerB = UUID.randomUUID();
+        TenantContext.runAs(tenantB, () -> tx.executeWithoutResult(
+                s -> customers.save(new Customer(customerB, tenantB, "Cliente B", null, null))));
         putCommessa(tenantB, "admin", id,
-                "{\"customerId\":\"" + customerA + "\",\"nome\":\"Furto\",\"stato\":\"pianificata\"}")
+                "{\"customerId\":\"" + customerB + "\",\"nome\":\"Furto\",\"stato\":\"pianificata\"}")
                 .andExpect(status().isConflict());
     }
 
