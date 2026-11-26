@@ -18,6 +18,14 @@ name: CI Android
 # I secret non arrivano alle pull request dai fork: il repository è privato e non ne ha, ma se un
 # giorno ne avesse, questo job andrebbe limitato alle PR interne.
 #
+# GitHub non passa i secret del repository (a parte GITHUB_TOKEN) alle esecuzioni innescate da
+# una pull request di Dependabot, anche se il secret esiste a livello di repository: è un
+# comportamento di GitHub per le PR di Dependabot, non una svista di configurazione. Il job si
+# salta per quelle PR (vedi "if" sotto) invece di fallire in rosso su un problema che non c'è modo
+# di risolvere lì: la build di apps/web resta comunque verificata da "CI Web" su ogni PR, incluse
+# quelle di Dependabot, e la build firmata reale la fa "Release immagini" al merge su main (un
+# push umano, non di Dependabot: lì i secret ci sono).
+#
 # Cache per contenuto (chiave = hash di apps/web, apps/desktop e di questo file): se un rilascio
 # non cambia nulla che l'app incapsula, riusa l'APK già firmato invece di ricompilarlo e
 # rifirmarlo. Decide il contenuto, non il commit: coerente con un ritorno indietro (ADR 0004).
@@ -36,6 +44,9 @@ permissions:
 
 jobs:
   apk:
+    # Vedi il commento sopra "on:": niente secret per le pull request di Dependabot, quindi
+    # niente firma possibile. Si salta (non si fallisce): giorgiorest/gestionale#147.
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       # Deve restare il primo step dopo il checkout: la chiave sotto si basa sull'hash dei file
