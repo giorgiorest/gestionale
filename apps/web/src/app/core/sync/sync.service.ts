@@ -40,6 +40,8 @@ function localTable(db: LocalDb, entity: string): Table<LocalRow, string> | null
   switch (entity) {
     case 'customers':
       return db.customers as unknown as Table<LocalRow, string>;
+    case 'suppliers':
+      return db.suppliers as unknown as Table<LocalRow, string>;
     case 'resources':
       return db.resources as unknown as Table<LocalRow, string>;
     case 'commesse':

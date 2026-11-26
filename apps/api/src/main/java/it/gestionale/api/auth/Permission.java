@@ -7,6 +7,8 @@ package it.gestionale.api.auth;
 public enum Permission {
     CUSTOMERS_READ("customers:read"),
     CUSTOMERS_WRITE("customers:write"),
+    SUPPLIERS_READ("suppliers:read"),
+    SUPPLIERS_WRITE("suppliers:write"),
     ASSISTANT_USE("assistant:use"),
     NOTIFICATIONS_SEND("notifications:send"),
     USERS_MANAGE("users:manage"),

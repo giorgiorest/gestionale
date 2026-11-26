@@ -22,6 +22,7 @@ function fakeDb() {
   const db = {
     outbox: fakeTable(),
     customers: fakeTable(),
+    suppliers: fakeTable(),
     resources: fakeTable(),
     commesse: fakeTable(),
     resourceAssignments: fakeTable(),

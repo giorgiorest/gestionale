@@ -35,6 +35,21 @@ export interface LocalCustomer {
   updatedAt: string;
 }
 
+/** Copia locale di un fornitore (stesso schema dell'API, tabella propria: roadmap 2.2). */
+export interface LocalSupplier {
+  id: string;
+  tenantId: string;
+  name: string;
+  email: string | null;
+  partitaIva: string | null;
+  codiceFiscale: string | null;
+  indirizzo: string | null;
+  pec: string | null;
+  codiceSdi: string | null;
+  condizioniPagamento: string | null;
+  updatedAt: string;
+}
+
 /** Copia locale di una risorsa (stesso schema dell'API). */
 export interface LocalResource {
   id: string;
@@ -148,6 +163,7 @@ export interface LocalMeta {
 export class LocalDb extends Dexie {
   outbox!: Table<OutboxEntry, string>;
   customers!: Table<LocalCustomer, string>;
+  suppliers!: Table<LocalSupplier, string>;
   notifications!: Table<LocalNotification, string>;
   syncState!: Table<SyncState, string>;
   meta!: Table<LocalMeta, string>;
@@ -198,6 +214,10 @@ export class LocalDb extends Dexie {
     // v9: righe di ore del rapportino (GitHub #50).
     this.version(9).stores({
       workEntries: 'id, tenantId, dailyReportId, resourceId, workActivityId, updatedAt',
+    });
+    // v10: fornitori (roadmap 2.2), tabella propria, non condivisa con customers.
+    this.version(10).stores({
+      suppliers: 'id, tenantId, updatedAt',
     });
   }
 }

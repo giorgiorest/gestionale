@@ -32,6 +32,9 @@ import it.gestionale.api.resourceassignments.ResourceAssignmentRepository;
 import it.gestionale.api.resources.Resource;
 import it.gestionale.api.resources.ResourceDto;
 import it.gestionale.api.resources.ResourceRepository;
+import it.gestionale.api.suppliers.Supplier;
+import it.gestionale.api.suppliers.SupplierDto;
+import it.gestionale.api.suppliers.SupplierRepository;
 import it.gestionale.api.tenancy.TenantContext;
 import it.gestionale.api.workactivities.WorkActivity;
 import it.gestionale.api.workactivities.WorkActivityDto;
@@ -50,8 +53,8 @@ import org.springframework.transaction.annotation.Transactional;
  * l'ultima volta e applicherà localmente le righe restituite, comprese le cancellazioni.
  *
  * <p>Entità incluse: le tabelle di dominio con cancellazione logica e {@code updated_at}
- * (ADR 0018) — {@code customers}, {@code resources}, {@code commesse}, {@code resource_assignments},
- * {@code work_activities}, {@code daily_reports}, {@code work_entries},
+ * (ADR 0018) — {@code customers}, {@code suppliers}, {@code resources}, {@code commesse},
+ * {@code resource_assignments}, {@code work_activities}, {@code daily_reports}, {@code work_entries},
  * {@code daily_report_materials}. {@code notifications} resta fuori: non ha quelle colonne (è
  * un registro di soli inserimenti, con stato di lettura a parte) e ha già un proprio canale
  * (campanella + outbox, vedi {@code docs/architettura.md}).
@@ -69,6 +72,7 @@ public class SyncService {
 
     private final ObjectMapper objectMapper;
     private final CustomerRepository customers;
+    private final SupplierRepository suppliers;
     private final ResourceRepository resources;
     private final CommessaRepository commesse;
     private final ResourceAssignmentRepository resourceAssignments;
@@ -77,12 +81,14 @@ public class SyncService {
     private final WorkEntryRepository workEntries;
     private final DailyReportMaterialRepository dailyReportMaterials;
 
-    public SyncService(ObjectMapper objectMapper, CustomerRepository customers, ResourceRepository resources,
-                       CommessaRepository commesse, ResourceAssignmentRepository resourceAssignments,
-                       WorkActivityRepository workActivities, DailyReportRepository dailyReports,
-                       WorkEntryRepository workEntries, DailyReportMaterialRepository dailyReportMaterials) {
+    public SyncService(ObjectMapper objectMapper, CustomerRepository customers, SupplierRepository suppliers,
+                       ResourceRepository resources, CommessaRepository commesse,
+                       ResourceAssignmentRepository resourceAssignments, WorkActivityRepository workActivities,
+                       DailyReportRepository dailyReports, WorkEntryRepository workEntries,
+                       DailyReportMaterialRepository dailyReportMaterials) {
         this.objectMapper = objectMapper;
         this.customers = customers;
+        this.suppliers = suppliers;
         this.resources = resources;
         this.commesse = commesse;
         this.resourceAssignments = resourceAssignments;
@@ -106,6 +112,10 @@ public class SyncService {
         hasMore |= syncEntity("customers", Permission.CUSTOMERS_READ, authorities, cursorIn, cursorOut, entities,
                 limit, (after, pageable) -> customers.findChangesSince(tenantId, after.updatedAt(), after.id(), pageable),
                 Customer::getId, Customer::getUpdatedAt, Customer::getVersion, Customer::isDeleted, CustomerDto::from);
+
+        hasMore |= syncEntity("suppliers", Permission.SUPPLIERS_READ, authorities, cursorIn, cursorOut, entities,
+                limit, (after, pageable) -> suppliers.findChangesSince(tenantId, after.updatedAt(), after.id(), pageable),
+                Supplier::getId, Supplier::getUpdatedAt, Supplier::getVersion, Supplier::isDeleted, SupplierDto::from);
 
         hasMore |= syncEntity("resources", Permission.RESOURCES_READ, authorities, cursorIn, cursorOut, entities,
                 limit, (after, pageable) -> resources.findChangesSince(tenantId, after.updatedAt(), after.id(), pageable),

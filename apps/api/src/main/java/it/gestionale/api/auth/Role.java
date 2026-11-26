@@ -21,7 +21,8 @@ public enum Role {
      * impostare un costo (l'override contestuale alla commessa) — la tariffa oraria base della
      * risorsa è la stessa responsabilità, non un dato nuovo da proteggere diversamente.
      */
-    OPERATOR("operator", EnumSet.of(Permission.CUSTOMERS_READ, Permission.CUSTOMERS_WRITE, Permission.ASSISTANT_USE,
+    OPERATOR("operator", EnumSet.of(Permission.CUSTOMERS_READ, Permission.CUSTOMERS_WRITE,
+            Permission.SUPPLIERS_READ, Permission.SUPPLIERS_WRITE, Permission.ASSISTANT_USE,
             Permission.RESOURCES_READ, Permission.COMMESSE_READ, Permission.RESOURCE_ASSIGNMENTS_READ,
             Permission.RESOURCE_ASSIGNMENTS_WRITE, Permission.WORK_ACTIVITIES_READ,
             Permission.WORK_ACTIVITIES_WRITE, Permission.DAILY_REPORTS_READ, Permission.DAILY_REPORTS_WRITE,
@@ -34,9 +35,10 @@ public enum Role {
      * ruolo di sola lettura): ha già {@code resource-assignments:read}, cioè vede già l'override di
      * costo contestuale — stesso trattamento per la tariffa base.
      */
-    VIEWER("viewer", EnumSet.of(Permission.CUSTOMERS_READ, Permission.RESOURCES_READ, Permission.COMMESSE_READ,
-            Permission.RESOURCE_ASSIGNMENTS_READ, Permission.WORK_ACTIVITIES_READ, Permission.DAILY_REPORTS_READ,
-            Permission.WORK_ENTRIES_READ, Permission.DAILY_REPORT_MATERIALS_READ, Permission.LABOR_COST_READ)),
+    VIEWER("viewer", EnumSet.of(Permission.CUSTOMERS_READ, Permission.SUPPLIERS_READ, Permission.RESOURCES_READ,
+            Permission.COMMESSE_READ, Permission.RESOURCE_ASSIGNMENTS_READ, Permission.WORK_ACTIVITIES_READ,
+            Permission.DAILY_REPORTS_READ, Permission.WORK_ENTRIES_READ, Permission.DAILY_REPORT_MATERIALS_READ,
+            Permission.LABOR_COST_READ)),
 
     // Ruoli di cantiere (docs/roadmap.md, Fasi A-I): ogni PR che introduce una funzione di cantiere
     // aggiunge qui i Permission giusti ai ruoli giusti.
@@ -90,10 +92,12 @@ public enum Role {
      * {@code daily-report-materials:read/write} per lo stesso motivo di {@code daily-reports}: i
      * "materiali" di questo commento sono il futuro catalogo/magazzino di cantiere (GitHub #55,
      * {@code docs/roadmap.md} C.1), non le righe di materiale del rapportino, che restano
-     * "mai a rapportini".
+     * "mai a rapportini". {@code suppliers:read/write} (roadmap 2.2): i fornitori sono
+     * esplicitamente tra le sue aree di accesso.
      */
     AMMINISTRATIVO("amministrativo", EnumSet.of(Permission.RESOURCES_READ, Permission.RESOURCES_WRITE,
-            Permission.COMMESSE_READ, Permission.COMMESSE_WRITE));
+            Permission.COMMESSE_READ, Permission.COMMESSE_WRITE, Permission.SUPPLIERS_READ,
+            Permission.SUPPLIERS_WRITE));
 
     private final String code;
     private final Set<Permission> permissions;

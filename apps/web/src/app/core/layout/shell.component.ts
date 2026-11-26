@@ -34,6 +34,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { label: 'Home', icon: 'home', link: '/', exact: true },
   { label: 'Clienti', icon: 'groups', link: '/clienti', permission: 'customers:read' },
+  { label: 'Fornitori', icon: 'local_shipping', link: '/fornitori', permission: 'suppliers:read' },
   { label: 'Commesse', icon: 'foundation', link: '/commesse', permission: 'commesse:read' },
   { label: 'Risorse', icon: 'engineering', link: '/risorse', permission: 'resources:read' },
   { label: 'Notifiche', icon: 'notifications', link: '/notifiche' },
