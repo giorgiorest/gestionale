@@ -7,6 +7,13 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      # typescript è vincolato dal peer range di @angular/build (oggi ">=6.0 <6.1"), non da una
+      # sua scelta propria: un salto di versione maggiore rompe "npm ci" con un conflitto ERESOLVE
+      # (vedi giorgiorest/gestionale#150) e va fatto insieme a un aggiornamento di Angular, non da
+      # solo come aggiornamento di routine.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: maven
     directory: /apps/api
