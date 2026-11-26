@@ -19,6 +19,8 @@ import it.gestionale.api.commesse.CommessaStato;
 import it.gestionale.api.customers.Customer;
 import it.gestionale.api.customers.CustomerRepository;
 import it.gestionale.api.licensing.LicenseRepository;
+import it.gestionale.api.attachments.Attachment;
+import it.gestionale.api.attachments.AttachmentRepository;
 import it.gestionale.api.resources.Resource;
 import it.gestionale.api.resources.ResourceRepository;
 import it.gestionale.api.suppliers.Supplier;
@@ -49,6 +51,8 @@ class TenantIsolationTest extends AbstractIntegrationTest {
     ResourceRepository resources;
     @Autowired
     SupplierRepository suppliers;
+    @Autowired
+    AttachmentRepository attachments;
     @Autowired
     CommessaRepository commesse;
     @Autowired
@@ -139,6 +143,24 @@ class TenantIsolationTest extends AbstractIntegrationTest {
         assertThat(seenByA).extracting(Supplier::getId).containsExactly(supplierA);
         assertThatThrownBy(() -> TenantContext.runAs(tenantA, () -> suppliers.save(
                 new Supplier(UUID.randomUUID(), tenantB, "Intruso", null, null, null, null, null, null, null, "u-a"))))
+                .hasStackTraceContaining("row-level security");
+    }
+
+    /** Come {@link #resourcesAreIsolatedByTenant}, ma su {@code attachments} (roadmap 2.4). */
+    @Test
+    void attachmentsAreIsolatedByTenant() {
+        UUID attachmentA = UUID.randomUUID();
+        UUID attachmentB = UUID.randomUUID();
+        TenantContext.runAs(tenantA, () -> attachments.save(new Attachment(attachmentA, tenantA, "daily_reports",
+                UUID.randomUUID(), "foto.jpg", "image/jpeg", 1024, "a".repeat(64), "key-a", "u-a")));
+        TenantContext.runAs(tenantB, () -> attachments.save(new Attachment(attachmentB, tenantB, "daily_reports",
+                UUID.randomUUID(), "foto.jpg", "image/jpeg", 1024, "b".repeat(64), "key-b", "u-b")));
+
+        List<Attachment> seenByA = TenantContext.callAs(tenantA, attachments::findAll);
+        assertThat(seenByA).extracting(Attachment::getId).containsExactly(attachmentA);
+        assertThatThrownBy(() -> TenantContext.runAs(tenantA, () -> attachments.save(new Attachment(
+                UUID.randomUUID(), tenantB, "daily_reports", UUID.randomUUID(), "intruso.jpg", "image/jpeg", 1,
+                "c".repeat(64), "key-c", "u-a"))))
                 .hasStackTraceContaining("row-level security");
     }
 

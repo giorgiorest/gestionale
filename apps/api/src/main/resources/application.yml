@@ -100,6 +100,23 @@ gestionale:
     provider: ${AI_PROVIDER:none}
     # La chiave arriva solo da variabile d'ambiente; mai nel codice o nel repository.
     api-key: ${AI_API_KEY:}
+  attachments:
+    # Allegati (ADR 0016): archivio compatibile S3, mai byte attraverso l'API — solo URL firmati.
+    # Nessun default in produzione: S3_BUCKET, S3_ACCESS_KEY e S3_SECRET_KEY sono obbligatori.
+    s3:
+      endpoint: ${S3_ENDPOINT:}
+      region: ${S3_REGION:us-east-1}
+      bucket: ${S3_BUCKET}
+      access-key: ${S3_ACCESS_KEY}
+      secret-key: ${S3_SECRET_KEY}
+      # true per gli archivi self-hosted (MinIO e simili); false per S3 reale (virtual-hosted style).
+      force-path-style: ${S3_FORCE_PATH_STYLE:true}
+    max-size-bytes: ${ATTACHMENTS_MAX_SIZE_BYTES:26214400}
+    # Verificato lato server alla richiesta di un URL di caricamento: il tipo dichiarato dal client
+    # non è attendibile da solo (ADR 0016 punto 7). Immagini e PDF per cominciare.
+    allowed-mime-types: ${ATTACHMENTS_ALLOWED_MIME_TYPES:image/jpeg,image/png,image/heic,image/webp,application/pdf}
+    # Durata dell'URL firmato: "ordine di minuti" (ADR 0016).
+    presigned-url-duration: ${ATTACHMENTS_PRESIGNED_URL_DURATION:PT10M}
 
 ---
 spring:
@@ -139,6 +156,14 @@ gestionale:
     email:
       enabled: ${EMAIL_ENABLED:true}
       app-url: ${APP_PUBLIC_URL:http://localhost:4200}
+  attachments:
+    # MinIO locale (infra/docker/compose.yml): stesso bucket/credenziali del container di sviluppo.
+    s3:
+      endpoint: ${S3_ENDPOINT:http://localhost:9000}
+      bucket: ${S3_BUCKET:gestionale-dev}
+      access-key: ${S3_ACCESS_KEY:gestionale}
+      # Solo sviluppo locale (stesso valore di infra/docker/compose.yml); in produzione dal .env.
+      secret-key: ${S3_SECRET_KEY:sviluppo-locale-non-usare-in-produzione}
 
 ---
 spring:

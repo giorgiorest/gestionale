@@ -99,9 +99,9 @@ Dettagli: [ADR 0004](decisioni/0004-app-desktop.md) e `apps/desktop/README.md`.
   lato server. Il cursore è **per entità** `(updated_at, id)`, codificato in un'unica stringa
   opaca (base64url di un JSON interno, il client non la interpreta): assente per un'entità,
   equivale a "dall'inizio dei tempi" (tombstone compresi), senza un caso speciale per la prima
-  sincronizzazione. La risposta ha una chiave per entità — `customers`, `resources`, `commesse`,
-  `resource_assignments`, `work_activities`, `daily_reports`, `work_entries`,
-  `daily_report_materials` — ma **solo** se l'utente ha il permesso di lettura corrispondente
+  sincronizzazione. La risposta ha una chiave per entità — `customers`, `suppliers`, `resources`,
+  `commesse`, `resource_assignments`, `work_activities`, `daily_reports`, `work_entries`,
+  `daily_report_materials`, `attachments` — ma **solo** se l'utente ha il permesso di lettura corrispondente
   (l'assenza della chiave è il segnale, non un array vuoto); ogni riga porta `id`, `updatedAt`,
   `version`, `deleted` e, se non cancellata, `data` con lo stesso Dto della sua API REST (per
   `resource_assignments`, `hourlyCostOverride` resta nascosto senza `labor-cost:read`, come in
@@ -131,6 +131,23 @@ Dettagli: [ADR 0004](decisioni/0004-app-desktop.md) e `apps/desktop/README.md`.
 - **Spring Boot 3.5**, Java 21, API REST stateless, autenticazione **OAuth2/OIDC** (JWT emessi da Keycloak).
 - **PostgreSQL 17** con migrazioni **Flyway** (mai modificare una migrazione già applicata).
 - Errori in formato RFC 9457 (`application/problem+json`).
+
+## Allegati
+
+Decisione e motivazioni: [ADR 0016](decisioni/0016-archivio-allegati.md). L'API non fa mai da
+proxy per i byte: `attachments/` controlla permesso, entitlement e tenant, poi emette un **URL
+firmato** di breve durata (ordine di minuti) con `S3Presigner` (AWS SDK v2) — `PUT` per caricare,
+`GET` per scaricare, verso un archivio compatibile S3 configurato per installazione (MinIO in
+sviluppo, un fornitore europeo preferibile in SaaS per i dati personali). La tabella `attachments`
+contiene solo i metadati (nome originale, tipo MIME, dimensione, `sha256`, entità e id a cui è
+appeso, chiave nell'archivio `<tenant_id>/<entità>/<id-entità>/<id-allegato>`), con RLS come ogni
+tabella di dominio. Caricamento in due passi, pensato per l'uso offline: `POST
+/api/attachments/upload-url` valida tipo MIME (elenco ammesso) e dimensione ed emette l'URL
+firmato, senza scrivere ancora nulla; dopo che il client ha caricato i byte, `PUT
+/api/attachments/{id}` conferma i metadati — idempotente, compatibile con il reinvio generico
+dalla outbox. La cancellazione di un oggetto nell'archivio quando l'allegato viene cancellato
+logicamente resta un processo a parte, non ancora costruito (ADR 0016, "punti noti ancora
+aperti").
 
 ## Identità e profilazione
 

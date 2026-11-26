@@ -27,7 +27,9 @@ public enum Permission {
     DAILY_REPORT_MATERIALS_READ("daily-report-materials:read"),
     DAILY_REPORT_MATERIALS_WRITE("daily-report-materials:write"),
     LABOR_COST_READ("labor-cost:read"),
-    LABOR_COST_WRITE("labor-cost:write");
+    LABOR_COST_WRITE("labor-cost:write"),
+    ATTACHMENTS_READ("attachments:read"),
+    ATTACHMENTS_WRITE("attachments:write");
 
     private final String code;
 

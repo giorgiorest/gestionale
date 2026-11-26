@@ -13,6 +13,9 @@ import java.util.function.Function;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import it.gestionale.api.attachments.Attachment;
+import it.gestionale.api.attachments.AttachmentDto;
+import it.gestionale.api.attachments.AttachmentRepository;
 import it.gestionale.api.auth.Permission;
 import it.gestionale.api.commesse.Commessa;
 import it.gestionale.api.commesse.CommessaDto;
@@ -55,7 +58,7 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>Entità incluse: le tabelle di dominio con cancellazione logica e {@code updated_at}
  * (ADR 0018) — {@code customers}, {@code suppliers}, {@code resources}, {@code commesse},
  * {@code resource_assignments}, {@code work_activities}, {@code daily_reports}, {@code work_entries},
- * {@code daily_report_materials}. {@code notifications} resta fuori: non ha quelle colonne (è
+ * {@code daily_report_materials}, {@code attachments}. {@code notifications} resta fuori: non ha quelle colonne (è
  * un registro di soli inserimenti, con stato di lettura a parte) e ha già un proprio canale
  * (campanella + outbox, vedi {@code docs/architettura.md}).
  *
@@ -80,12 +83,13 @@ public class SyncService {
     private final DailyReportRepository dailyReports;
     private final WorkEntryRepository workEntries;
     private final DailyReportMaterialRepository dailyReportMaterials;
+    private final AttachmentRepository attachmentsRepo;
 
     public SyncService(ObjectMapper objectMapper, CustomerRepository customers, SupplierRepository suppliers,
                        ResourceRepository resources, CommessaRepository commesse,
                        ResourceAssignmentRepository resourceAssignments, WorkActivityRepository workActivities,
                        DailyReportRepository dailyReports, WorkEntryRepository workEntries,
-                       DailyReportMaterialRepository dailyReportMaterials) {
+                       DailyReportMaterialRepository dailyReportMaterials, AttachmentRepository attachmentsRepo) {
         this.objectMapper = objectMapper;
         this.customers = customers;
         this.suppliers = suppliers;
@@ -96,6 +100,7 @@ public class SyncService {
         this.dailyReports = dailyReports;
         this.workEntries = workEntries;
         this.dailyReportMaterials = dailyReportMaterials;
+        this.attachmentsRepo = attachmentsRepo;
     }
 
     @Transactional(readOnly = true)
@@ -155,6 +160,11 @@ public class SyncService {
                 (after, pageable) -> dailyReportMaterials.findChangesSince(tenantId, after.updatedAt(), after.id(), pageable),
                 DailyReportMaterial::getId, DailyReportMaterial::getUpdatedAt, DailyReportMaterial::getVersion,
                 DailyReportMaterial::isDeleted, DailyReportMaterialDto::from);
+
+        hasMore |= syncEntity("attachments", Permission.ATTACHMENTS_READ, authorities, cursorIn, cursorOut, entities,
+                limit, (after, pageable) -> attachmentsRepo.findChangesSince(tenantId, after.updatedAt(), after.id(), pageable),
+                Attachment::getId, Attachment::getUpdatedAt, Attachment::getVersion, Attachment::isDeleted,
+                AttachmentDto::from);
 
         return new SyncChangesDto(encodeCursor(cursorOut), hasMore, entities);
     }

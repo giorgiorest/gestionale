@@ -28,7 +28,7 @@ public enum Role {
             Permission.WORK_ACTIVITIES_WRITE, Permission.DAILY_REPORTS_READ, Permission.DAILY_REPORTS_WRITE,
             Permission.WORK_ENTRIES_READ, Permission.WORK_ENTRIES_WRITE, Permission.DAILY_REPORT_MATERIALS_READ,
             Permission.DAILY_REPORT_MATERIALS_WRITE, Permission.LABOR_COST_READ,
-            Permission.LABOR_COST_WRITE)),
+            Permission.LABOR_COST_WRITE, Permission.ATTACHMENTS_READ, Permission.ATTACHMENTS_WRITE)),
     /**
      * Consultazione: sola lettura. {@code resources:read}/{@code commesse:read} per lo stesso
      * motivo di {@code OPERATOR}. {@code labor-cost:read} (#53, non {@code write}, coerente con un
@@ -38,7 +38,7 @@ public enum Role {
     VIEWER("viewer", EnumSet.of(Permission.CUSTOMERS_READ, Permission.SUPPLIERS_READ, Permission.RESOURCES_READ,
             Permission.COMMESSE_READ, Permission.RESOURCE_ASSIGNMENTS_READ, Permission.WORK_ACTIVITIES_READ,
             Permission.DAILY_REPORTS_READ, Permission.WORK_ENTRIES_READ, Permission.DAILY_REPORT_MATERIALS_READ,
-            Permission.LABOR_COST_READ)),
+            Permission.LABOR_COST_READ, Permission.ATTACHMENTS_READ)),
 
     // Ruoli di cantiere (docs/roadmap.md, Fasi A-I): ogni PR che introduce una funzione di cantiere
     // aggiunge qui i Permission giusti ai ruoli giusti.
@@ -93,11 +93,12 @@ public enum Role {
      * "materiali" di questo commento sono il futuro catalogo/magazzino di cantiere (GitHub #55,
      * {@code docs/roadmap.md} C.1), non le righe di materiale del rapportino, che restano
      * "mai a rapportini". {@code suppliers:read/write} (roadmap 2.2): i fornitori sono
-     * esplicitamente tra le sue aree di accesso.
+     * esplicitamente tra le sue aree di accesso. {@code attachments:read/write} (roadmap 2.4):
+     * "archivio" è altrettanto esplicito tra le sue aree.
      */
     AMMINISTRATIVO("amministrativo", EnumSet.of(Permission.RESOURCES_READ, Permission.RESOURCES_WRITE,
             Permission.COMMESSE_READ, Permission.COMMESSE_WRITE, Permission.SUPPLIERS_READ,
-            Permission.SUPPLIERS_WRITE));
+            Permission.SUPPLIERS_WRITE, Permission.ATTACHMENTS_READ, Permission.ATTACHMENTS_WRITE));
 
     private final String code;
     private final Set<Permission> permissions;

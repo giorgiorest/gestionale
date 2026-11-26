@@ -77,6 +77,13 @@
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <dependency>
+            <!-- ADR 0016: allegati via archivio compatibile S3, mai byte attraverso l'API — solo URL
+                 firmati. Nessun SDK proprietario di un fornitore: l'archivio deve restare sostituibile. -->
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>2.29.52</version>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
