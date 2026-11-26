@@ -25,6 +25,10 @@ jobs:
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
       - run: npm ci
+      # Catena di fornitura: fallisce la CI su vulnerabilità note di livello alto o critico nelle
+      # dipendenze (dirette e transitive). Dependabot (.github/dependabot.yml) le aggiorna.
+      - name: Controllo vulnerabilità dipendenze (npm audit)
+        run: npm audit --audit-level=high
       - name: Build di produzione
         run: npm run build -- --configuration production
       # Angular 22 esegue i test con Vitest + jsdom: non serve un browser (niente --browsers=ChromeHeadless, che vale per Karma).
@@ -35,6 +39,15 @@ jobs:
         with:
           name: gestionale-web-dist
           path: apps/web/dist/
+      # Elenco licenze delle dipendenze di produzione, pubblicato come artifact (non committato:
+      # cambia a ogni aggiornamento di dipendenza, lo rigenera la CI).
+      - name: Elenco licenze delle dipendenze
+        run: npx --yes license-checker-rseidelsohn@5.0.1 --production --csv --out licenze-web.csv
+      - name: Pubblica elenco licenze
+        uses: actions/upload-artifact@v7
+        with:
+          name: licenze-web
+          path: apps/web/licenze-web.csv
 
   # Verifica che l'immagine web si costruisca (amd64 e arm64): non viene pubblicata.
   # La pubblica release-images.yml a ogni push su main.
@@ -52,3 +65,25 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: false
           tags: gestionale-web:ci
+      # La scansione serve un'immagine caricata nel daemon locale: la build sopra è multi-architettura
+      # con push:false, quindi non la carica. Si builda di nuovo solo amd64 (load:true) per scansionarla;
+      # solo controllo di CI, non finisce nell'immagine distribuita.
+      - name: Build immagine web per la scansione (amd64)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: infra/docker/web.Dockerfile
+          platforms: linux/amd64
+          load: true
+          tags: gestionale-web:scan
+      # Solo segnalazione (exit-code 0): le CVE del sistema operativo della base image spesso non
+      # hanno ancora una correzione upstream e bloccherebbero la CI permanentemente. Le dipendenze
+      # applicative dirette restano coperte, bloccante, da npm audit sopra.
+      - name: Scansione vulnerabilità immagine (Trivy)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: gestionale-web:scan
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '0'

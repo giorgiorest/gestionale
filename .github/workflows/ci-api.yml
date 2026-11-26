@@ -50,3 +50,23 @@ jobs:
         with:
           name: gestionale-api-jar
           path: apps/api/target/*.jar
+      # Catena di fornitura: scansiona il jar (dipendenze dirette e transitive incluse) e fallisce
+      # la CI sulle vulnerabilità HIGH/CRITICAL con una correzione disponibile. Dependabot
+      # (.github/dependabot.yml) le aggiorna.
+      - name: Scansione vulnerabilità dipendenze (Trivy)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: apps/api/target
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+      # Elenco licenze delle dipendenze, pubblicato come artifact (non committato: cambia a ogni
+      # aggiornamento di dipendenza, lo rigenera la CI).
+      - name: Elenco licenze delle dipendenze
+        run: ./mvnw -B org.codehaus.mojo:license-maven-plugin:2.10.0:add-third-party
+      - name: Pubblica elenco licenze
+        uses: actions/upload-artifact@v7
+        with:
+          name: licenze-api
+          path: apps/api/target/generated-sources/license/THIRD-PARTY.txt

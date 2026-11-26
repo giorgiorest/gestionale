@@ -1,0 +1,35 @@
+# Catena di fornitura: aggiornamenti automatici delle dipendenze. Cadenza settimanale per non
+# sommergere le pull request; ogni aggiornamento passa dalla CI come qualsiasi altra modifica.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /apps/web
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: maven
+    directory: /apps/api
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  # Immagine base di infra/docker/web.Dockerfile (build Node e nginx finale).
+  - package-ecosystem: docker
+    directory: /infra/docker
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  # Immagine base di apps/api/Dockerfile (Eclipse Temurin).
+  - package-ecosystem: docker
+    directory: /apps/api
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
