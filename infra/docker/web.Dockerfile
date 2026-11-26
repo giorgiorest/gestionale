@@ -4,7 +4,7 @@
 # Configurazione a runtime (config.json) dalle variabili: WEB_API_URL, OIDC_AUTHORITY, OIDC_CLIENT_ID.
 
 # I file statici sono indipendenti dall'architettura: build una volta sola sulla piattaforma della build.
-FROM --platform=$BUILDPLATFORM docker.io/library/node:22-alpine AS build
+FROM --platform=$BUILDPLATFORM docker.io/library/node:26-alpine AS build
 WORKDIR /workspace
 COPY apps/web/package.json apps/web/package-lock.json ./
 RUN npm ci
