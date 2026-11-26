@@ -4,6 +4,7 @@
 # Lo esegue il workflow "Prepara server" via SSH, come root (sudo):
 #
 #   prepare-server.sh <cartella app> <dominio> <email ACME> <registry immagini> <utente>
+#                    <S3 endpoint> <S3 region> <S3 bucket> <S3 access key> <S3 secret key> <S3 path style>
 #
 # Cosa fa (docs/deploy-vps.md, passi 4–7 e backup):
 #   1. aggiornamenti di sistema e aggiornamenti di sicurezza automatici;
@@ -12,7 +13,7 @@
 #   4. SSH solo con chiave, niente accesso di root;
 #   5. Docker e Docker Compose, utente nel gruppo docker;
 #   6. cartella dell'applicazione e .env con password casuali, SOLO se il .env non esiste;
-#      in un .env esistente aggiunge solo le voci nuove (es. segreto della console), senza toccare le altre;
+#      in un .env esistente aggiorna le configurazioni S3 ricevute dal workflow, senza toccare le altre;
 #   7. backup giornaliero del database alle 3, 14 giorni di storico.
 # Non stampa mai password o segreti.
 set -euo pipefail
@@ -22,6 +23,12 @@ domain="$2"
 acme_email="$3"
 registry="$4"
 app_user="$5"
+s3_endpoint="${6:-}"
+s3_region="${7:-us-east-1}"
+s3_bucket="${8:-}"
+s3_access_key="${9:-}"
+s3_secret_key="${10:-}"
+s3_force_path_style="${11:-false}"
 
 export DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a
 # Attende gli aggiornamenti automatici già in corso (macchina appena creata) invece di fallire.
@@ -84,7 +91,7 @@ group "6. Cartella dell'applicazione e .env"
 install -d -o "$app_user" -g "$app_user" "$app_dir" "$app_dir/backup"
 env_file="$app_dir/.env"
 if [ -f "$env_file" ]; then
-  echo "Il .env esiste già: i valori presenti non vengono modificati."
+  echo "Il .env esiste già: i valori presenti non vengono modificati, tranne le configurazioni S3 ricevute."
   grep -qx "APP_DOMAIN=$domain" "$env_file" ||
     echo "::warning::APP_DOMAIN nel .env non è $domain: correggilo a mano (nano $env_file)."
 else
@@ -116,6 +123,12 @@ BRAND_PRIMARY_COLOR=
 BRAND_ACCENT_COLOR=
 LEGAL_PRIVACY_URL=
 LEGAL_TERMS_URL=
+S3_ENDPOINT=$s3_endpoint
+S3_REGION=$s3_region
+S3_BUCKET=$s3_bucket
+S3_ACCESS_KEY=$s3_access_key
+S3_SECRET_KEY=$s3_secret_key
+S3_FORCE_PATH_STYLE=$s3_force_path_style
 EOF
   chown "$app_user:$app_user" "$env_file"
   chmod 600 "$env_file"
@@ -130,6 +143,30 @@ ensure_env() {
 }
 ensure_env PLATFORM_KEYCLOAK_CLIENT_SECRET "$(openssl rand -hex 32)"
 ensure_env ADMIN_ALLOWED_IPS ""
+ensure_env S3_ENDPOINT "$s3_endpoint"
+ensure_env S3_REGION "$s3_region"
+ensure_env S3_BUCKET "$s3_bucket"
+ensure_env S3_ACCESS_KEY "$s3_access_key"
+ensure_env S3_SECRET_KEY "$s3_secret_key"
+ensure_env S3_FORCE_PATH_STYLE "$s3_force_path_style"
+
+# Per le voci S3 il valore ricevuto dal workflow è autoritativo; così il rinnovo di una secret
+# viene applicato alle installazioni esistenti senza modificare le altre impostazioni del .env.
+set_env() {
+  local name="$1"
+  local value="$2"
+  if grep -q "^${name}=" "$env_file"; then
+    sed -i "s|^${name}=.*|${name}=${value}|" "$env_file"
+  else
+    printf '%s=%s\n' "$name" "$value" >> "$env_file"
+  fi
+}
+set_env S3_ENDPOINT "$s3_endpoint"
+set_env S3_REGION "$s3_region"
+set_env S3_BUCKET "$s3_bucket"
+set_env S3_ACCESS_KEY "$s3_access_key"
+set_env S3_SECRET_KEY "$s3_secret_key"
+set_env S3_FORCE_PATH_STYLE "$s3_force_path_style"
 endgroup
 
 group "7. Backup giornaliero del database"
