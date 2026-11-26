@@ -47,7 +47,7 @@ Si ripaga entro la seconda PR: serve a non ri-scoprire il progetto a ogni sessio
 | 0.1 | Ricettario in CLAUDE.md, questa roadmap, ADR 0012–0017, permessi di progetto, controllo delle migrazioni in CI | — | 🟨 |
 | 0.2 | Catena di fornitura: Dependabot, `npm audit` e controllo dipendenze nella CI, scansione delle immagini, elenco delle licenze delle dipendenze | — | ✅ |
 | 0.3 | ESLint e Prettier nella CI web, budget sulla dimensione del bundle | — | ⬜ |
-| 0.4 | Osservabilità: log strutturati JSON con `tenant_id` e id della richiesta, metriche Actuator/Prometheus, avviso quando la salute cade | — | ⬜ |
+| 0.4 | Osservabilità: log strutturati JSON con `tenant_id` e id della richiesta, metriche Actuator/Prometheus, avviso quando la salute cade | — | ✅ |
 | 0.5 | **Backup fuori sito** (l'archivio oggi resta sulla stessa macchina) e **prova di ripristino** documentata | — | ⬜ |
 | 0.6 | Hook `SessionStart`: branch, PR aperta, prossima voce di roadmap, primo numero Flyway libero | — | ✅ |
 

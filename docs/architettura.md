@@ -172,6 +172,24 @@ Dettagli: [ADR 0002](decisioni/0002-deploy-target.md), [guida VPS](deploy-vps.md
 - *Prepara server* configura un server Ubuntu qualsiasi (aggiornamenti, firewall, SSH solo con
   chiave, Docker, `.env` con password generate sulla macchina, backup notturno), in modo idempotente.
 
+## Osservabilità
+
+Dettagli: [ADR 0022](decisioni/0022-osservabilita.md).
+
+- **Log**: JSON su stdout (Logback + `logstash-logback-encoder`), un campo per profilo diverso da
+  `dev` (dove restano leggibili a schermo). Ogni riga porta `request_id` (generato o propagato
+  dall'header `X-Request-Id`, restituito anche in risposta) e `tenant_id` quando presente — messi
+  in MDC da `RequestLoggingContextFilter` (`it.gestionale.api.observability`), registrato subito
+  dopo `TenantFilter`.
+- **Metriche**: Micrometer + Prometheus, `GET /actuator/prometheus`. Non richiede un JWT (un
+  raccoglitore di metriche non ne ha uno), ma non è instradato da Caddy fuori dalla rete
+  amministrativa: stesso `ADMIN_ALLOWED_IPS` di `/console` e `/api/platform/**` (vedi Caddyfile).
+- **Avviso sulla salute**: `HealthAlertWatchdog` legge `HealthEndpoint` in-process (lo stesso
+  aggregato di `/actuator/health`) una volta al minuto e avvisa gli amministratori
+  dell'installazione solo sulla transizione (non a ogni controllo): sempre con un log `ERROR`, e
+  via email a `HEALTH_ALERT_EMAIL` se impostata. Non è un'installazione per tenant: non passa da
+  `NotificationService` né da `TenantContext`/`WorkerContext`.
+
 ## Privacy
 
 Dettagli: [ADR 0008](decisioni/0008-privacy-dati-sul-dispositivo.md) e [privacy-gdpr.md](privacy-gdpr.md).

@@ -2,6 +2,7 @@ package it.gestionale.api.config;
 
 import it.gestionale.api.auth.RoleAuthoritiesConverter;
 import it.gestionale.api.auth.SecurityProperties;
+import it.gestionale.api.observability.RequestLoggingContextFilter;
 import it.gestionale.api.tenancy.TenancyProperties;
 import it.gestionale.api.tenancy.TenantAccessService;
 import it.gestionale.api.tenancy.TenantFilter;
@@ -28,6 +29,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  *   <li>issuer e audience del token sono validati (spring.security.oauth2.resourceserver.jwt.*);</li>
  *   <li>i ruoli del claim {@code roles} diventano autorità e permessi ({@link RoleAuthoritiesConverter});</li>
  *   <li>il tenant viene estratto dal token da {@link TenantFilter}, subito dopo l'autenticazione;</li>
+ *   <li>subito dopo, {@link RequestLoggingContextFilter} mette tenant e id di richiesta in MDC
+ *       per i log strutturati (ADR 0022);</li>
  *   <li>i permessi si controllano sugli endpoint con {@code @PreAuthorize};</li>
  *   <li>CORS solo per le origini dell'app desktop ({@link CorsProperties}): token nel header, niente cookie.</li>
  * </ul>
@@ -73,10 +76,15 @@ public class SecurityConfig {
             .cors(Customizer.withDefaults())
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.GET, "/api/health", "/actuator/health", "/actuator/info").permitAll()
+                // /actuator/prometheus: un raccoglitore di metriche non ha un JWT; resta comunque
+                // irraggiungibile da Internet perché non instradato da Caddy fuori dalla rete
+                // amministrativa (vedi Caddyfile, stesso ADMIN_ALLOWED_IPS di console/piattaforma).
+                .requestMatchers(HttpMethod.GET, "/api/health", "/actuator/health", "/actuator/info",
+                        "/actuator/prometheus").permitAll()
                 .anyRequest().authenticated())
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
-            .addFilterAfter(new TenantFilter(tenancyProperties, tenantAccess), BearerTokenAuthenticationFilter.class);
+            .addFilterAfter(new TenantFilter(tenancyProperties, tenantAccess), BearerTokenAuthenticationFilter.class)
+            .addFilterAfter(new RequestLoggingContextFilter(), TenantFilter.class);
         return http.build();
     }
 }
