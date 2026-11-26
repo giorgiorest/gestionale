@@ -384,8 +384,13 @@ echo '{"source":"startup"}' | .claude/hooks/session-start.sh   # prova a mano
 
 ## CI e deploy
 
-- `ci-api.yml`: build e test dell'API.
-- `ci-web.yml`: build di produzione, test e build dell'immagine web (amd64 e arm64).
+- `ci-api.yml`: build e test dell'API; catena di fornitura: scansione delle vulnerabilità delle
+  dipendenze (Trivy, bloccante) ed elenco delle licenze (artifact).
+- `ci-web.yml`: build di produzione, test e build dell'immagine web (amd64 e arm64); catena di
+  fornitura: `npm audit` (bloccante), scansione dell'immagine (Trivy, solo segnalazione) ed elenco
+  delle licenze (artifact).
+- `dependabot.yml`: aggiornamenti settimanali di npm (`apps/web`), Maven (`apps/api`), GitHub
+  Actions e delle immagini Docker di base.
 - `ci-desktop.yml`: installer Windows dell'app desktop sulle pull request (artifact `gestionale-desktop-windows`,
   non ancora firmato); su `main` lo richiama `release-images.yml`.
 - `android.yml`: APK Android firmato sulle pull request (artifact `gestionale-android-apk`);
@@ -407,8 +412,8 @@ la richiesta scade e si può sempre lanciare **Deploy** a mano ([ADR 0009](docs/
 
 | Workflow | Quando | Cosa fa |
 |----------|--------|---------|
-| `ci-api.yml` | PR e `main` (API) | build e test dell'API |
-| `ci-web.yml` | PR e `main` (web) | build, test, immagine web (amd64 e arm64) |
+| `ci-api.yml` | PR e `main` (API) | build e test dell'API, scansione vulnerabilità dipendenze, elenco licenze |
+| `ci-web.yml` | PR e `main` (web) | build, test, immagine web (amd64 e arm64), `npm audit`, scansione vulnerabilità immagine, elenco licenze |
 | `ci-desktop.yml` | PR (web, desktop); richiamato dal rilascio | installer Windows (artifact `gestionale-desktop-windows`, non ancora firmato) |
 | `android.yml` | PR (web, desktop); richiamato dal rilascio | APK Android firmato (artifact `gestionale-android-apk`) |
 | `ci-workflows.yml` | PR (workflow, script, hook) | actionlint e shellcheck |
