@@ -2,11 +2,14 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { API_URL } from '../api/api-url';
-import { LOCAL_DB, LocalDb, OutboxEntry } from '../../db/local-db';
+import { ProfileService } from '../profile/profile.service';
+import { LOCAL_DB, LocalCustomer, LocalDb, OutboxEntry, SyncState } from '../../db/local-db';
 import { SyncService } from './sync.service';
 
-/** Outbox in memoria: jsdom non ha IndexedDB. */
-function fakeDb(entries: OutboxEntry[]): LocalDb {
+const TENANT = 'tenant-1';
+
+/** Outbox, clienti e stato della sincronizzazione in memoria: jsdom non ha IndexedDB. */
+function fakeDb(entries: OutboxEntry[], customers: LocalCustomer[], syncState: SyncState[]): LocalDb {
   return {
     outbox: {
       add: async (entry: OutboxEntry) => {
@@ -31,6 +34,30 @@ function fakeDb(entries: OutboxEntry[]): LocalDb {
         }),
       }),
     },
+    customers: {
+      bulkPut: async (rows: LocalCustomer[]) => {
+        for (const row of rows) {
+          const i = customers.findIndex((c) => c.id === row.id);
+          if (i >= 0) customers[i] = row;
+          else customers.push(row);
+        }
+      },
+      bulkDelete: async (ids: string[]) => {
+        for (const id of ids) {
+          const i = customers.findIndex((c) => c.id === id);
+          if (i >= 0) customers.splice(i, 1);
+        }
+      },
+    },
+    syncState: {
+      get: async (key: string) => syncState.find((s) => s.key === key),
+      put: async (row: SyncState) => {
+        const i = syncState.findIndex((s) => s.key === row.key);
+        if (i >= 0) syncState[i] = row;
+        else syncState.push(row);
+        return row.key;
+      },
+    },
   } as unknown as LocalDb;
 }
 
@@ -38,17 +65,22 @@ const tick = () => new Promise((resolve) => setTimeout(resolve));
 
 describe('SyncService', () => {
   let entries: OutboxEntry[];
+  let customers: LocalCustomer[];
+  let syncState: SyncState[];
   let service: SyncService;
   let http: HttpTestingController;
 
   beforeEach(() => {
     entries = [];
+    customers = [];
+    syncState = [];
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: API_URL, useValue: '/api' },
-        { provide: LOCAL_DB, useValue: fakeDb(entries) },
+        { provide: LOCAL_DB, useValue: fakeDb(entries, customers, syncState) },
+        { provide: ProfileService, useValue: { load: async () => ({ tenant: { id: TENANT } }) } },
       ],
     });
     service = TestBed.inject(SyncService);
@@ -123,5 +155,70 @@ describe('SyncService', () => {
 
     // Solo l'entità chiesta, e per c1 vale la cancellazione accodata per ultima.
     expect([...pending]).toEqual([['c1', 'delete']]);
+  });
+
+  it('pullChanges applica le modifiche ricevute e salva il cursore', async () => {
+    const done = service.pullChanges();
+    await tick();
+    http.expectOne((r) => r.url === '/api/sync/changes').flush({
+      cursor: 'cursore-1',
+      hasMore: false,
+      entities: {
+        customers: [
+          { id: 'c1', updatedAt: '2026-01-01T00:00:00Z', version: 0, deleted: false, data: { name: 'Rossi', email: null, version: 0, updatedAt: '2026-01-01T00:00:00Z' } },
+          { id: 'c2', updatedAt: '2026-01-01T00:00:00Z', version: 1, deleted: true, data: null },
+        ],
+      },
+    });
+
+    expect(await done).toBe(2);
+    expect(customers).toEqual([{ id: 'c1', tenantId: TENANT, name: 'Rossi', email: null, version: 0, updatedAt: '2026-01-01T00:00:00Z' }]);
+    expect(syncState).toEqual([{ key: 'pull', cursor: 'cursore-1' }]);
+  });
+
+  it('pullChanges richiama finché hasMore è vero, passando il cursore ricevuto', async () => {
+    const done = service.pullChanges();
+    await tick();
+    http.expectOne((r) => r.url === '/api/sync/changes' && r.params.get('cursor') === null).flush({
+      cursor: 'cursore-1',
+      hasMore: true,
+      entities: { customers: [{ id: 'c1', updatedAt: '', version: 0, deleted: false, data: { name: 'Rossi', email: null } }] },
+    });
+    await tick();
+    http.expectOne((r) => r.url === '/api/sync/changes' && r.params.get('cursor') === 'cursore-1').flush({
+      cursor: 'cursore-2',
+      hasMore: false,
+      entities: { customers: [{ id: 'c2', updatedAt: '', version: 0, deleted: false, data: { name: 'Bianchi', email: null } }] },
+    });
+
+    expect(await done).toBe(2);
+    expect(customers.map((c) => c.id).sort()).toEqual(['c1', 'c2']);
+  });
+
+  it('pullChanges non sovrascrive un record con una modifica locale ancora in coda', async () => {
+    await service.enqueue('customers', 'update', { id: 'c1', name: 'Modificato in locale' });
+    const done = service.pullChanges();
+    await tick();
+    http.expectOne((r) => r.url === '/api/sync/changes').flush({
+      cursor: 'cursore-1',
+      hasMore: false,
+      entities: { customers: [{ id: 'c1', updatedAt: '', version: 0, deleted: false, data: { name: 'Dal server', email: null } }] },
+    });
+
+    expect(await done).toBe(0);
+    expect(customers).toEqual([]);
+  });
+
+  it('pullChanges ignora le entità senza una tabella locale', async () => {
+    const done = service.pullChanges();
+    await tick();
+    http.expectOne((r) => r.url === '/api/sync/changes').flush({
+      cursor: 'cursore-1',
+      hasMore: false,
+      entities: { daily_report_materials: [{ id: 'm1', updatedAt: '', version: 0, deleted: false, data: {} }] },
+    });
+
+    expect(await done).toBe(0);
+    expect(syncState).toEqual([{ key: 'pull', cursor: 'cursore-1' }]);
   });
 });

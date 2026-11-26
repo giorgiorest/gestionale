@@ -19,6 +19,7 @@ import { EntitlementsService } from '../entitlements/entitlements.service';
 import { NotificationBellComponent } from '../notifications/notification-bell.component';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ProfileService, ROLE_LABELS } from '../profile/profile.service';
+import { SyncService } from '../sync/sync.service';
 
 /** Voce del menu laterale, mostrata solo se l'utente ha il permesso e il piano la include. */
 interface NavItem {
@@ -72,6 +73,18 @@ const NAV: NavItem[] = [
       <span class="spacer"></span>
       @if (profile.me()?.tenant; as tenant) {
         <span class="tenant" data-testid="tenant">{{ tenant.name }}</span>
+      }
+      @if (sync.pending() > 0) {
+        <span
+          class="pending-changes"
+          matTooltip="Modifiche non ancora inviate al server"
+          role="status"
+          [attr.aria-label]="sync.pending() + ' modifiche non ancora inviate al server'"
+          data-testid="pending-changes"
+        >
+          <mat-icon aria-hidden="true">cloud_off</mat-icon>
+          {{ sync.pending() }}
+        </span>
       }
       <app-notification-bell />
       <button mat-button [matMenuTriggerFor]="userMenu" class="user" data-testid="user-menu">
@@ -174,6 +187,19 @@ const NAV: NavItem[] = [
       color: var(--mat-sys-on-surface-variant);
       margin-right: 8px;
     }
+    .pending-changes {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font: var(--mat-sys-label-large);
+      color: var(--mat-sys-on-surface-variant);
+      margin-right: 4px;
+    }
+    .pending-changes mat-icon {
+      font-size: 20px;
+      height: 20px;
+      width: 20px;
+    }
     .user-name {
       margin-left: 4px;
     }
@@ -224,6 +250,7 @@ export class ShellComponent {
   readonly branding = inject(BrandingService);
   readonly profile = inject(ProfileService);
   readonly notifications = inject(NotificationsService);
+  readonly sync = inject(SyncService);
   private readonly entitlements = inject(EntitlementsService);
 
   readonly handset = toSignal(
@@ -247,5 +274,7 @@ export class ShellComponent {
   constructor() {
     void this.profile.load();
     void this.entitlements.load();
+    void this.sync.refreshPending();
+    this.sync.startPullPolling();
   }
 }
