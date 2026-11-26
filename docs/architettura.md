@@ -90,9 +90,23 @@ Dettagli: [ADR 0004](decisioni/0004-app-desktop.md) e `apps/desktop/README.md`.
   `409`.
 - **Lettura**: per ora ogni pagina scarica l'elenco completo e lo salva in IndexedDB; se il
   server non risponde mostra la copia locale (esempio: `features/customers`).
-- **Ricezione (`pullChanges`, da implementare)**: sincronizzazione incrementale con **cursore** per entità
-  (`syncState`): il client chiede le modifiche successive all'ultimo cursore ricevuto
-  (es. `updated_at` + id, o una sequenza di modifica) e le applica localmente.
+- **Ricezione**: `GET /api/sync/changes?cursor=&limit=` (voce 1.2), sincronizzazione incrementale
+  lato server. Il cursore è **per entità** `(updated_at, id)`, codificato in un'unica stringa
+  opaca (base64url di un JSON interno, il client non la interpreta): assente per un'entità,
+  equivale a "dall'inizio dei tempi" (tombstone compresi), senza un caso speciale per la prima
+  sincronizzazione. La risposta ha una chiave per entità — `customers`, `resources`, `commesse`,
+  `resource_assignments`, `work_activities`, `daily_reports`, `work_entries`,
+  `daily_report_materials` — ma **solo** se l'utente ha il permesso di lettura corrispondente
+  (l'assenza della chiave è il segnale, non un array vuoto); ogni riga porta `id`, `updatedAt`,
+  `version`, `deleted` e, se non cancellata, `data` con lo stesso Dto della sua API REST (per
+  `resource_assignments`, `hourlyCostOverride` resta nascosto senza `labor-cost:read`, come in
+  `GET /api/commesse/{id}/resource-assignments`). Interroga `limit + 1` righe per sapere se ce ne
+  sono altre senza una `COUNT` a parte; `hasMore` è vero se almeno un'entità ha raggiunto il
+  limite, e va richiamato con il nuovo cursore finché non torna falso. `notifications` resta
+  fuori: non ha `updated_at`/`deleted_at` (registro di soli inserimenti, stato di lettura a
+  parte) e ha già un proprio canale (la campanella). **`pullChanges` nel client (voce 1.3, non
+  qui)**: applicherà localmente le righe ricevute, comprese le cancellazioni, tenendo il cursore
+  in `syncState`.
 - **Conflitti**: con 50 utenti che modificano soprattutto la propria parte, i conflitti sono
   rari. Strategia iniziale: *last-write-wins* per record, con `updated_at` lato server;
   la colonna `version` c'è già, il controllo con `If-Match` e la risoluzione nell'interfaccia sono

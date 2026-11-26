@@ -20,14 +20,14 @@ public record ResourceAssignmentDto(UUID id, UUID resourceId, UUID commessaId, L
                                     LocalDate validTo, String role, BigDecimal hourlyCostOverride, boolean active,
                                     long version, Instant updatedAt) {
 
-    static ResourceAssignmentDto from(ResourceAssignment a) {
+    public static ResourceAssignmentDto from(ResourceAssignment a) {
         return new ResourceAssignmentDto(a.getId(), a.getResourceId(), a.getCommessaId(), a.getValidFrom(),
                 a.getValidTo(), a.getRole(), a.getHourlyCostOverride(), a.isActive(), a.getVersion(),
                 a.getUpdatedAt());
     }
 
     /** Copia senza il costo, per chi non ha {@code labor-cost:read} (vedi ADR 0021). */
-    ResourceAssignmentDto withoutHourlyCostOverride() {
+    public ResourceAssignmentDto withoutHourlyCostOverride() {
         return hourlyCostOverride == null ? this
                 : new ResourceAssignmentDto(id, resourceId, commessaId, validFrom, validTo, role, null, active,
                         version, updatedAt);

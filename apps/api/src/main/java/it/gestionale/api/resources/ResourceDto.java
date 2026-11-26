@@ -14,7 +14,7 @@ import jakarta.validation.constraints.Size;
 public record ResourceDto(UUID id, String firstName, String lastName, String userId, UUID teamLeadId, long version,
                           Instant updatedAt) {
 
-    static ResourceDto from(Resource resource) {
+    public static ResourceDto from(Resource resource) {
         return new ResourceDto(resource.getId(), resource.getFirstName(), resource.getLastName(),
                 resource.getUserId(), resource.getTeamLeadId(), resource.getVersion(), resource.getUpdatedAt());
     }

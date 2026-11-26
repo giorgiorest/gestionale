@@ -14,7 +14,7 @@ import jakarta.validation.constraints.Size;
  */
 public record CustomerDto(UUID id, String name, String email, long version, Instant updatedAt) {
 
-    static CustomerDto from(Customer customer) {
+    public static CustomerDto from(Customer customer) {
         return new CustomerDto(customer.getId(), customer.getName(), customer.getEmail(),
                 customer.getVersion(), customer.getUpdatedAt());
     }

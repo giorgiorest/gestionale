@@ -1,10 +1,14 @@
 package it.gestionale.api.resources;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /**
  * Soggetto a RLS: restituisce solo le risorse del tenant corrente.
@@ -25,4 +29,14 @@ public interface ResourceRepository extends JpaRepository<Resource, UUID> {
 
     /** Cancellazione fisica, usata solo dal ripristino del tenant demo. */
     void deleteByTenantId(UUID tenantId);
+
+    /** Modifiche (comprese le cancellazioni logiche) dopo il cursore, per {@code GET /api/sync/changes}. */
+    @Query("""
+            select e from Resource e
+            where e.tenantId = :tenantId
+              and (e.updatedAt > :afterUpdatedAt or (e.updatedAt = :afterUpdatedAt and e.id > :afterId))
+            order by e.updatedAt asc, e.id asc
+            """)
+    List<Resource> findChangesSince(@Param("tenantId") UUID tenantId, @Param("afterUpdatedAt") Instant afterUpdatedAt,
+            @Param("afterId") UUID afterId, Pageable pageable);
 }

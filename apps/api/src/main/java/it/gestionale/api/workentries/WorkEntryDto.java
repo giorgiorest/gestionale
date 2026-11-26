@@ -16,7 +16,7 @@ import jakarta.validation.constraints.Size;
 public record WorkEntryDto(UUID id, UUID dailyReportId, UUID resourceId, UUID workActivityId, BigDecimal hours,
                            BigDecimal overtimeHours, String notes, long version, Instant updatedAt) {
 
-    static WorkEntryDto from(WorkEntry entry) {
+    public static WorkEntryDto from(WorkEntry entry) {
         return new WorkEntryDto(entry.getId(), entry.getDailyReportId(), entry.getResourceId(),
                 entry.getWorkActivityId(), entry.getHours(), entry.getOvertimeHours(), entry.getNotes(),
                 entry.getVersion(), entry.getUpdatedAt());

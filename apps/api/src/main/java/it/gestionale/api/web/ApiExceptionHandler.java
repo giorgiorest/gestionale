@@ -16,6 +16,7 @@ import it.gestionale.api.notifications.UnknownRecipientException;
 import it.gestionale.api.resourceassignments.UnknownAssignmentReferenceException;
 import it.gestionale.api.resources.UnknownResourceException;
 import it.gestionale.api.resources.UnknownTeamLeadException;
+import it.gestionale.api.sync.InvalidSyncCursorException;
 import it.gestionale.api.tenancy.MissingTenantException;
 import it.gestionale.api.workactivities.UnknownWorkActivityReferenceException;
 import it.gestionale.api.workentries.UnknownWorkEntryReferenceException;
@@ -131,6 +132,11 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(InvalidLaborCostReportRangeException.class)
     ProblemDetail invalidLaborCostReportRange(InvalidLaborCostReportRangeException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidSyncCursorException.class)
+    ProblemDetail invalidSyncCursor(InvalidSyncCursorException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 

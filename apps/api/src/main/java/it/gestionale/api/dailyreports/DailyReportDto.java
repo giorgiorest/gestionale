@@ -20,7 +20,7 @@ public record DailyReportDto(UUID id, UUID commessaId, LocalDate date, String we
 
     private static final DailyReportStatusConverter STATUS = new DailyReportStatusConverter();
 
-    static DailyReportDto from(DailyReport report) {
+    public static DailyReportDto from(DailyReport report) {
         return new DailyReportDto(report.getId(), report.getCommessaId(), report.getDate(), report.getWeather(),
                 report.getNotes(), STATUS.convertToDatabaseColumn(report.getStatus()), report.getSubmittedAt(),
                 report.getClosedAt(), report.getVersion(), report.getUpdatedAt());

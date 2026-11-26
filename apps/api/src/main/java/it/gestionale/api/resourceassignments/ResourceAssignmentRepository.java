@@ -1,10 +1,12 @@
 package it.gestionale.api.resourceassignments;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -36,4 +38,14 @@ public interface ResourceAssignmentRepository extends JpaRepository<ResourceAssi
             """)
     boolean existsValidAssignment(@Param("resourceId") UUID resourceId, @Param("commessaId") UUID commessaId,
             @Param("date") LocalDate date, @Param("tenantId") UUID tenantId);
+
+    /** Modifiche (comprese le cancellazioni logiche) dopo il cursore, per {@code GET /api/sync/changes}. */
+    @Query("""
+            select e from ResourceAssignment e
+            where e.tenantId = :tenantId
+              and (e.updatedAt > :afterUpdatedAt or (e.updatedAt = :afterUpdatedAt and e.id > :afterId))
+            order by e.updatedAt asc, e.id asc
+            """)
+    List<ResourceAssignment> findChangesSince(@Param("tenantId") UUID tenantId,
+            @Param("afterUpdatedAt") Instant afterUpdatedAt, @Param("afterId") UUID afterId, Pageable pageable);
 }

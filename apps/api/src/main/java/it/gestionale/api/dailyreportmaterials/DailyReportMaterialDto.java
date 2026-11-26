@@ -17,7 +17,7 @@ import jakarta.validation.constraints.Size;
 public record DailyReportMaterialDto(UUID id, UUID dailyReportId, String description, BigDecimal quantity,
                                      String unit, String notes, long version, Instant updatedAt) {
 
-    static DailyReportMaterialDto from(DailyReportMaterial material) {
+    public static DailyReportMaterialDto from(DailyReportMaterial material) {
         return new DailyReportMaterialDto(material.getId(), material.getDailyReportId(), material.getDescription(),
                 material.getQuantity(), material.getUnit(), material.getNotes(), material.getVersion(),
                 material.getUpdatedAt());
