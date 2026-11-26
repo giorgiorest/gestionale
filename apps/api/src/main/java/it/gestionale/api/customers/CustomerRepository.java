@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -21,7 +22,18 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
 
     long countByTenantIdAndDeletedAtIsNull(UUID tenantId);
 
-    List<Customer> findByTenantIdAndDeletedAtIsNullOrderByNameAsc(UUID tenantId);
+    /**
+     * Lista paginata, ordinata e ricercabile (ADR 0014): l'ordinamento arriva da {@code pageable}
+     * (nessun {@code order by} qui, altrimenti Spring Data non potrebbe sostituirlo). {@code pattern}
+     * è {@code null} per non filtrare, altrimenti {@code "%" + q + "%"} per il confronto ILIKE.
+     */
+    @Query("""
+            select e from Customer e
+            where e.tenantId = :tenantId
+              and e.deletedAt is null
+              and (:pattern is null or e.name ilike :pattern or e.email ilike :pattern)
+            """)
+    Page<Customer> search(@Param("tenantId") UUID tenantId, @Param("pattern") String pattern, Pageable pageable);
 
     /** Anche se cancellato. Il filtro per tenant è difesa in profondità: la RLS già protegge. */
     Optional<Customer> findByIdAndTenantId(UUID id, UUID tenantId);

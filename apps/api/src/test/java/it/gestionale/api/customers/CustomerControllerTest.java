@@ -88,9 +88,10 @@ class CustomerControllerTest extends AbstractIntegrationTest {
 
         mvc.perform(get("/api/customers").with(TestJwt.user(tenantA, "viewer")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].name").value("Rossi S.p.A."))
-                .andExpect(jsonPath("$[0].email").doesNotExist());
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].name").value("Rossi S.p.A."))
+                .andExpect(jsonPath("$.content[0].email").doesNotExist());
     }
 
     @Test
@@ -114,7 +115,7 @@ class CustomerControllerTest extends AbstractIntegrationTest {
         deleteCustomer(tenantA, "operator", id).andExpect(status().isNoContent());
 
         mvc.perform(get("/api/customers").with(TestJwt.user(tenantA, "viewer")))
-                .andExpect(jsonPath("$.length()").value(0));
+                .andExpect(jsonPath("$.content.length()").value(0));
         // La riga resta come tombstone: servirà a propagare la cancellazione ai dispositivi offline.
         Customer deleted = row(tenantA, id);
         assertThat(deleted.isDeleted()).isTrue();
@@ -140,8 +141,8 @@ class CustomerControllerTest extends AbstractIntegrationTest {
 
         assertThat(row(tenantA, id).isDeleted()).isFalse();
         mvc.perform(get("/api/customers").with(TestJwt.user(tenantA, "viewer")))
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].name").value("Rossi riattivato"));
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].name").value("Rossi riattivato"));
     }
 
     @Test
@@ -164,12 +165,12 @@ class CustomerControllerTest extends AbstractIntegrationTest {
 
         mvc.perform(get("/api/customers").with(TestJwt.user(tenantB, "admin")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(0));
+                .andExpect(jsonPath("$.content.length()").value(0));
         // Stesso id da un altro tenant: la riga non è visibile e l'inserimento va in conflitto.
         putCustomer(tenantB, "admin", id, "{\"name\":\"Furto\"}").andExpect(status().isConflict());
 
         mvc.perform(get("/api/customers").with(TestJwt.user(tenantA, "viewer")))
-                .andExpect(jsonPath("$[0].name").value("Cliente di A"));
+                .andExpect(jsonPath("$.content[0].name").value("Cliente di A"));
     }
 
     @Test
@@ -182,7 +183,7 @@ class CustomerControllerTest extends AbstractIntegrationTest {
 
         assertThat(row(tenantA, id).isDeleted()).isFalse();
         mvc.perform(get("/api/customers").with(TestJwt.user(tenantA, "viewer")))
-                .andExpect(jsonPath("$.length()").value(1));
+                .andExpect(jsonPath("$.content.length()").value(1));
     }
 
     @Test
@@ -190,5 +191,40 @@ class CustomerControllerTest extends AbstractIntegrationTest {
         putCustomer(tenantA, "operator", UUID.randomUUID(), "{\"name\":\" \"}").andExpect(status().isBadRequest());
         putCustomer(tenantA, "operator", UUID.randomUUID(), "{\"name\":\"X\",\"email\":\"non-una-email\"}")
                 .andExpect(status().isBadRequest());
+    }
+
+    /** Contratto delle liste paginate (ADR 0014): page/size/sort/q e la forma esplicita di PageDto. */
+    @Test
+    void listIsPagedSortedAndSearchable() throws Exception {
+        putCustomer(tenantA, "operator", UUID.randomUUID(), "{\"name\":\"Bianchi\",\"email\":\"a@example.com\"}")
+                .andExpect(status().isOk());
+        putCustomer(tenantA, "operator", UUID.randomUUID(), "{\"name\":\"Rossi\",\"email\":\"b@example.com\"}")
+                .andExpect(status().isOk());
+        putCustomer(tenantA, "operator", UUID.randomUUID(), "{\"name\":\"Verdi\",\"email\":\"c@example.com\"}")
+                .andExpect(status().isOk());
+
+        // Pagina piccola: solo i metadati e il contenuto richiesti, ordinamento predefinito per nome.
+        mvc.perform(get("/api/customers?page=0&size=2").with(TestJwt.user(tenantA, "viewer")))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(2))
+                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.totalPages").value(2))
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].name").value("Bianchi"))
+                .andExpect(jsonPath("$.content[1].name").value("Rossi"));
+
+        // sort= esplicito, formato Spring.
+        mvc.perform(get("/api/customers?sort=name,desc").with(TestJwt.user(tenantA, "viewer")))
+                .andExpect(jsonPath("$.content[0].name").value("Verdi"));
+
+        // q= ricerca libera, su nome o email, senza distinzione di maiuscole.
+        mvc.perform(get("/api/customers?q=ROSSI").with(TestJwt.user(tenantA, "viewer")))
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].name").value("Rossi"));
+        mvc.perform(get("/api/customers?q=b@example").with(TestJwt.user(tenantA, "viewer")))
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].name").value("Rossi"));
+        mvc.perform(get("/api/customers?q=nessuna-corrispondenza").with(TestJwt.user(tenantA, "viewer")))
+                .andExpect(jsonPath("$.content.length()").value(0));
     }
 }

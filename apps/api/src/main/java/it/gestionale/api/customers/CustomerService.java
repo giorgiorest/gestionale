@@ -1,10 +1,11 @@
 package it.gestionale.api.customers;
 
 import java.time.Clock;
-import java.util.List;
 import java.util.UUID;
 
 import it.gestionale.api.tenancy.TenantContext;
+import it.gestionale.api.web.PageDto;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,12 +20,14 @@ public class CustomerService {
         this.clock = clock;
     }
 
-    /** Clienti attivi del tenant: i record cancellati logicamente non compaiono. */
+    /**
+     * Clienti attivi del tenant (ADR 0014): i record cancellati logicamente non compaiono.
+     * {@code q}, se non vuoto, filtra per nome o email (ILIKE).
+     */
     @Transactional(readOnly = true)
-    public List<CustomerDto> list() {
-        return customers.findByTenantIdAndDeletedAtIsNullOrderByNameAsc(TenantContext.require()).stream()
-                .map(CustomerDto::from)
-                .toList();
+    public PageDto<CustomerDto> list(Pageable pageable, String q) {
+        String pattern = q == null || q.isBlank() ? null : "%" + q.trim() + "%";
+        return PageDto.of(customers.search(TenantContext.require(), pattern, pageable), CustomerDto::from);
     }
 
     /**

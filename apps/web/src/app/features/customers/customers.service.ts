@@ -2,16 +2,19 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { API_URL } from '../../core/api/api-url';
+import { PageDto } from '../../core/api/page';
 import { ProfileService } from '../../core/profile/profile.service';
 import { SyncService } from '../../core/sync/sync.service';
-import { LOCAL_DB, LocalCustomer } from '../../db/local-db';
+import { LOCAL_DB } from '../../db/local-db';
 import { uuidv7 } from '../../shared/uuid';
 
 /** Nome dell'entità nelle API e nella outbox. */
 const ENTITY = 'customers';
 
-/** Cliente come restituito dall'API. */
-interface CustomerDto {
+export const DEFAULT_PAGE_SIZE = 50;
+
+/** Cliente come lo mostra la pagina (sia dall'API che dalla copia offline). */
+export interface CustomerRow {
   id: string;
   name: string;
   email: string | null;
@@ -19,8 +22,15 @@ interface CustomerDto {
 }
 
 /**
- * Clienti del tenant, con copia locale per l'uso offline.
- * Le scritture passano dalla outbox ({@link SyncService}), mai direttamente dall'API.
+ * Clienti del tenant: lista paginata e ricercabile lato server (ADR 0014), con copia offline.
+ *
+ * - Online, `load()` chiama `GET /api/customers?page=&size=&q=`: la pagina mostrata è quella del
+ *   server, non più "tutto l'elenco".
+ * - Offline, ricade sulla copia locale che il cursore di sincronizzazione mantiene in `db.customers`
+ *   (vedi {@link SyncService.pullChanges}), con paginazione e ricerca calcolate lato client: è
+ *   un'esperienza degradata, non un secondo meccanismo di sincronizzazione.
+ * - Le scritture passano dalla outbox ({@link SyncService}), mai direttamente dall'API, e
+ *   aggiornano la pagina corrente in modo ottimistico (senza aspettare un nuovo giro dal server).
  */
 @Injectable({ providedIn: 'root' })
 export class CustomersService {
@@ -30,70 +40,78 @@ export class CustomersService {
   private readonly sync = inject(SyncService);
   private readonly profile = inject(ProfileService);
 
-  readonly customers = signal<LocalCustomer[]>([]);
+  readonly customers = signal<CustomerRow[]>([]);
+  readonly totalElements = signal(0);
+  readonly page = signal(0);
+  readonly size = signal(DEFAULT_PAGE_SIZE);
+  readonly q = signal('');
   /** true se l'ultimo caricamento è avvenuto dalla copia locale (server non raggiungibile). */
   readonly offline = signal(false);
 
-  /** Invia le modifiche in sospeso, poi aggiorna la copia locale dal server (o la usa se offline). */
+  private tenantId: string | null = null;
+
+  /** Invia le modifiche in sospeso, poi carica la pagina corrente dal server (o dalla copia locale). */
   async load(): Promise<void> {
-    // flush() non dipende dal profilo (lavora solo sulla outbox locale): in parallelo, non in coda.
     const [profile] = await Promise.all([this.profile.load(), this.sync.flush()]);
-    const tenantId = profile?.tenant?.id ?? null;
+    this.tenantId = profile?.tenant?.id ?? null;
+    const q = this.q().trim();
+    const params: Record<string, string> = { page: String(this.page()), size: String(this.size()) };
+    if (q) {
+      params['q'] = q;
+    }
     try {
-      const remote = await firstValueFrom(this.http.get<CustomerDto[]>(`${this.apiUrl}/${ENTITY}`));
-      const [pending, local] = await Promise.all([
-        this.sync.pendingByEntity(ENTITY),
-        this.db.customers.toArray(),
-      ]);
-      // Un record cancellato in locale ma non ancora inviato non deve tornare dal server.
-      const arrived = remote.filter((c) => pending.get(c.id) !== 'delete');
-      await this.db.customers.bulkPut(
-        arrived.map((c) => ({ id: c.id, tenantId: tenantId ?? '', name: c.name, email: c.email, updatedAt: c.updatedAt })),
+      const result = await firstValueFrom(
+        this.http.get<PageDto<CustomerRow>>(`${this.apiUrl}/${ENTITY}`, { params }),
       );
-      // Toglie dalla copia locale i record spariti dal server, salvo quelli ancora da inviare.
-      const remoteIds = new Set(remote.map((c) => c.id));
-      const stale = local.filter((c) => !remoteIds.has(c.id) && !pending.has(c.id)).map((c) => c.id);
-      await this.db.customers.bulkDelete(stale);
+      // Una cancellazione locale non ancora inviata non deve tornare a comparire.
+      const pending = await this.sync.pendingByEntity(ENTITY);
+      this.customers.set(result.content.filter((c) => pending.get(c.id) !== 'delete'));
+      this.totalElements.set(result.totalElements);
       this.offline.set(false);
     } catch {
-      this.offline.set(true);
+      await this.loadOffline(q);
     }
-    await this.refresh(tenantId);
+  }
+
+  private async loadOffline(q: string): Promise<void> {
+    const needle = q.toLowerCase();
+    const local = await this.db.customers.toArray();
+    const matching = local
+      .filter((c) => !this.tenantId || c.tenantId === this.tenantId)
+      .filter((c) => !needle || c.name.toLowerCase().includes(needle) || (c.email ?? '').toLowerCase().includes(needle))
+      .sort((a, b) => a.name.localeCompare(b.name, 'it'));
+    const start = this.page() * this.size();
+    this.customers.set(matching.slice(start, start + this.size()));
+    this.totalElements.set(matching.length);
+    this.offline.set(true);
   }
 
   /** Crea un cliente localmente e lo accoda per l'invio al server. */
-  async create(name: string, email: string | null): Promise<LocalCustomer> {
+  async create(name: string, email: string | null): Promise<CustomerRow> {
     const tenantId = (await this.profile.load())?.tenant?.id ?? '';
-    const customer: LocalCustomer = {
+    const customer: CustomerRow = {
       id: uuidv7(),
-      tenantId,
       name: name.trim(),
       email: email?.trim() || null,
       updatedAt: new Date().toISOString(),
     };
-    await this.db.customers.put(customer);
+    await this.db.customers.put({ ...customer, tenantId });
     await this.sync.enqueue(ENTITY, 'create', { id: customer.id, name: customer.name, email: customer.email });
-    await this.refresh(tenantId);
+    this.customers.update((rows) => [...rows, customer].sort((a, b) => a.name.localeCompare(b.name, 'it')));
+    this.totalElements.update((n) => n + 1);
     void this.sync.flush();
     return customer;
   }
 
   /**
-   * Cancella un cliente: scompare subito dalla copia locale e la cancellazione viene accodata
+   * Cancella un cliente: scompare subito dalla pagina mostrata e la cancellazione viene accodata
    * (`DELETE /api/customers/{id}`, idempotente). Sul server è una cancellazione logica.
    */
   async remove(id: string): Promise<void> {
-    const tenantId = (await this.profile.load())?.tenant?.id ?? '';
     await this.db.customers.delete(id);
     await this.sync.enqueue(ENTITY, 'delete', { id });
-    await this.refresh(tenantId);
+    this.customers.update((rows) => rows.filter((c) => c.id !== id));
+    this.totalElements.update((n) => Math.max(0, n - 1));
     void this.sync.flush();
-  }
-
-  private async refresh(tenantId: string | null): Promise<void> {
-    const all = await this.db.customers.toArray();
-    this.customers.set(
-      all.filter((c) => !tenantId || c.tenantId === tenantId).sort((a, b) => a.name.localeCompare(b.name, 'it')),
-    );
   }
 }

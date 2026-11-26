@@ -63,7 +63,7 @@ debito da pagare moltiplicato per il numero di entità.
 | 1.1 | Cancellazione logica (`deleted_at`), `DELETE /api/customers/{id}` idempotente, `@Version` per il blocco ottimistico, `created_by`/`updated_by` ([ADR 0018](decisioni/0018-cancellazione-logica.md)) | V6 | ✅ |
 | 1.2 | `GET /api/sync/changes` con cursore per entità (`updated_at` + id) e tombstones | V17 | ✅ |
 | 1.3 | `pullChanges` nel client: cursore in `syncState`, applicazione locale, schermata «modifiche non inviate» | — | ✅ |
-| 1.4 | Liste paginate, ordinate e ricercabili ([ADR 0014](decisioni/0014-liste-paginate.md)) su `customers`, con gli indici | V7 | ⬜ |
+| 1.4 | Liste paginate, ordinate e ricercabili ([ADR 0014](decisioni/0014-liste-paginate.md)) su `customers`, con gli indici | V18 | ✅ |
 | 1.5 | Conflitti: `If-Match`/409, risoluzione nell'interfaccia | — | ⬜ |
 
 ## Fase 2 — Anagrafiche del mestiere

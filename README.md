@@ -45,7 +45,7 @@ gestionale/
 | `auth/`      | ruoli d'azienda (`admin`, `operator`, `viewer`) e di cantiere (`capocantiere`, `caposquadra`, `operaio`, `amministrativo`) → permessi, `GET /api/me` (profilo utente) |
 | `tenancy/`   | `TenantContext`, `TenantFilter` (tenant dal JWT), `TenantAwareDataSource` (imposta `app.tenant_id` sulla connessione) |
 | `licensing/` | `Entitlements`, `EntitlementService`, `LicenseVerifier` (licenze offline Ed25519), `GET /api/entitlements` |
-| `customers/` | anagrafica clienti: `GET /api/customers`, `PUT /api/customers/{id}` e `DELETE /api/customers/{id}` (idempotenti; la cancellazione è logica, [ADR 0018](docs/decisioni/0018-cancellazione-logica.md)) |
+| `customers/` | anagrafica clienti: `GET /api/customers` paginato, ordinato e ricercabile (`?page=&size=&sort=&q=`, risposta `PageDto<CustomerDto>`, [ADR 0014](docs/decisioni/0014-liste-paginate.md)), `PUT /api/customers/{id}` e `DELETE /api/customers/{id}` (idempotenti; la cancellazione è logica, [ADR 0018](docs/decisioni/0018-cancellazione-logica.md)) |
 | `resources/` | risorse e squadre (dipendenti che compilano i rapportini): stesso schema di `customers/`, collegate opzionalmente alla rubrica `app_users` (`userId`) e tra loro (`teamLeadId`, "fa parte della squadra di") |
 | `commesse/`  | commesse (cantieri): entità centrale del prodotto ([ADR 0012](docs/decisioni/0012-verticale-edilizia.md)), con cliente (`customerId`, chiave esterna vera) e stato (`pianificata`, `in_corso`, `sospesa`, `conclusa`) |
 | `resourceassignments/` | assegnazione di una risorsa a una commessa, con periodo di validità e ruolo *contestuale a quella commessa* (distinto dal ruolo applicativo della persona) |
