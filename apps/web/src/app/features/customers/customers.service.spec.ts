@@ -2,10 +2,11 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { API_URL } from '../../core/api/api-url';
+import { PageDto } from '../../core/api/page';
 import { ProfileService } from '../../core/profile/profile.service';
 import { SyncService } from '../../core/sync/sync.service';
 import { LOCAL_DB, LocalCustomer, LocalDb, OutboxOperation } from '../../db/local-db';
-import { CustomersService } from './customers.service';
+import { CustomerRow, CustomersService } from './customers.service';
 
 const TENANT = 'tenant-1';
 
@@ -22,17 +23,13 @@ function fakeDb(customers: LocalCustomer[]): LocalDb {
         customers.push(c);
         return c.id;
       },
-      bulkPut: async (list: LocalCustomer[]) => {
-        for (const c of list) {
-          const i = customers.findIndex((x) => x.id === c.id);
-          if (i >= 0) customers[i] = c;
-          else customers.push(c);
-        }
-      },
-      bulkDelete: async (ids: string[]) => ids.forEach(removeById),
       delete: async (id: string) => removeById(id),
     },
   } as unknown as LocalDb;
+}
+
+function page(content: (CustomerRow & { version?: number })[], totalElements = content.length): PageDto<CustomerRow> {
+  return { content, page: 0, size: 50, totalElements, totalPages: Math.max(1, Math.ceil(totalElements / 50)) };
 }
 
 describe('CustomersService', () => {
@@ -73,33 +70,69 @@ describe('CustomersService', () => {
 
   const tick = () => new Promise((resolve) => setTimeout(resolve));
 
-  it('carica dal server, salva la copia locale e ordina per nome', async () => {
-    customers.push({ id: 'old', tenantId: TENANT, name: 'Rimosso dal server', email: null, updatedAt: '' });
+  it('carica la pagina dal server con i parametri di pagina e dimensione', async () => {
     const done = service.load();
     await tick();
-    http.expectOne('/api/customers').flush([
-      { id: 'b', name: 'Verdi', email: null, version: 0, updatedAt: '2026-01-01T00:00:00Z' },
-      { id: 'a', name: 'Bianchi', email: 'b@example.com', version: 1, updatedAt: '2026-01-01T00:00:00Z' },
-    ]);
+    const req = http.expectOne((r) => r.url === '/api/customers');
+    expect(req.request.params.get('page')).toBe('0');
+    expect(req.request.params.get('size')).toBe('50');
+    req.flush(
+      page([
+        { id: 'a', name: 'Bianchi', email: 'b@example.com', updatedAt: '2026-01-01T00:00:00Z' },
+        { id: 'b', name: 'Verdi', email: null, updatedAt: '2026-01-01T00:00:00Z' },
+      ]),
+    );
     await done;
 
     expect(service.offline()).toBe(false);
     expect(service.customers().map((c) => c.name)).toEqual(['Bianchi', 'Verdi']);
-    expect(customers.map((c) => c.id).sort()).toEqual(['a', 'b']);
+    expect(service.totalElements()).toBe(2);
   });
 
-  it('se il server non risponde usa la copia locale', async () => {
-    customers.push({ id: 'a', tenantId: TENANT, name: 'Locale', email: null, updatedAt: '' });
+  it('manda q solo quando la ricerca non è vuota', async () => {
+    service.q.set('rossi');
     const done = service.load();
     await tick();
-    http.expectOne('/api/customers').error(new ProgressEvent('error'));
+    const req = http.expectOne((r) => r.url === '/api/customers');
+    expect(req.request.params.get('q')).toBe('rossi');
+    req.flush(page([{ id: 'a', name: 'Rossi', email: null, updatedAt: '2026-01-01T00:00:00Z' }]));
+    await done;
+
+    expect(service.customers().map((c) => c.name)).toEqual(['Rossi']);
+  });
+
+  it('se il server non risponde ricade sulla copia locale, paginata e filtrata lato client', async () => {
+    customers.push({ id: 'a', tenantId: TENANT, name: 'Locale', email: null, updatedAt: '' });
+    customers.push({ id: 'b', tenantId: TENANT, name: 'Altro tenant', email: null, updatedAt: '' });
+    customers[1].tenantId = 'altro-tenant';
+    const done = service.load();
+    await tick();
+    http.expectOne((r) => r.url === '/api/customers').error(new ProgressEvent('error'));
     await done;
 
     expect(service.offline()).toBe(true);
     expect(service.customers().map((c) => c.name)).toEqual(['Locale']);
+    expect(service.totalElements()).toBe(1);
   });
 
-  it('crea il cliente in locale e lo accoda nella outbox', async () => {
+  it('una cancellazione locale non ancora inviata non torna dal server', async () => {
+    pending.set('a', 'delete');
+    const done = service.load();
+    await tick();
+    http
+      .expectOne((r) => r.url === '/api/customers')
+      .flush(
+        page([
+          { id: 'a', name: 'Rossi', email: null, updatedAt: '2026-01-01T00:00:00Z' },
+          { id: 'b', name: 'Verdi', email: null, updatedAt: '2026-01-01T00:00:00Z' },
+        ]),
+      );
+    await done;
+
+    expect(service.customers().map((c) => c.id)).toEqual(['b']);
+  });
+
+  it('crea il cliente in locale, lo accoda nella outbox e lo mostra subito', async () => {
     const created = await service.create('  Rossi S.r.l. ', '');
 
     expect(created.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7/);
@@ -107,9 +140,10 @@ describe('CustomersService', () => {
     expect(created.email).toBeNull();
     expect(enqueued).toEqual([['customers', 'create', { id: created.id, name: 'Rossi S.r.l.', email: null }]]);
     expect(service.customers().map((c) => c.id)).toEqual([created.id]);
+    expect(service.totalElements()).toBe(1);
   });
 
-  it('cancella il cliente in locale e accoda il DELETE', async () => {
+  it('cancella il cliente in locale, accoda il DELETE e lo toglie subito dalla pagina', async () => {
     customers.push({ id: 'a', tenantId: TENANT, name: 'Rossi', email: null, updatedAt: '' });
 
     await service.remove('a');
@@ -117,19 +151,5 @@ describe('CustomersService', () => {
     expect(customers).toEqual([]);
     expect(enqueued).toEqual([['customers', 'delete', { id: 'a' }]]);
     expect(service.customers()).toEqual([]);
-  });
-
-  it('un cliente cancellato ma non ancora inviato non torna dal server', async () => {
-    pending.set('a', 'delete');
-    const done = service.load();
-    await tick();
-    http.expectOne('/api/customers').flush([
-      { id: 'a', name: 'Rossi', email: null, version: 0, updatedAt: '2026-01-01T00:00:00Z' },
-      { id: 'b', name: 'Verdi', email: null, version: 0, updatedAt: '2026-01-01T00:00:00Z' },
-    ]);
-    await done;
-
-    expect(customers.map((c) => c.id)).toEqual(['b']);
-    expect(service.customers().map((c) => c.id)).toEqual(['b']);
   });
 });

@@ -88,8 +88,13 @@ Dettagli: [ADR 0004](decisioni/0004-app-desktop.md) e `apps/desktop/README.md`.
 - **Chi ha scritto**: ogni tabella di dominio ha `created_by`/`updated_by` (claim `sub`; NULL per i
   processi di sistema) e `version` per il blocco ottimistico (`@Version`); un conflitto diventa
   `409`.
-- **Lettura**: per ora ogni pagina scarica l'elenco completo e lo salva in IndexedDB; se il
-  server non risponde mostra la copia locale (esempio: `features/customers`).
+- **Liste** ([ADR 0014](decisioni/0014-liste-paginate.md)): convenzione unica per ogni entità con
+  un elenco — `GET /api/<entità>?page=&size=&sort=&q=`, risposta `PageDto<T>` esplicita
+  (`content`, `page`, `size`, `totalElements`, `totalPages`), indice `(tenant_id, <ordinamento
+  predefinito>)`. Online, la pagina chiama questo endpoint; se il server non risponde, ricade sulla
+  copia locale mantenuta dal cursore di sincronizzazione (sotto), con paginazione e ricerca
+  calcolate lato client come esperienza degradata (esempio: `features/customers`). La paginazione
+  **non** è il meccanismo di sincronizzazione: quello resta `pullChanges` (sotto), a cursore.
 - **Ricezione**: `GET /api/sync/changes?cursor=&limit=` (voce 1.2), sincronizzazione incrementale
   lato server. Il cursore è **per entità** `(updated_at, id)`, codificato in un'unica stringa
   opaca (base64url di un JSON interno, il client non la interpreta): assente per un'entità,
@@ -109,7 +114,7 @@ Dettagli: [ADR 0004](decisioni/0004-app-desktop.md) e `apps/desktop/README.md`.
   codifica già per entità, al client basta passarlo indietro intero) e lo salva dopo ogni pagina,
   così un errore a metà non perde il progresso fatto. Applica le righe alle tabelle Dexie
   corrispondenti (`bulkPut` per le righe attive, `bulkDelete` per i tombstone), aggiungendo
-  `tenantId` dal profilo corrente come già fa `CustomersService.load()`; un'entità senza tabella
+  `tenantId` dal profilo corrente come già fa `CustomersService.create()`; un'entità senza tabella
   locale (oggi `daily_report_materials`, in attesa della UI del rapportino da telefono, voce 3.3)
   viene ignorata con un log, senza bloccare le altre. Un id ancora in `pendingByEntity()` (una
   modifica locale non ancora inviata) non viene toccato. Parte al login (`ShellComponent`), ogni

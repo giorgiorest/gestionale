@@ -6,14 +6,17 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { HasPermissionDirective } from '../../core/profile/has-permission.directive';
 import { ProfileService } from '../../core/profile/profile.service';
 import { SyncService } from '../../core/sync/sync.service';
-import { LocalCustomer } from '../../db/local-db';
 import { openConfirm } from '../../shared/confirm-dialog';
-import { CustomersService } from './customers.service';
+import { CustomerRow, CustomersService } from './customers.service';
+
+/** Debounce della ricerca lato server: non una richiesta per ogni tasto premuto. */
+const SEARCH_DEBOUNCE_MS = 300;
 
 /** Anagrafica clienti: elenco con ricerca e inserimento rapido (funziona anche offline). */
 @Component({
@@ -26,6 +29,7 @@ import { CustomersService } from './customers.service';
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatPaginatorModule,
     MatTableModule,
     MatTooltipModule,
   ],
@@ -33,7 +37,7 @@ import { CustomersService } from './customers.service';
     <div class="page">
       <div class="page-header">
         <h1>Clienti</h1>
-        <span class="subtitle">{{ service.customers().length }} in anagrafica</span>
+        <span class="subtitle">{{ service.totalElements() }} in anagrafica</span>
         <span class="spacer"></span>
         @if (sync.pending() > 0) {
           <span class="status todo"><mat-icon inline>sync</mat-icon>{{ sync.pending() }} da sincronizzare</span>
@@ -67,9 +71,9 @@ import { CustomersService } from './customers.service';
           <mat-form-field appearance="outline" subscriptSizing="dynamic" class="search">
             <mat-icon matPrefix>search</mat-icon>
             <mat-label>Cerca</mat-label>
-            <input matInput name="filter" [ngModel]="filter()" (ngModelChange)="filter.set($event)" />
+            <input matInput name="filter" [ngModel]="filterText()" (ngModelChange)="onFilterChange($event)" />
           </mat-form-field>
-          <table mat-table [dataSource]="rows()" data-testid="customers">
+          <table mat-table [dataSource]="service.customers()" data-testid="customers">
             <ng-container matColumnDef="name">
               <th mat-header-cell *matHeaderCellDef>Ragione sociale</th>
               <td mat-cell *matCellDef="let c" class="name">{{ c.name }}</td>
@@ -103,10 +107,17 @@ import { CustomersService } from './customers.service';
             <tr mat-row *matRowDef="let row; columns: columns()"></tr>
             <tr class="mat-row" *matNoDataRow>
               <td class="mat-cell empty" [attr.colspan]="columns().length">
-                {{ filter() ? 'Nessun cliente corrisponde alla ricerca.' : 'Nessun cliente.' }}
+                {{ filterText() ? 'Nessun cliente corrisponde alla ricerca.' : 'Nessun cliente.' }}
               </td>
             </tr>
           </table>
+          <mat-paginator
+            [length]="service.totalElements()"
+            [pageIndex]="service.page()"
+            [pageSize]="service.size()"
+            [pageSizeOptions]="[50, 100, 200]"
+            (page)="onPage($event)"
+          ></mat-paginator>
         </mat-card-content>
       </mat-card>
     </div>
@@ -150,19 +161,35 @@ export class CustomersPage {
   private readonly dialog = inject(MatDialog);
   readonly saving = signal(false);
   readonly removing = signal<string | null>(null);
-  readonly filter = signal('');
+  /** Testo digitato nel campo di ricerca: la ricerca server-side parte dopo un breve debounce. */
+  readonly filterText = signal('');
   readonly columns = computed(() =>
     this.profile.hasPermission('customers:write') ? ['name', 'email', 'actions'] : ['name', 'email'],
   );
-  readonly rows = computed(() => {
-    const q = this.filter().trim().toLowerCase();
-    const all = this.service.customers();
-    return q ? all.filter((c) => c.name.toLowerCase().includes(q) || (c.email ?? '').toLowerCase().includes(q)) : all;
-  });
   name = '';
   email = '';
 
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
+
   constructor() {
+    void this.service.load();
+  }
+
+  onFilterChange(value: string): void {
+    this.filterText.set(value);
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+    }
+    this.searchTimer = setTimeout(() => {
+      this.service.q.set(value.trim());
+      this.service.page.set(0);
+      void this.service.load();
+    }, SEARCH_DEBOUNCE_MS);
+  }
+
+  onPage(event: PageEvent): void {
+    this.service.page.set(event.pageIndex);
+    this.service.size.set(event.pageSize);
     void this.service.load();
   }
 
@@ -181,7 +208,7 @@ export class CustomersPage {
   }
 
   /** Cancella il cliente, previa conferma: funziona anche offline (la modifica resta in coda). */
-  async remove(customer: LocalCustomer): Promise<void> {
+  async remove(customer: CustomerRow): Promise<void> {
     const ok = await openConfirm(this.dialog, {
       title: 'Cancellare il cliente?',
       message: `${customer.name} non comparirà più in anagrafica. La cancellazione viene inviata al server appena è raggiungibile.`,
