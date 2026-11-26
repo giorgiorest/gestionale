@@ -77,7 +77,7 @@ assegna da solo). A mano, nella console di Keycloak:
 I permessi esatti di ogni ruolo sono in `Role` (backend, `apps/api/.../auth/Role.java`): Keycloak
 assegna solo il ruolo, il significato lo decide l'applicazione (così il provider di identità resta
 sostituibile). I quattro ruoli di cantiere sono scaffolding senza permessi propri finché non esiste
-la funzione da proteggere: ogni voce di `docs/roadmap-alex.md` che introduce un endpoint nuovo
+la funzione da proteggere: ogni voce delle Fasi A–I di `docs/roadmap.md` che introduce un endpoint nuovo
 aggiunge i `Permission` giusti ai ruoli giusti.
 
 ### Aggiungere un nuovo ruolo

@@ -142,7 +142,7 @@ Dettagli e motivazioni (anche per la rivendita): [ADR 0003](decisioni/0003-ident
 - L'API valida firma, issuer e audience (`gestionale-api`) e legge solo claim neutri:
   `sub`, `preferred_username`, `name`, `email`, `tenant_id`, `roles`.
 - **Profilazione**: in Keycloak si assegnano ruoli d'azienda (`admin`, `operator`, `viewer`) e di
-  cantiere (`capocantiere`, `caposquadra`, `operaio`, `amministrativo`, `docs/roadmap-alex.md`); il
+  cantiere (`capocantiere`, `caposquadra`, `operaio`, `amministrativo`, `docs/roadmap.md` Fasi A–I); il
   backend li traduce in permessi (`customers:read`, `customers:write`, `resources:read`,
   `resources:write`, `commesse:read`, `commesse:write`, `resource-assignments:read`,
   `resource-assignments:write`, `work-activities:read`, `work-activities:write`,

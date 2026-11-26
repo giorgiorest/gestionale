@@ -169,7 +169,7 @@ export class LocalDb extends Dexie {
     this.version(3).stores({
       meta: 'key',
     });
-    // v4: risorse (roadmap-alex.md 2.3).
+    // v4: risorse (roadmap.md 2.3).
     this.version(4).stores({
       resources: 'id, tenantId, teamLeadId, updatedAt',
     });

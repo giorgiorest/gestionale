@@ -1,12 +1,12 @@
 # Ordine di esecuzione consigliato
 
-Incrocia `docs/roadmap.md`, `docs/roadmap-alex.md` e gli incrementi del piano tecnico
+Incrocia `docs/roadmap.md` (Fasi 0–7 e A–I) e gli incrementi del piano tecnico
 ("Analisi_Completa.md", epiche GitHub [#40](https://github.com/giorgiorest/gestionale/issues/40)–[#45](https://github.com/giorgiorest/gestionale/issues/45))
-per rispondere a una domanda che nessuno dei due file da solo copre: **in che ordine conviene
+per rispondere a una domanda che `roadmap.md` da solo non copre: **in che ordine conviene
 lavorare le ~110 voci rimanenti per finire prima**, rispettando le dipendenze reali e
 parallelizzando il resto.
 
-Questo file **non è una fonte di verità sullo stato** (quella resta nei due file sopra e nelle
+Questo file **non è una fonte di verità sullo stato** (quella resta in `docs/roadmap.md` e nelle
 issue): è solo un'indicazione di sequenza, pensata per decidere quali sessioni avviare insieme.
 Non va aggiornato voce per voce; va riletto e corretto se l'ordine reale si discosta parecchio
 da qui.
@@ -16,7 +16,7 @@ simultanee); una freccia (→) indica dipendenza diretta, da fare in sequenza.
 
 ## Onda 0 — Decisioni, zero codice
 
-Prese il 25/11/2026 (vedi "Decisioni prese" in `roadmap-alex.md`): ruoli multipli per utente
+Prese il 25/11/2026 (vedi "Decisioni prese" in `docs/roadmap.md`): ruoli multipli per utente
 (confermato, tracciato come 5.12 in `roadmap.md`), AI sui documenti rimandata a dopo le
 fondamenta (E.2, E.5, E.6, C.3, A.11, F.5, G.6 → Onda 10), dettatura vocale confermata presto
 (D.5 resta in Onda 4). Restano aperte solo le due di `roadmap.md`, scelte di fornitore non
@@ -44,8 +44,8 @@ In sequenza (ognuna dipende dalla precedente):
 
 ## Onda 2 — Anagrafiche di base
 
-`roadmap.md` Fase 2 (2.3 già fatta). **2.2 (Fornitori) sblocca tutta la Fase E** di
-`roadmap-alex.md`: darle priorità sulle altre di questa onda.
+`roadmap.md` Fase 2 (2.3 già fatta). **2.2 (Fornitori) sblocca tutta la Fase E**: darle
+priorità sulle altre di questa onda.
 
 - 2.1 Clienti
 - 2.2 Fornitori — priorità alta, sblocca Fase E
@@ -65,10 +65,10 @@ Onda 2 (moduli diversi), ma entrambe richiedono Onda 1 completata (sincronizzazi
 
 ## Onda 4 — Estensioni di cantiere indipendenti
 
-`roadmap-alex.md` Fasi A (estensioni), B, C, D + incrementi tecnici 9–10
+`docs/roadmap.md` Fasi A (estensioni), B, C, D + incrementi tecnici 9–10
 ([#55](https://github.com/giorgiorest/gestionale/issues/55),
 [#56](https://github.com/giorgiorest/gestionale/issues/56)). Dichiarate indipendenti tra loro
-in `roadmap-alex.md` ("Note di sequenza"): **la coppia di voci da parallelizzare più
+in `roadmap.md` ("Note di sequenza"): **la coppia di voci da parallelizzare più
 aggressivamente**, appena Onda 2/3 sono avviate.
 
 - Fase A: A.5, A.6, A.8, A.9, A.10 → A.12 (parallele) — A.11 rimandata, vedi Onda 10
@@ -81,7 +81,7 @@ aggressivamente**, appena Onda 2/3 sono avviate.
 
 ## Onda 5 — Fornitori avanzati e acquisti
 
-`roadmap-alex.md` Fase E + incremento 11 ([#57](https://github.com/giorgiorest/gestionale/issues/57)).
+`docs/roadmap.md` Fase E + incremento 11 ([#57](https://github.com/giorgiorest/gestionale/issues/57)).
 Dopo 2.2 (fornitori base, Onda 2).
 
 - E.1 → E.3 → E.4 — E.2, E.5, E.6 rimandate, vedi Onda 10
@@ -89,7 +89,7 @@ Dopo 2.2 (fornitori base, Onda 2).
 
 ## Onda 6 — Fatturazione, contabilità e vicende contrattuali
 
-`roadmap.md` Fase 4 + `roadmap-alex.md` Fase F e Fase I + incremento 12
+`docs/roadmap.md` Fasi 4, F e I + incremento 12
 ([#58](https://github.com/giorgiorest/gestionale/issues/58), già nota dipendenza per F).
 
 - 4.1 → 4.2 → 4.3 → 4.4 → 4.5 → 4.6 → 4.7 (4.8 in pausa, decisione esterna) → 4.9 → 4.10
@@ -98,14 +98,14 @@ Dopo 2.2 (fornitori base, Onda 2).
 
 ## Onda 7 — Pianificazione (Gantt/WBS)
 
-`roadmap-alex.md` Fase G. Dopo F.1 (costi industriali) e le commesse (già fatte).
+`docs/roadmap.md` Fase G. Dopo F.1 (costi industriali) e le commesse (già fatte).
 
 - G.1 → G.2 → G.3
 - G.4, G.5 — parallele tra loro, indipendenti da G.3 — G.6 rimandata, vedi Onda 10
 
 ## Onda 8 — Archivio documentale
 
-`roadmap-alex.md` Fase H + incremento 13 ([#59](https://github.com/giorgiorest/gestionale/issues/59)).
+`docs/roadmap.md` Fase H + incremento 13 ([#59](https://github.com/giorgiorest/gestionale/issues/59)).
 
 - H.1, H.3 — da subito, indipendenti
 - H.2 — dopo un minimo di I.5 (fideiussioni/polizze), per non duplicare il modello di contratto
