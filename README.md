@@ -55,7 +55,7 @@ gestionale/
 | `dailyreportmaterials/` | righe di materiale del rapportino (voce 3.2 della roadmap): descrizione e unità di misura a testo libero, perché un catalogo materiali non esiste ancora (GitHub #55, `docs/roadmap-alex.md` C.1); non modificabili fuori da `draft`, stessa cancellazione logica di `workentries/`; gli allegati (foto materiali, DDT) restano rimandati a dopo la voce 2.4 (ADR 0016), per non costruire due volte l'archivio |
 | `hoursreport/` | cruscotto ore di una commessa (`GET /api/commesse/{id}/reports/hours?from=&to=`, #52): tre viste (settimanale, mensile per risorsa, per lavorazione) da un'unica aggregazione per giorno/risorsa/lavorazione fatta in query; permesso riusato (`work-entries:read`), nessuna migrazione ([ADR 0020](docs/decisioni/0020-endpoint-di-report.md)) |
 | `notifications/` | notifiche e comunicazioni ai dipendenti, presa visione, rubrica, invio email (`EmailDispatcher`) |
-| `sync/`      | `GET /api/sync/changes`: sincronizzazione incrementale lato server, cursore per entità (`updated_at` + id) e tombstone (voce 1.2 della roadmap); `pullChanges` lato client (voce 1.3) applicherà le righe |
+| `sync/`      | `GET /api/sync/changes`: sincronizzazione incrementale lato server, cursore per entità (`updated_at` + id) e tombstone (voce 1.2 della roadmap); applicato lato client da `pullChanges` (voce 1.3) |
 | `ai/`        | `AiProvider`, `AiTool`, `NoopAiProvider` (503), quota mensile, `POST /api/ai/chat` |
 | `demo/`      | `DemoTenantSeeder` con `reset()` |
 | `health/`    | `GET /api/health` |
@@ -68,7 +68,7 @@ gestionale/
 | `core/auth`                | login OIDC (Authorization Code + PKCE), `authGuard`, interceptor del token |
 | `core/profile`             | profilo, ruoli e permessi (`GET /api/me`), `*appHasPermission`, `permissionGuard` |
 | `core/entitlements`        | funzionalità del piano, `*appHasFeature`, `featureGuard` |
-| `core/sync`                | outbox: `enqueue`, `flush` (invio al server), `pullChanges` (da fare) |
+| `core/sync`                | outbox: `enqueue`, `flush` (invio al server), `pullChanges` (ricezione, con cursore in `syncState`) |
 | `core/notifications`       | notifiche dell'utente, campanella con contatore |
 | `db/`                      | `LocalDb` (Dexie): `outbox`, `customers`, `resources`, `commesse`, `resourceAssignments`, `workActivities`, `dailyReports`, `workEntries`, `syncState` |
 | `features/`                | `auth` (accesso), `server` (app desktop), `home`, `profile`, `customers`, `resources`, `commesse`, `resource-assignments`, `work-activities`, `daily-reports`, `work-entries`, `hours-report` (cruscotto ore, nessuna copia locale: è un report, non un'entità sincronizzata), `notifications`, `announcements` (comunicazioni), `assistant` |
