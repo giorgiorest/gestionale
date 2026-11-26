@@ -96,6 +96,48 @@ services:
       - "8025:8025"
       - "1025:1025"
 
+  minio:
+    # Archivio allegati compatibile S3 per lo sviluppo locale (ADR 0016 punto 3). Solo sviluppo: il
+    # server MinIO è AGPL-3.0 e non va distribuito nel prodotto. MinIO non pubblica più immagini su
+    # Docker Hub: quay.io, "latest" perché qui la riproducibilità del tag non serve.
+    image: quay.io/minio/minio:latest
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-gestionale}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-sviluppo-locale-non-usare-in-produzione}
+    volumes:
+      - minio-data:/data
+    ports:
+      - "9000:9000"
+      # Console web di amministrazione: http://localhost:9001
+      - "9001:9001"
+    healthcheck:
+      # Non "mc ready local": l'immagine del server non include il client mc (sta solo in
+      # quay.io/minio/mc). L'endpoint di salute HTTP non richiede nessun binario esterno.
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio-init:
+    # Crea il bucket se non esiste già (MinIO non lo fa da solo). Gira a ogni avvio e poi termina,
+    # come db-init.
+    image: quay.io/minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: "no"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-gestionale}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-sviluppo-locale-non-usare-in-produzione}
+      S3_BUCKET: ${S3_BUCKET:-gestionale-dev}
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"
+        mc mb --ignore-existing "local/$$S3_BUCKET"
+        echo "Bucket $$S3_BUCKET pronto"
+
   # ------------------------------------------------------------------ profilo "app"
 
   api:
@@ -105,6 +147,8 @@ services:
       dockerfile: Dockerfile
     depends_on:
       db-init:
+        condition: service_completed_successfully
+      minio-init:
         condition: service_completed_successfully
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
@@ -131,6 +175,11 @@ services:
       APP_PUBLIC_URL: ${GESTIONALE_WEB_URL:-http://localhost:4200}
       AI_PROVIDER: ${AI_PROVIDER:-none}
       AI_API_KEY: ${AI_API_KEY:-}
+      # Allegati (ADR 0016): lo stesso bucket/credenziali del container MinIO qui sopra.
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      S3_BUCKET: ${S3_BUCKET:-gestionale-dev}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-gestionale}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-sviluppo-locale-non-usare-in-produzione}
     ports:
       - "8080:8080"
 
@@ -159,3 +208,4 @@ services:
 
 volumes:
   db-data:
+  minio-data:

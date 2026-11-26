@@ -207,7 +207,27 @@ Facoltativo, indipendente da `EMAIL_ENABLED`: `HEALTH_ALERT_EMAIL=<tua email>` a
 salute dell'app cambia stato ([ADR 0022](decisioni/0022-osservabilita.md)). Riusa lo stesso server
 SMTP e lo stesso `MAIL_FROM`; vuota, l'avviso resta solo nei log.
 
-## 10. Backup del database
+## 10. Allegati (archivio S3)
+
+Gli allegati (ADR 0016) stanno in un archivio compatibile S3, non nel database: serve un bucket e
+le sue credenziali, non MinIO (quello è solo per lo sviluppo locale). Un fornitore europeo è
+preferibile per i dati personali in SaaS (GDPR); va scelto dal titolare del prodotto (vedi la voce
+nella sezione "Decisioni ancora da prendere" di `docs/roadmap.md`). Nel `.env` della macchina:
+
+```
+S3_ENDPOINT=https://s3.eu-west-1.amazonaws.com   # vuoto per AWS S3 reale con l'SDK predefinito
+S3_REGION=eu-west-1
+S3_BUCKET=<nome del bucket>
+S3_ACCESS_KEY=<chiave di accesso>
+S3_SECRET_KEY=<chiave segreta>
+S3_FORCE_PATH_STYLE=false   # true solo per un archivio self-hosted (es. un altro MinIO in produzione)
+```
+
+poi `docker compose up -d` nella cartella `/opt/civilbeefy`. Il bucket va creato a mano dal
+fornitore scelto, con accesso privato: l'API non vi accede mai direttamente, solo con URL firmati
+di breve durata (nessun byte passa dall'API).
+
+## 11. Backup del database
 
 In SSH, un backup al giorno alle 3 con 14 giorni di storico (applicazione e Keycloak):
 
@@ -224,7 +244,7 @@ e aggiungi la riga:
 
 Per una copia fuori dalla macchina: Object Storage di Oracle (20 GB gratuiti) con `oci os object put`.
 
-## 11. Comandi utili sulla macchina
+## 12. Comandi utili sulla macchina
 
 Nella cartella `/opt/civilbeefy`:
 
@@ -236,7 +256,7 @@ Nella cartella `/opt/civilbeefy`:
 | Applicare modifiche al `.env` | `docker compose up -d` |
 | Spazio su disco | `df -h` e `docker system df` |
 
-## 12. App desktop
+## 13. App desktop
 
 All'avvio l'app desktop chiede l'indirizzo del server: `https://<dominio>`.
 

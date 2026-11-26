@@ -32,6 +32,36 @@ function page(content: (CustomerRow & { version?: number })[], totalElements = c
   return { content, page: 0, size: 50, totalElements, totalPages: Math.max(1, Math.ceil(totalElements / 50)) };
 }
 
+/** Riga completa com'è restituita dall'API, con i soli campi indicati diversi dal default. */
+function customerRow(fields: Partial<CustomerRow> & { id: string; name: string }): CustomerRow {
+  return {
+    email: null,
+    partitaIva: null,
+    codiceFiscale: null,
+    indirizzo: null,
+    pec: null,
+    codiceSdi: null,
+    condizioniPagamento: null,
+    updatedAt: '2026-01-01T00:00:00Z',
+    ...fields,
+  };
+}
+
+/** Riga locale (Dexie) completa, con i soli campi indicati diversi dal default. */
+function localCustomer(fields: Partial<LocalCustomer> & { id: string; tenantId: string; name: string }): LocalCustomer {
+  return {
+    email: null,
+    partitaIva: null,
+    codiceFiscale: null,
+    indirizzo: null,
+    pec: null,
+    codiceSdi: null,
+    condizioniPagamento: null,
+    updatedAt: '',
+    ...fields,
+  };
+}
+
 describe('CustomersService', () => {
   let customers: LocalCustomer[];
   /** Coda finta: id → operazione, come la restituisce SyncService.pendingByEntity(). */
@@ -78,8 +108,8 @@ describe('CustomersService', () => {
     expect(req.request.params.get('size')).toBe('50');
     req.flush(
       page([
-        { id: 'a', name: 'Bianchi', email: 'b@example.com', updatedAt: '2026-01-01T00:00:00Z' },
-        { id: 'b', name: 'Verdi', email: null, updatedAt: '2026-01-01T00:00:00Z' },
+        customerRow({ id: 'a', name: 'Bianchi', email: 'b@example.com' }),
+        customerRow({ id: 'b', name: 'Verdi' }),
       ]),
     );
     await done;
@@ -95,15 +125,15 @@ describe('CustomersService', () => {
     await tick();
     const req = http.expectOne((r) => r.url === '/api/customers');
     expect(req.request.params.get('q')).toBe('rossi');
-    req.flush(page([{ id: 'a', name: 'Rossi', email: null, updatedAt: '2026-01-01T00:00:00Z' }]));
+    req.flush(page([customerRow({ id: 'a', name: 'Rossi' })]));
     await done;
 
     expect(service.customers().map((c) => c.name)).toEqual(['Rossi']);
   });
 
   it('se il server non risponde ricade sulla copia locale, paginata e filtrata lato client', async () => {
-    customers.push({ id: 'a', tenantId: TENANT, name: 'Locale', email: null, updatedAt: '' });
-    customers.push({ id: 'b', tenantId: TENANT, name: 'Altro tenant', email: null, updatedAt: '' });
+    customers.push(localCustomer({ id: 'a', tenantId: TENANT, name: 'Locale' }));
+    customers.push(localCustomer({ id: 'b', tenantId: TENANT, name: 'Altro tenant' }));
     customers[1].tenantId = 'altro-tenant';
     const done = service.load();
     await tick();
@@ -121,12 +151,7 @@ describe('CustomersService', () => {
     await tick();
     http
       .expectOne((r) => r.url === '/api/customers')
-      .flush(
-        page([
-          { id: 'a', name: 'Rossi', email: null, updatedAt: '2026-01-01T00:00:00Z' },
-          { id: 'b', name: 'Verdi', email: null, updatedAt: '2026-01-01T00:00:00Z' },
-        ]),
-      );
+      .flush(page([customerRow({ id: 'a', name: 'Rossi' }), customerRow({ id: 'b', name: 'Verdi' })]));
     await done;
 
     expect(service.customers().map((c) => c.id)).toEqual(['b']);
@@ -138,13 +163,29 @@ describe('CustomersService', () => {
     expect(created.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7/);
     expect(created.name).toBe('Rossi S.r.l.');
     expect(created.email).toBeNull();
-    expect(enqueued).toEqual([['customers', 'create', { id: created.id, name: 'Rossi S.r.l.', email: null }]]);
+    expect(enqueued).toEqual([
+      [
+        'customers',
+        'create',
+        {
+          id: created.id,
+          name: 'Rossi S.r.l.',
+          email: null,
+          partitaIva: null,
+          codiceFiscale: null,
+          indirizzo: null,
+          pec: null,
+          codiceSdi: null,
+          condizioniPagamento: null,
+        },
+      ],
+    ]);
     expect(service.customers().map((c) => c.id)).toEqual([created.id]);
     expect(service.totalElements()).toBe(1);
   });
 
   it('cancella il cliente in locale, accoda il DELETE e lo toglie subito dalla pagina', async () => {
-    customers.push({ id: 'a', tenantId: TENANT, name: 'Rossi', email: null, updatedAt: '' });
+    customers.push(localCustomer({ id: 'a', tenantId: TENANT, name: 'Rossi' }));
 
     await service.remove('a');
 

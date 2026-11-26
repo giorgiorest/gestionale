@@ -44,10 +44,11 @@ class MeControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.roles[0]").value("viewer"))
                 .andExpect(jsonPath("$.permissions[0]").value("customers:read"))
                 .andExpect(jsonPath("$.permissions").value(org.hamcrest.Matchers.containsInAnyOrder(
-                        "customers:read", "resources:read", "commesse:read", "resource-assignments:read",
-                        "work-activities:read", "daily-reports:read", "work-entries:read",
-                        "daily-report-materials:read", "labor-cost:read")))
-                .andExpect(jsonPath("$.permissions.length()").value(9));
+                        "customers:read", "suppliers:read", "resources:read", "commesse:read",
+                        "resource-assignments:read", "work-activities:read", "daily-reports:read",
+                        "work-entries:read", "daily-report-materials:read", "labor-cost:read",
+                        "attachments:read")))
+                .andExpect(jsonPath("$.permissions.length()").value(11));
     }
 
     @Test

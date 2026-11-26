@@ -7,6 +7,8 @@ package it.gestionale.api.auth;
 public enum Permission {
     CUSTOMERS_READ("customers:read"),
     CUSTOMERS_WRITE("customers:write"),
+    SUPPLIERS_READ("suppliers:read"),
+    SUPPLIERS_WRITE("suppliers:write"),
     ASSISTANT_USE("assistant:use"),
     NOTIFICATIONS_SEND("notifications:send"),
     USERS_MANAGE("users:manage"),
@@ -25,7 +27,9 @@ public enum Permission {
     DAILY_REPORT_MATERIALS_READ("daily-report-materials:read"),
     DAILY_REPORT_MATERIALS_WRITE("daily-report-materials:write"),
     LABOR_COST_READ("labor-cost:read"),
-    LABOR_COST_WRITE("labor-cost:write");
+    LABOR_COST_WRITE("labor-cost:write"),
+    ATTACHMENTS_READ("attachments:read"),
+    ATTACHMENTS_WRITE("attachments:write");
 
     private final String code;
 

@@ -18,7 +18,23 @@ export interface CustomerRow {
   id: string;
   name: string;
   email: string | null;
+  partitaIva: string | null;
+  codiceFiscale: string | null;
+  indirizzo: string | null;
+  pec: string | null;
+  codiceSdi: string | null;
+  condizioniPagamento: string | null;
   updatedAt: string;
+}
+
+/** Dati fiscali e commerciali in ingresso, oltre a ragione sociale ed email (voce 2.1). */
+export interface CustomerFiscalData {
+  partitaIva?: string | null;
+  codiceFiscale?: string | null;
+  indirizzo?: string | null;
+  pec?: string | null;
+  codiceSdi?: string | null;
+  condizioniPagamento?: string | null;
 }
 
 /**
@@ -87,16 +103,32 @@ export class CustomersService {
   }
 
   /** Crea un cliente localmente e lo accoda per l'invio al server. */
-  async create(name: string, email: string | null): Promise<CustomerRow> {
+  async create(name: string, email: string | null, fiscal: CustomerFiscalData = {}): Promise<CustomerRow> {
     const tenantId = (await this.profile.load())?.tenant?.id ?? '';
     const customer: CustomerRow = {
       id: uuidv7(),
       name: name.trim(),
       email: email?.trim() || null,
+      partitaIva: fiscal.partitaIva?.trim() || null,
+      codiceFiscale: fiscal.codiceFiscale?.trim() || null,
+      indirizzo: fiscal.indirizzo?.trim() || null,
+      pec: fiscal.pec?.trim() || null,
+      codiceSdi: fiscal.codiceSdi?.trim() || null,
+      condizioniPagamento: fiscal.condizioniPagamento?.trim() || null,
       updatedAt: new Date().toISOString(),
     };
     await this.db.customers.put({ ...customer, tenantId });
-    await this.sync.enqueue(ENTITY, 'create', { id: customer.id, name: customer.name, email: customer.email });
+    await this.sync.enqueue(ENTITY, 'create', {
+      id: customer.id,
+      name: customer.name,
+      email: customer.email,
+      partitaIva: customer.partitaIva,
+      codiceFiscale: customer.codiceFiscale,
+      indirizzo: customer.indirizzo,
+      pec: customer.pec,
+      codiceSdi: customer.codiceSdi,
+      condizioniPagamento: customer.condizioniPagamento,
+    });
     this.customers.update((rows) => [...rows, customer].sort((a, b) => a.name.localeCompare(b.name, 'it')));
     this.totalElements.update((n) => n + 1);
     void this.sync.flush();

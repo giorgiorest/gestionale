@@ -14,3 +14,10 @@ gestionale:
     jwt:
       # Mai contattato: nei test i JWT sono simulati.
       issuer-uri: http://localhost:0/realms/piattaforma
+  attachments:
+    s3:
+      # Mai contattato: generare un URL firmato è una firma locale, nessuna chiamata di rete.
+      endpoint: http://localhost:0/test-s3
+      bucket: test-bucket
+      access-key: test-access-key
+      secret-key: test-secret-key

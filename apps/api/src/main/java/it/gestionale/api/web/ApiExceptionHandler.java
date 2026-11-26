@@ -2,6 +2,8 @@ package it.gestionale.api.web;
 
 import it.gestionale.api.ai.AiQuotaExceededException;
 import it.gestionale.api.ai.AiUnavailableException;
+import it.gestionale.api.attachments.AttachmentNotFoundException;
+import it.gestionale.api.attachments.InvalidAttachmentException;
 import it.gestionale.api.commesse.UnknownCustomerException;
 import it.gestionale.api.dailyreportmaterials.UnknownDailyReportMaterialReferenceException;
 import it.gestionale.api.dailyreports.DailyReportNotFoundException;
@@ -157,6 +159,16 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(InvalidLicenseException.class)
     ProblemDetail invalidLicense(InvalidLicenseException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler(AttachmentNotFoundException.class)
+    ProblemDetail attachmentNotFound(AttachmentNotFoundException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidAttachmentException.class)
+    ProblemDetail invalidAttachment(InvalidAttachmentException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 }

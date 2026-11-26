@@ -51,6 +51,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/customers/customers.page').then((m) => m.CustomersPage),
       },
       {
+        path: 'fornitori',
+        canActivate: [permissionGuard('suppliers:read')],
+        loadComponent: () => import('./features/suppliers/suppliers.page').then((m) => m.SuppliersPage),
+      },
+      {
         path: 'risorse',
         canActivate: [permissionGuard('resources:read')],
         loadComponent: () => import('./features/resources/resources.page').then((m) => m.ResourcesPage),

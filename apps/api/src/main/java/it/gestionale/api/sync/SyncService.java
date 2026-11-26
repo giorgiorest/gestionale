@@ -9,10 +9,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import it.gestionale.api.attachments.Attachment;
+import it.gestionale.api.attachments.AttachmentDto;
+import it.gestionale.api.attachments.AttachmentRepository;
+import it.gestionale.api.auth.DomainEntityPermissions;
 import it.gestionale.api.auth.Permission;
 import it.gestionale.api.commesse.Commessa;
 import it.gestionale.api.commesse.CommessaDto;
@@ -32,6 +37,9 @@ import it.gestionale.api.resourceassignments.ResourceAssignmentRepository;
 import it.gestionale.api.resources.Resource;
 import it.gestionale.api.resources.ResourceDto;
 import it.gestionale.api.resources.ResourceRepository;
+import it.gestionale.api.suppliers.Supplier;
+import it.gestionale.api.suppliers.SupplierDto;
+import it.gestionale.api.suppliers.SupplierRepository;
 import it.gestionale.api.tenancy.TenantContext;
 import it.gestionale.api.workactivities.WorkActivity;
 import it.gestionale.api.workactivities.WorkActivityDto;
@@ -50,16 +58,20 @@ import org.springframework.transaction.annotation.Transactional;
  * l'ultima volta e applicherà localmente le righe restituite, comprese le cancellazioni.
  *
  * <p>Entità incluse: le tabelle di dominio con cancellazione logica e {@code updated_at}
- * (ADR 0018) — {@code customers}, {@code resources}, {@code commesse}, {@code resource_assignments},
- * {@code work_activities}, {@code daily_reports}, {@code work_entries},
- * {@code daily_report_materials}. {@code notifications} resta fuori: non ha quelle colonne (è
+ * (ADR 0018) — {@code customers}, {@code suppliers}, {@code resources}, {@code commesse},
+ * {@code resource_assignments}, {@code work_activities}, {@code daily_reports}, {@code work_entries},
+ * {@code daily_report_materials}, {@code attachments}. {@code notifications} resta fuori: non ha quelle colonne (è
  * un registro di soli inserimenti, con stato di lettura a parte) e ha già un proprio canale
  * (campanella + outbox, vedi {@code docs/architettura.md}).
  *
  * <p>Ogni entità compare nella risposta solo se l'utente ha il permesso di lettura corrispondente:
  * l'endpoint ne copre più di una, quindi il controllo non può stare in un unico
  * {@code @PreAuthorize} e si fa qui, entità per entità (difesa in profondità, la stessa idea di
- * {@code TenantContext.require()} nei servizi che filtrano già per RLS).
+ * {@code TenantContext.require()} nei servizi che filtrano già per RLS). Per {@code attachments},
+ * {@code attachments:read} da solo non basta: ogni riga si filtra anche per il permesso di
+ * lettura della sua {@code entityType} (stessa mappa di {@code AttachmentService}, via
+ * {@code DomainEntityPermissions}) — altrimenti un ruolo come {@code amministrativo} vedrebbe,
+ * da qui, i metadati degli allegati dei rapportini che non può leggere direttamente.
  */
 @Service
 public class SyncService {
@@ -69,6 +81,7 @@ public class SyncService {
 
     private final ObjectMapper objectMapper;
     private final CustomerRepository customers;
+    private final SupplierRepository suppliers;
     private final ResourceRepository resources;
     private final CommessaRepository commesse;
     private final ResourceAssignmentRepository resourceAssignments;
@@ -76,13 +89,16 @@ public class SyncService {
     private final DailyReportRepository dailyReports;
     private final WorkEntryRepository workEntries;
     private final DailyReportMaterialRepository dailyReportMaterials;
+    private final AttachmentRepository attachmentsRepo;
 
-    public SyncService(ObjectMapper objectMapper, CustomerRepository customers, ResourceRepository resources,
-                       CommessaRepository commesse, ResourceAssignmentRepository resourceAssignments,
-                       WorkActivityRepository workActivities, DailyReportRepository dailyReports,
-                       WorkEntryRepository workEntries, DailyReportMaterialRepository dailyReportMaterials) {
+    public SyncService(ObjectMapper objectMapper, CustomerRepository customers, SupplierRepository suppliers,
+                       ResourceRepository resources, CommessaRepository commesse,
+                       ResourceAssignmentRepository resourceAssignments, WorkActivityRepository workActivities,
+                       DailyReportRepository dailyReports, WorkEntryRepository workEntries,
+                       DailyReportMaterialRepository dailyReportMaterials, AttachmentRepository attachmentsRepo) {
         this.objectMapper = objectMapper;
         this.customers = customers;
+        this.suppliers = suppliers;
         this.resources = resources;
         this.commesse = commesse;
         this.resourceAssignments = resourceAssignments;
@@ -90,6 +106,7 @@ public class SyncService {
         this.dailyReports = dailyReports;
         this.workEntries = workEntries;
         this.dailyReportMaterials = dailyReportMaterials;
+        this.attachmentsRepo = attachmentsRepo;
     }
 
     @Transactional(readOnly = true)
@@ -106,6 +123,10 @@ public class SyncService {
         hasMore |= syncEntity("customers", Permission.CUSTOMERS_READ, authorities, cursorIn, cursorOut, entities,
                 limit, (after, pageable) -> customers.findChangesSince(tenantId, after.updatedAt(), after.id(), pageable),
                 Customer::getId, Customer::getUpdatedAt, Customer::getVersion, Customer::isDeleted, CustomerDto::from);
+
+        hasMore |= syncEntity("suppliers", Permission.SUPPLIERS_READ, authorities, cursorIn, cursorOut, entities,
+                limit, (after, pageable) -> suppliers.findChangesSince(tenantId, after.updatedAt(), after.id(), pageable),
+                Supplier::getId, Supplier::getUpdatedAt, Supplier::getVersion, Supplier::isDeleted, SupplierDto::from);
 
         hasMore |= syncEntity("resources", Permission.RESOURCES_READ, authorities, cursorIn, cursorOut, entities,
                 limit, (after, pageable) -> resources.findChangesSince(tenantId, after.updatedAt(), after.id(), pageable),
@@ -146,6 +167,11 @@ public class SyncService {
                 DailyReportMaterial::getId, DailyReportMaterial::getUpdatedAt, DailyReportMaterial::getVersion,
                 DailyReportMaterial::isDeleted, DailyReportMaterialDto::from);
 
+        hasMore |= syncEntity("attachments", Permission.ATTACHMENTS_READ, authorities, cursorIn, cursorOut, entities,
+                limit, (after, pageable) -> attachmentsRepo.findChangesSince(tenantId, after.updatedAt(), after.id(), pageable),
+                Attachment::getId, Attachment::getUpdatedAt, Attachment::getVersion, Attachment::isDeleted,
+                AttachmentDto::from, attachment -> hasEntityReadPermission(attachment.getEntityType(), authorities));
+
         return new SyncChangesDto(encodeCursor(cursorOut), hasMore, entities);
     }
 
@@ -160,11 +186,27 @@ public class SyncService {
         };
     }
 
+    /** Come l'overload con {@code visible}, ma senza filtro di riga: ogni riga letta è nella risposta. */
+    private <T> boolean syncEntity(String entityName, Permission readPermission, Set<String> authorities,
+                                   Map<String, SyncCursorEntry> cursorIn, Map<String, SyncCursorEntry> cursorOut,
+                                   Map<String, List<SyncChangeDto>> out, int limit, ChangesQuery<T> query,
+                                   Function<T, UUID> idOf, Function<T, Instant> updatedAtOf,
+                                   Function<T, Long> versionOf, Function<T, Boolean> deletedOf,
+                                   Function<T, Object> dataOf) {
+        return syncEntity(entityName, readPermission, authorities, cursorIn, cursorOut, out, limit, query, idOf,
+                updatedAtOf, versionOf, deletedOf, dataOf, row -> true);
+    }
+
     /**
      * Interroga, pagina e mappa un'entità, se l'utente ha il permesso di lettura corrispondente.
      * Richiede {@code limit + 1} righe per sapere se ce ne sono altre senza una {@code COUNT}
      * separata. Se non ci sono risultati il cursore dell'entità resta quello in ingresso: non
      * c'è nulla da far avanzare, e la prossima chiamata ripartirà dallo stesso punto.
+     *
+     * <p>{@code visible} filtra le singole righe (es. {@code attachments}, per il permesso della
+     * loro {@code entityType}): il cursore avanza comunque fino all'ultima riga <strong>letta</strong>
+     * (non solo quelle visibili), altrimenti una riga non visibile bloccherebbe per sempre
+     * l'avanzamento di tutte quelle dopo di lei.
      *
      * @return vero se questa entità ha raggiunto il limite di pagina (altre modifiche in coda)
      */
@@ -173,7 +215,7 @@ public class SyncService {
                                    Map<String, List<SyncChangeDto>> out, int limit, ChangesQuery<T> query,
                                    Function<T, UUID> idOf, Function<T, Instant> updatedAtOf,
                                    Function<T, Long> versionOf, Function<T, Boolean> deletedOf,
-                                   Function<T, Object> dataOf) {
+                                   Function<T, Object> dataOf, Predicate<T> visible) {
         if (!authorities.contains(readPermission.code())) {
             return false;
         }
@@ -184,6 +226,7 @@ public class SyncService {
         boolean hasMore = rows.size() > limit;
         List<T> changed = hasMore ? rows.subList(0, limit) : rows;
         out.put(entityName, changed.stream()
+                .filter(visible)
                 .map(row -> new SyncChangeDto(idOf.apply(row), updatedAtOf.apply(row), versionOf.apply(row),
                         deletedOf.apply(row), deletedOf.apply(row) ? null : dataOf.apply(row)))
                 .toList());
@@ -191,6 +234,12 @@ public class SyncService {
                 : new SyncCursorEntry(updatedAtOf.apply(changed.get(changed.size() - 1)),
                         idOf.apply(changed.get(changed.size() - 1))));
         return hasMore;
+    }
+
+    /** Permesso di lettura dell'entità a cui un allegato è appeso (vedi {@code AttachmentService}). */
+    private static boolean hasEntityReadPermission(String entityType, Set<String> authorities) {
+        DomainEntityPermissions.EntityPermissions permissions = DomainEntityPermissions.of(entityType);
+        return permissions != null && authorities.contains(permissions.read().code());
     }
 
     private Map<String, SyncCursorEntry> decodeCursor(String raw) {

@@ -32,6 +32,24 @@ public class Customer {
     @Column
     private String email;
 
+    @Column(name = "partita_iva")
+    private String partitaIva;
+
+    @Column(name = "codice_fiscale")
+    private String codiceFiscale;
+
+    @Column
+    private String indirizzo;
+
+    @Column
+    private String pec;
+
+    @Column(name = "codice_sdi")
+    private String codiceSdi;
+
+    @Column(name = "condizioni_pagamento")
+    private String condizioniPagamento;
+
     /** Blocco ottimistico: incrementata da Hibernate a ogni modifica. */
     @Version
     @Column(nullable = false)
@@ -59,10 +77,21 @@ public class Customer {
     }
 
     public Customer(UUID id, UUID tenantId, String name, String email, String userId) {
+        this(id, tenantId, name, email, null, null, null, null, null, null, userId);
+    }
+
+    public Customer(UUID id, UUID tenantId, String name, String email, String partitaIva, String codiceFiscale,
+                     String indirizzo, String pec, String codiceSdi, String condizioniPagamento, String userId) {
         this.id = id;
         this.tenantId = tenantId;
         this.name = name;
         this.email = email;
+        this.partitaIva = partitaIva;
+        this.codiceFiscale = codiceFiscale;
+        this.indirizzo = indirizzo;
+        this.pec = pec;
+        this.codiceSdi = codiceSdi;
+        this.condizioniPagamento = condizioniPagamento;
         this.createdBy = userId;
         this.updatedBy = userId;
     }
@@ -72,9 +101,16 @@ public class Customer {
      * un {@code PUT} successivo alla cancellazione è l'ultima volontà del client (last-write-wins).
      * Data e autore della creazione non cambiano.
      */
-    public void update(String name, String email, String userId, Instant at) {
+    public void update(String name, String email, String partitaIva, String codiceFiscale, String indirizzo,
+                        String pec, String codiceSdi, String condizioniPagamento, String userId, Instant at) {
         this.name = name;
         this.email = email;
+        this.partitaIva = partitaIva;
+        this.codiceFiscale = codiceFiscale;
+        this.indirizzo = indirizzo;
+        this.pec = pec;
+        this.codiceSdi = codiceSdi;
+        this.condizioniPagamento = condizioniPagamento;
         this.deletedAt = null;
         this.updatedBy = userId;
         this.updatedAt = at;
@@ -112,6 +148,30 @@ public class Customer {
 
     public String getEmail() {
         return email;
+    }
+
+    public String getPartitaIva() {
+        return partitaIva;
+    }
+
+    public String getCodiceFiscale() {
+        return codiceFiscale;
+    }
+
+    public String getIndirizzo() {
+        return indirizzo;
+    }
+
+    public String getPec() {
+        return pec;
+    }
+
+    public String getCodiceSdi() {
+        return codiceSdi;
+    }
+
+    public String getCondizioniPagamento() {
+        return condizioniPagamento;
     }
 
     public long getVersion() {
