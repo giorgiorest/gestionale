@@ -80,6 +80,7 @@ export class SyncService {
   private readonly profile = inject(ProfileService);
 
   private flushing: Promise<number> | null = null;
+  private pulling: Promise<number> | null = null;
   private pullTimer: ReturnType<typeof setInterval> | null = null;
 
   /** Voci in attesa di invio. */
@@ -130,7 +131,12 @@ export class SyncService {
    * Richiama l'endpoint finché `hasMore` è vero, salvando il cursore dopo ogni pagina: un errore
    * a metà strada lascia comunque il progresso fatto finora. Restituisce le modifiche applicate.
    */
-  async pullChanges(): Promise<number> {
+  pullChanges(): Promise<number> {
+    this.pulling ??= this.doPull().finally(() => (this.pulling = null));
+    return this.pulling;
+  }
+
+  private async doPull(): Promise<number> {
     const tenantId = (await this.profile.load())?.tenant?.id ?? '';
     let cursor = (await this.db.syncState.get(PULL_CURSOR_KEY))?.cursor ?? undefined;
     let applied = 0;

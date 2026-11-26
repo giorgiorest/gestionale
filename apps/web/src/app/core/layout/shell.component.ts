@@ -78,9 +78,11 @@ const NAV: NavItem[] = [
         <span
           class="pending-changes"
           matTooltip="Modifiche non ancora inviate al server"
+          role="status"
+          [attr.aria-label]="sync.pending() + ' modifiche non ancora inviate al server'"
           data-testid="pending-changes"
         >
-          <mat-icon>cloud_off</mat-icon>
+          <mat-icon aria-hidden="true">cloud_off</mat-icon>
           {{ sync.pending() }}
         </span>
       }
