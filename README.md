@@ -52,6 +52,7 @@ gestionale/
 | `workactivities/` | lavorazioni di una commessa (es. "Armatura pilastri"), riutilizzate dal rapportino per classificare le ore; `code` univoco per commessa, `parentId` opzionale per la gerarchia (WBS) |
 | `dailyreports/` | testata del rapportino giornaliero (meteo, note, stato); un solo rapportino per commessa/data nell'MVP; workflow `draft → submitted → closed` con endpoint dedicati (`POST .../submit`, `.../close`, non un `PATCH` sullo stato — ADR 0019); non modificabile da nessun endpoint ordinario fuori da `draft`; notifica il manager a invio/chiusura e, con un controllo periodico (`MissingDailyReportWatchdog`, #54), se una commessa in corso resta senza rapportino in una data |
 | `workentries/` | righe di ore del rapportino: risorsa, lavorazione (della stessa commessa) e ore/straordinario; il totale è derivato in UI, non salvato; non modificabili fuori da `draft`; alla chiusura, `WorkEntryCostSnapshot` congela il costo manodopera (tariffa da `ResourceAssignment.hourlyCostOverride`, NULL se assente — ADR 0019) |
+| `dailyreportmaterials/` | righe di materiale del rapportino (voce 3.2 della roadmap): descrizione e unità di misura a testo libero, perché un catalogo materiali non esiste ancora (GitHub #55, `docs/roadmap-alex.md` C.1); non modificabili fuori da `draft`, stessa cancellazione logica di `workentries/`; gli allegati (foto materiali, DDT) restano rimandati a dopo la voce 2.4 (ADR 0016), per non costruire due volte l'archivio |
 | `hoursreport/` | cruscotto ore di una commessa (`GET /api/commesse/{id}/reports/hours?from=&to=`, #52): tre viste (settimanale, mensile per risorsa, per lavorazione) da un'unica aggregazione per giorno/risorsa/lavorazione fatta in query; permesso riusato (`work-entries:read`), nessuna migrazione ([ADR 0020](docs/decisioni/0020-endpoint-di-report.md)) |
 | `notifications/` | notifiche e comunicazioni ai dipendenti, presa visione, rubrica, invio email (`EmailDispatcher`) |
 | `ai/`        | `AiProvider`, `AiTool`, `NoopAiProvider` (503), quota mensile, `POST /api/ai/chat` |
@@ -288,6 +289,8 @@ e menu laterale. Scelta e alternative: [ADR 0006](docs/decisioni/0006-interfacci
 | `daily-reports:write` — creare e modificare la testata di un rapportino in bozza, e inviarlo/chiuderlo (`submit`/`close`, ADR 0019) | ✓ | ✓ | | ✓ | | | |
 | `work-entries:read` — consultare le ore registrate nei rapportini | ✓ | ✓ | ✓ | ✓ | ✓ | | |
 | `work-entries:write` — registrare e modificare le ore nei rapportini | ✓ | ✓ | | ✓ | | | |
+| `daily-report-materials:read` — consultare i materiali registrati nei rapportini | ✓ | ✓ | ✓ | ✓ | ✓ | | |
+| `daily-report-materials:write` — registrare e modificare i materiali nei rapportini | ✓ | ✓ | | ✓ | | | |
 
 `operator` e `viewer` hanno anche `resources:read` e `commesse:read` solo per raggiungere la pagina
 e popolare l'elenco da cui si gestiscono le assegnazioni, le lavorazioni e i rapportini (tab

@@ -3,6 +3,7 @@ package it.gestionale.api.web;
 import it.gestionale.api.ai.AiQuotaExceededException;
 import it.gestionale.api.ai.AiUnavailableException;
 import it.gestionale.api.commesse.UnknownCustomerException;
+import it.gestionale.api.dailyreportmaterials.UnknownDailyReportMaterialReferenceException;
 import it.gestionale.api.dailyreports.DailyReportNotFoundException;
 import it.gestionale.api.dailyreports.InvalidDailyReportStateException;
 import it.gestionale.api.dailyreports.UnknownCommessaReferenceException;
@@ -115,6 +116,11 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(UnknownWorkEntryReferenceException.class)
     ProblemDetail unknownWorkEntryReference(UnknownWorkEntryReferenceException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler(UnknownDailyReportMaterialReferenceException.class)
+    ProblemDetail unknownDailyReportMaterialReference(UnknownDailyReportMaterialReferenceException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 

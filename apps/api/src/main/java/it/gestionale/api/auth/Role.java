@@ -25,7 +25,8 @@ public enum Role {
             Permission.RESOURCES_READ, Permission.COMMESSE_READ, Permission.RESOURCE_ASSIGNMENTS_READ,
             Permission.RESOURCE_ASSIGNMENTS_WRITE, Permission.WORK_ACTIVITIES_READ,
             Permission.WORK_ACTIVITIES_WRITE, Permission.DAILY_REPORTS_READ, Permission.DAILY_REPORTS_WRITE,
-            Permission.WORK_ENTRIES_READ, Permission.WORK_ENTRIES_WRITE, Permission.LABOR_COST_READ,
+            Permission.WORK_ENTRIES_READ, Permission.WORK_ENTRIES_WRITE, Permission.DAILY_REPORT_MATERIALS_READ,
+            Permission.DAILY_REPORT_MATERIALS_WRITE, Permission.LABOR_COST_READ,
             Permission.LABOR_COST_WRITE)),
     /**
      * Consultazione: sola lettura. {@code resources:read}/{@code commesse:read} per lo stesso
@@ -35,7 +36,7 @@ public enum Role {
      */
     VIEWER("viewer", EnumSet.of(Permission.CUSTOMERS_READ, Permission.RESOURCES_READ, Permission.COMMESSE_READ,
             Permission.RESOURCE_ASSIGNMENTS_READ, Permission.WORK_ACTIVITIES_READ, Permission.DAILY_REPORTS_READ,
-            Permission.WORK_ENTRIES_READ, Permission.LABOR_COST_READ)),
+            Permission.WORK_ENTRIES_READ, Permission.DAILY_REPORT_MATERIALS_READ, Permission.LABOR_COST_READ)),
 
     // Ruoli di cantiere (docs/roadmap-alex.md): ogni PR che introduce una funzione di cantiere
     // aggiunge qui i Permission giusti ai ruoli giusti.
@@ -50,13 +51,15 @@ public enum Role {
             Permission.COMMESSE_READ, Permission.COMMESSE_WRITE, Permission.RESOURCE_ASSIGNMENTS_READ,
             Permission.RESOURCE_ASSIGNMENTS_WRITE, Permission.WORK_ACTIVITIES_READ,
             Permission.WORK_ACTIVITIES_WRITE, Permission.DAILY_REPORTS_READ, Permission.DAILY_REPORTS_WRITE,
-            Permission.WORK_ENTRIES_READ, Permission.WORK_ENTRIES_WRITE, Permission.LABOR_COST_READ,
+            Permission.WORK_ENTRIES_READ, Permission.WORK_ENTRIES_WRITE, Permission.DAILY_REPORT_MATERIALS_READ,
+            Permission.DAILY_REPORT_MATERIALS_WRITE, Permission.LABOR_COST_READ,
             Permission.LABOR_COST_WRITE)),
     /**
      * Caposquadra: coordina la propria squadra sul cantiere. Il piano prevede scrittura sul
-     * rapportino (e sulle sue righe di ore) limitata alla propria squadra ("RW squadra"): finché
-     * quel controllo non esiste (richiede incrociare {@code daily-reports}/{@code work-entries}
-     * con le assegnazioni della squadra, {@code resource-assignments}), solo lettura qui, non il
+     * rapportino (e sulle sue righe, di ore o di materiale) limitata alla propria squadra
+     * ("RW squadra"): finché quel controllo non esiste (richiede incrociare
+     * {@code daily-reports}/{@code work-entries}/{@code daily-report-materials} con le
+     * assegnazioni della squadra, {@code resource-assignments}), solo lettura qui, non il
      * pieno {@code DAILY_REPORTS_WRITE}/{@code WORK_ENTRIES_WRITE} di {@code CAPOCANTIERE} —
      * altrimenti scriverebbe anche sui rapportini di commesse/squadre non sue. Niente
      * {@code labor-cost:read} (#53, a differenza di {@code CAPOCANTIERE}): coordina la squadra sul
@@ -65,7 +68,8 @@ public enum Role {
      */
     CAPOSQUADRA("caposquadra", EnumSet.of(Permission.RESOURCES_READ, Permission.COMMESSE_READ,
             Permission.RESOURCE_ASSIGNMENTS_READ, Permission.WORK_ACTIVITIES_READ,
-            Permission.DAILY_REPORTS_READ, Permission.WORK_ENTRIES_READ)),
+            Permission.DAILY_REPORTS_READ, Permission.WORK_ENTRIES_READ,
+            Permission.DAILY_REPORT_MATERIALS_READ)),
     /**
      * Operaio: lavora sul cantiere (ore, rapportini). Non ancora la testata del rapportino né le
      * sue righe di ore (#50): il piano le marca "proprie righe", cioè scrittura delle {@code
@@ -82,7 +86,11 @@ public enum Role {
      * Amministrativo: personale d'ufficio con accesso limitato (materiali, personale, attrezzature,
      * fornitori, archivio), mai a rapportini, contabilità o pianificazione. Niente
      * {@code labor-cost:read/write} (#53), nonostante {@code resources:write}: il costo orario è
-     * un dato di contabilità/payroll, esattamente ciò che questo ruolo non deve mai toccare.
+     * un dato di contabilità/payroll, esattamente ciò che questo ruolo non deve mai toccare. Niente
+     * {@code daily-report-materials:read/write} per lo stesso motivo di {@code daily-reports}: i
+     * "materiali" di questo commento sono il futuro catalogo/magazzino di cantiere (GitHub #55,
+     * {@code docs/roadmap-alex.md} C.1), non le righe di materiale del rapportino, che restano
+     * "mai a rapportini".
      */
     AMMINISTRATIVO("amministrativo", EnumSet.of(Permission.RESOURCES_READ, Permission.RESOURCES_WRITE,
             Permission.COMMESSE_READ, Permission.COMMESSE_WRITE));

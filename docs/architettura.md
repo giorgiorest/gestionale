@@ -120,6 +120,7 @@ Dettagli e motivazioni (anche per la rivendita): [ADR 0003](decisioni/0003-ident
   `resources:write`, `commesse:read`, `commesse:write`, `resource-assignments:read`,
   `resource-assignments:write`, `work-activities:read`, `work-activities:write`,
   `daily-reports:read`, `daily-reports:write`, `work-entries:read`, `work-entries:write`,
+  `daily-report-materials:read`, `daily-report-materials:write`,
   `assistant:use`, `users:manage`) controllati con
   `@PreAuthorize`. `GET /api/me` restituisce profilo, tenant, ruoli
   e permessi.
