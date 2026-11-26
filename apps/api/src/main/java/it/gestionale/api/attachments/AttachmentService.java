@@ -3,10 +3,11 @@ package it.gestionale.api.attachments;
 import java.time.Clock;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
+import it.gestionale.api.auth.DomainEntityPermissions;
+import it.gestionale.api.auth.DomainEntityPermissions.EntityPermissions;
 import it.gestionale.api.auth.Permission;
 import it.gestionale.api.tenancy.TenantContext;
 import org.springframework.security.access.AccessDeniedException;
@@ -42,34 +43,6 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
  */
 @Service
 public class AttachmentService {
-
-    /** Permesso di lettura e di scrittura dell'entità a cui un allegato è appeso. */
-    private record EntityPermissions(Permission read, Permission write) {
-    }
-
-    /**
-     * Per ogni {@code entityType}: permesso di lettura e di scrittura <strong>dell'entità</strong>, non
-     * dell'allegato: non basta {@code attachments:read}, altrimenti un ruolo come {@code
-     * amministrativo} (che ha {@code attachments:read/write} ma non {@code daily-reports:read})
-     * potrebbe vedere gli allegati di un rapportino che non può leggere. Un {@code entityType}
-     * assente da questa mappa non è raggiungibile da nessuno (difesa in profondità contro un
-     * valore non previsto).
-     */
-    private static final Map<String, EntityPermissions> ENTITY_PERMISSIONS = Map.ofEntries(
-            Map.entry("customers", new EntityPermissions(Permission.CUSTOMERS_READ, Permission.CUSTOMERS_WRITE)),
-            Map.entry("suppliers", new EntityPermissions(Permission.SUPPLIERS_READ, Permission.SUPPLIERS_WRITE)),
-            Map.entry("resources", new EntityPermissions(Permission.RESOURCES_READ, Permission.RESOURCES_WRITE)),
-            Map.entry("commesse", new EntityPermissions(Permission.COMMESSE_READ, Permission.COMMESSE_WRITE)),
-            Map.entry("resource_assignments", new EntityPermissions(Permission.RESOURCE_ASSIGNMENTS_READ,
-                    Permission.RESOURCE_ASSIGNMENTS_WRITE)),
-            Map.entry("work_activities", new EntityPermissions(Permission.WORK_ACTIVITIES_READ,
-                    Permission.WORK_ACTIVITIES_WRITE)),
-            Map.entry("daily_reports", new EntityPermissions(Permission.DAILY_REPORTS_READ,
-                    Permission.DAILY_REPORTS_WRITE)),
-            Map.entry("work_entries", new EntityPermissions(Permission.WORK_ENTRIES_READ,
-                    Permission.WORK_ENTRIES_WRITE)),
-            Map.entry("daily_report_materials", new EntityPermissions(Permission.DAILY_REPORT_MATERIALS_READ,
-                    Permission.DAILY_REPORT_MATERIALS_WRITE)));
 
     private final AttachmentRepository attachments;
     private final AttachmentsProperties properties;
@@ -225,7 +198,7 @@ public class AttachmentService {
      * ma senza materializzare un {@code Set}: basta il primo che corrisponde).
      */
     private static void requireEntityPermission(String entityType, Function<EntityPermissions, Permission> which) {
-        EntityPermissions permissions = ENTITY_PERMISSIONS.get(entityType);
+        EntityPermissions permissions = DomainEntityPermissions.of(entityType);
         Permission required = permissions == null ? null : which.apply(permissions);
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         boolean granted = required != null && authentication != null && authentication.getAuthorities().stream()

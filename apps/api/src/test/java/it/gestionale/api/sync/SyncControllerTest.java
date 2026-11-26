@@ -3,6 +3,7 @@ package it.gestionale.api.sync;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -180,6 +181,38 @@ class SyncControllerTest extends AbstractIntegrationTest {
                 .andExpect(status().isOk());
         Map<String, Object> dataWithoutCost = read(withoutLaborCost, "$.entities.resource_assignments[0].data");
         assertThat(dataWithoutCost.get("hourlyCostOverride")).isNull();
+    }
+
+    /**
+     * {@code attachments:read} da solo non basta: una riga si vede solo se si ha anche il
+     * permesso di lettura della sua {@code entityType} (qui {@code daily_reports}) — altrimenti
+     * {@code amministrativo} (ha {@code attachments:read} ma non {@code daily-reports:read})
+     * vedrebbe da qui i metadati di un rapportino che non può leggere direttamente.
+     */
+    @Test
+    void attachmentRowIsFilteredByItsLinkedEntityPermission() throws Exception {
+        UUID attachmentId = UUID.randomUUID();
+        UUID entityId = UUID.randomUUID();
+        mvc.perform(post("/api/attachments/upload-url").with(TestJwt.user(tenantA, "admin"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"id\":\"" + attachmentId + "\",\"entityType\":\"daily_reports\",\"entityId\":\""
+                        + entityId + "\",\"filename\":\"cantiere.jpg\",\"mimeType\":\"image/jpeg\","
+                        + "\"sizeBytes\":1024}"))
+                .andExpect(status().isOk());
+        mvc.perform(put("/api/attachments/" + attachmentId).with(TestJwt.user(tenantA, "admin"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"sha256\":\"" + "a".repeat(64) + "\"}"))
+                .andExpect(status().isOk());
+
+        // operator ha sia attachments:read sia daily-reports:read: la vede.
+        sync(TestJwt.user(tenantA, "operator"), null, null)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.entities.attachments.length()").value(1));
+
+        // amministrativo ha attachments:read ma non daily-reports:read: non deve vederla.
+        sync(TestJwt.user(tenantA, "amministrativo"), null, null)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.entities.attachments.length()").value(0));
     }
 
     @Test

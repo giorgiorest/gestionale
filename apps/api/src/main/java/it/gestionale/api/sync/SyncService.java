@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -16,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import it.gestionale.api.attachments.Attachment;
 import it.gestionale.api.attachments.AttachmentDto;
 import it.gestionale.api.attachments.AttachmentRepository;
+import it.gestionale.api.auth.DomainEntityPermissions;
 import it.gestionale.api.auth.Permission;
 import it.gestionale.api.commesse.Commessa;
 import it.gestionale.api.commesse.CommessaDto;
@@ -65,7 +67,11 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>Ogni entità compare nella risposta solo se l'utente ha il permesso di lettura corrispondente:
  * l'endpoint ne copre più di una, quindi il controllo non può stare in un unico
  * {@code @PreAuthorize} e si fa qui, entità per entità (difesa in profondità, la stessa idea di
- * {@code TenantContext.require()} nei servizi che filtrano già per RLS).
+ * {@code TenantContext.require()} nei servizi che filtrano già per RLS). Per {@code attachments},
+ * {@code attachments:read} da solo non basta: ogni riga si filtra anche per il permesso di
+ * lettura della sua {@code entityType} (stessa mappa di {@code AttachmentService}, via
+ * {@code DomainEntityPermissions}) — altrimenti un ruolo come {@code amministrativo} vedrebbe,
+ * da qui, i metadati degli allegati dei rapportini che non può leggere direttamente.
  */
 @Service
 public class SyncService {
@@ -164,7 +170,7 @@ public class SyncService {
         hasMore |= syncEntity("attachments", Permission.ATTACHMENTS_READ, authorities, cursorIn, cursorOut, entities,
                 limit, (after, pageable) -> attachmentsRepo.findChangesSince(tenantId, after.updatedAt(), after.id(), pageable),
                 Attachment::getId, Attachment::getUpdatedAt, Attachment::getVersion, Attachment::isDeleted,
-                AttachmentDto::from);
+                AttachmentDto::from, attachment -> hasEntityReadPermission(attachment.getEntityType(), authorities));
 
         return new SyncChangesDto(encodeCursor(cursorOut), hasMore, entities);
     }
@@ -180,11 +186,27 @@ public class SyncService {
         };
     }
 
+    /** Come l'overload con {@code visible}, ma senza filtro di riga: ogni riga letta è nella risposta. */
+    private <T> boolean syncEntity(String entityName, Permission readPermission, Set<String> authorities,
+                                   Map<String, SyncCursorEntry> cursorIn, Map<String, SyncCursorEntry> cursorOut,
+                                   Map<String, List<SyncChangeDto>> out, int limit, ChangesQuery<T> query,
+                                   Function<T, UUID> idOf, Function<T, Instant> updatedAtOf,
+                                   Function<T, Long> versionOf, Function<T, Boolean> deletedOf,
+                                   Function<T, Object> dataOf) {
+        return syncEntity(entityName, readPermission, authorities, cursorIn, cursorOut, out, limit, query, idOf,
+                updatedAtOf, versionOf, deletedOf, dataOf, row -> true);
+    }
+
     /**
      * Interroga, pagina e mappa un'entità, se l'utente ha il permesso di lettura corrispondente.
      * Richiede {@code limit + 1} righe per sapere se ce ne sono altre senza una {@code COUNT}
      * separata. Se non ci sono risultati il cursore dell'entità resta quello in ingresso: non
      * c'è nulla da far avanzare, e la prossima chiamata ripartirà dallo stesso punto.
+     *
+     * <p>{@code visible} filtra le singole righe (es. {@code attachments}, per il permesso della
+     * loro {@code entityType}): il cursore avanza comunque fino all'ultima riga <strong>letta</strong>
+     * (non solo quelle visibili), altrimenti una riga non visibile bloccherebbe per sempre
+     * l'avanzamento di tutte quelle dopo di lei.
      *
      * @return vero se questa entità ha raggiunto il limite di pagina (altre modifiche in coda)
      */
@@ -193,7 +215,7 @@ public class SyncService {
                                    Map<String, List<SyncChangeDto>> out, int limit, ChangesQuery<T> query,
                                    Function<T, UUID> idOf, Function<T, Instant> updatedAtOf,
                                    Function<T, Long> versionOf, Function<T, Boolean> deletedOf,
-                                   Function<T, Object> dataOf) {
+                                   Function<T, Object> dataOf, Predicate<T> visible) {
         if (!authorities.contains(readPermission.code())) {
             return false;
         }
@@ -204,6 +226,7 @@ public class SyncService {
         boolean hasMore = rows.size() > limit;
         List<T> changed = hasMore ? rows.subList(0, limit) : rows;
         out.put(entityName, changed.stream()
+                .filter(visible)
                 .map(row -> new SyncChangeDto(idOf.apply(row), updatedAtOf.apply(row), versionOf.apply(row),
                         deletedOf.apply(row), deletedOf.apply(row) ? null : dataOf.apply(row)))
                 .toList());
@@ -211,6 +234,12 @@ public class SyncService {
                 : new SyncCursorEntry(updatedAtOf.apply(changed.get(changed.size() - 1)),
                         idOf.apply(changed.get(changed.size() - 1))));
         return hasMore;
+    }
+
+    /** Permesso di lettura dell'entità a cui un allegato è appeso (vedi {@code AttachmentService}). */
+    private static boolean hasEntityReadPermission(String entityType, Set<String> authorities) {
+        DomainEntityPermissions.EntityPermissions permissions = DomainEntityPermissions.of(entityType);
+        return permissions != null && authorities.contains(permissions.read().code());
     }
 
     private Map<String, SyncCursorEntry> decodeCursor(String raw) {
