@@ -38,7 +38,7 @@ public enum Role {
             Permission.RESOURCE_ASSIGNMENTS_READ, Permission.WORK_ACTIVITIES_READ, Permission.DAILY_REPORTS_READ,
             Permission.WORK_ENTRIES_READ, Permission.DAILY_REPORT_MATERIALS_READ, Permission.LABOR_COST_READ)),
 
-    // Ruoli di cantiere (docs/roadmap-alex.md): ogni PR che introduce una funzione di cantiere
+    // Ruoli di cantiere (docs/roadmap.md, Fasi A-I): ogni PR che introduce una funzione di cantiere
     // aggiunge qui i Permission giusti ai ruoli giusti.
     /**
      * Capocantiere: verifica e conferma il lavoro delle squadre sul cantiere, gestisce il
@@ -89,7 +89,7 @@ public enum Role {
      * un dato di contabilità/payroll, esattamente ciò che questo ruolo non deve mai toccare. Niente
      * {@code daily-report-materials:read/write} per lo stesso motivo di {@code daily-reports}: i
      * "materiali" di questo commento sono il futuro catalogo/magazzino di cantiere (GitHub #55,
-     * {@code docs/roadmap-alex.md} C.1), non le righe di materiale del rapportino, che restano
+     * {@code docs/roadmap.md} C.1), non le righe di materiale del rapportino, che restano
      * "mai a rapportini".
      */
     AMMINISTRATIVO("amministrativo", EnumSet.of(Permission.RESOURCES_READ, Permission.RESOURCES_WRITE,

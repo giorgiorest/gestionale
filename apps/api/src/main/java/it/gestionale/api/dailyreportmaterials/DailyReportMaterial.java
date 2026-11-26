@@ -12,7 +12,7 @@ import jakarta.persistence.Version;
 
 /**
  * Riga di materiale impiegato in un rapportino giornaliero ({@code DailyReport}, #49): nessun
- * catalogo materiali esiste ancora (GitHub #55, {@code docs/roadmap-alex.md} C.1), quindi
+ * catalogo materiali esiste ancora (GitHub #55, {@code docs/roadmap.md} C.1), quindi
  * {@code description} e {@code unit} sono testo libero, non un riferimento a un'anagrafica — da
  * rivedere quando quella storia arriva (trigger di revisione).
  *
