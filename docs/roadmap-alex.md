@@ -111,12 +111,12 @@ piano tecnico: è un'aggiunta, non una sovrapposizione (D.4 condivide solo la UI
 | D.2 | Compito con destinatari, attrezzature necessarie, posizione (mappa/GPS), foto — [#89](https://github.com/giorgiorest/gestionale/issues/89) | — | ⬜ |
 | D.3 | Esito per persona (fatto/non finito, nota, foto di riscontro) — [#90](https://github.com/giorgiorest/gestionale/issues/90) | — | ⬜ |
 | D.4 | Rapportino del giorno con archivio — [#91](https://github.com/giorgiorest/gestionale/issues/91) | da assegnare | ⬜ |
-| D.5 | Dettatura vocale per l'inserimento rapido del rapportino (offline registra, online trascrive) — [#92](https://github.com/giorgiorest/gestionale/issues/92) — **decisione aperta**, vedi tabella sotto | — | ⬜ |
+| D.5 | Dettatura vocale per l'inserimento rapido del rapportino (offline registra, online trascrive) — [#92](https://github.com/giorgiorest/gestionale/issues/92) | — | ⬜ |
 
 ## Fase E — Fornitori avanzati
 
 [Epica GitHub #65](https://github.com/giorgiorest/gestionale/issues/65). E.2/E.5/E.6: AI sui
-documenti, **decisione aperta** (vedi tabella sotto).
+documenti, **rimandata a dopo le fondamenta** (vedi "Decisioni prese").
 
 | PR | Contenuto | Migr. | Stato |
 |----|-----------|-------|-------|
@@ -131,7 +131,8 @@ documenti, **decisione aperta** (vedi tabella sotto).
 
 [Epica GitHub #66](https://github.com/giorgiorest/gestionale/issues/66). Dopo l'incremento 12 del
 piano tecnico ("WBS e budget", [#58](https://github.com/giorgiorest/gestionale/issues/58)): terreno
-condiviso sui costi, non duplicato. F.5: AI sui documenti, **decisione aperta** (vedi tabella sotto).
+condiviso sui costi, non duplicato. F.5: AI sui documenti, **rimandata a dopo le fondamenta**
+(vedi "Decisioni prese").
 
 | PR | Contenuto | Migr. | Stato |
 |----|-----------|-------|-------|
@@ -149,7 +150,7 @@ condiviso sui costi, non duplicato. F.5: AI sui documenti, **decisione aperta** 
 non sovrapposta, all'incremento 12 del piano tecnico ("WBS e budget", costo,
 [#58](https://github.com/giorgiorest/gestionale/issues/58)): condividono `WorkActivity.parentId`
 (incremento 2, [#48](https://github.com/giorgiorest/gestionale/issues/48)). G.6: AI sui documenti,
-**decisione aperta** (vedi tabella sotto).
+**rimandata a dopo le fondamenta** (vedi "Decisioni prese").
 
 | PR | Contenuto | Migr. | Stato |
 |----|-----------|-------|-------|
@@ -192,13 +193,18 @@ dell'esecuzione, non i costi né l'archivio generico.
 
 ---
 
-## Decisioni ancora da prendere
+## Decisioni prese (25/11/2026)
 
-| Cosa | Perché conta | Blocca |
-|------|---------------|--------|
-| Ruolo d'account (`admin`/`operator`/`viewer`) e ruolo di cantiere (`capocantiere`/`caposquadra`/`operaio`/`amministrativo`) sono oggi entrambi **a scelta singola** per utente (un solo `role` in Keycloak, un solo campo nella console di piattaforma), ma nella realtà il titolare di un'impresa piccola è spesso anche il capocantiere sul campo. Da decidere: accumulare i permessi di cantiere dentro `admin` quando serve, oppure passare a ruoli multipli per utente (cambio più grande: doc Keycloak, selettore multiplo in console, `PlatformDtos.role` da stringa a lista). | Prima si decide, meno codice delle fasi A–H si scrive sull'assunzione sbagliata | dalla PR che per prima richiede a un utente due ruoli insieme (probabile già in A.2/A.3) |
-| **AI sui documenti**: il piano tecnico ricevuto dall'utente ("Analisi_Completa.md") esclude esplicitamente l'AI dallo scope iniziale ("OCR/AI su DDT/fatture e dettatura automatica del rapportino, fuori scope"); questo file invece la mette al centro di sei voci (E.2, E.5, E.6, C.3, A.11, F.5, G.6) come probabile differenziante di prodotto. Due filosofie diverse, non una questione tecnica. | Decide se l'AI sui documenti è un differenziante da costruire presto o un'estensione da rimandare a dopo le fondamenta | E.2, E.5, E.6, C.3, A.11, F.5, G.6 |
-| **Dettatura vocale** (D.5): stessa esclusione esplicita nel piano tecnico, stesso bivio del punto sopra ma specifico alla dettatura. | Idem | D.5 |
+- **Ruoli multipli per utente**: confermato. Un utente potrà avere insieme un ruolo d'account
+  (`admin`/`operator`/`viewer`) e un ruolo di cantiere (`capocantiere`/`caposquadra`/`operaio`/
+  `amministrativo`). Cambio più grande di quanto bastava per A.1: tracciato come nuova voce
+  **5.12** in `docs/roadmap.md` (conviene farla presto, prima che altre fasi assegnino un ruolo
+  di cantiere assumendo la scelta singola).
+- **AI sui documenti**: rimandata a dopo le fondamenta. Le sei voci (E.2, E.5, E.6, C.3, A.11,
+  F.5, G.6) restano in questo file ma si lavorano per ultime (Onda 10 di
+  `docs/ordine-esecuzione.md`).
+- **Dettatura vocale (D.5)**: confermata da costruire presto, insieme al resto della Fase D (non
+  rimandata).
 
 ## Note di sequenza
 

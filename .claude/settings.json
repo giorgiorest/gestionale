@@ -26,6 +26,7 @@
       "Bash(git restore*)",
       "Bash(git fetch*)",
       "Bash(git merge*)",
+      "Bash(git push*)",
       "Bash(git rev-parse*)",
       "Bash(git ls-tree*)",
       "Bash(git ls-files*)",

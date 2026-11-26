@@ -119,6 +119,7 @@ debito da pagare moltiplicato per il numero di entità.
 | 5.9 | Firma degli installer Windows e aggiornamento automatico dell'app desktop | — | ⬜ |
 | 5.10 | Ambiente di prova separato dalla produzione, per provare le migrazioni su dati realistici | — | ⬜ |
 | 5.11 | Test end-to-end con Playwright, incluso il ciclo offline → online | — | ⬜ |
+| 5.12 | 🔐 Ruoli multipli per utente: un account può avere insieme un ruolo d'account (`admin`/`operator`/`viewer`) e un ruolo di cantiere (`capocantiere`/`caposquadra`/`operaio`/`amministrativo`) — Keycloak, `PlatformDtos.role` da stringa a lista, selettore multiplo in console (decisione presa il 25/11/2026, vedi `docs/roadmap-alex.md`) | — | ⬜ |
 
 ## Fase 6 — Lato SaaS
 
