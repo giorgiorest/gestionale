@@ -21,7 +21,7 @@ public record WorkActivityDto(UUID id, UUID commessaId, UUID parentId, String co
 
     private static final WorkActivityStatusConverter STATUS = new WorkActivityStatusConverter();
 
-    static WorkActivityDto from(WorkActivity activity) {
+    public static WorkActivityDto from(WorkActivity activity) {
         return new WorkActivityDto(activity.getId(), activity.getCommessaId(), activity.getParentId(),
                 activity.getCode(), activity.getName(), activity.getDescription(),
                 STATUS.convertToDatabaseColumn(activity.getStatus()), activity.getProgressPercentage(),

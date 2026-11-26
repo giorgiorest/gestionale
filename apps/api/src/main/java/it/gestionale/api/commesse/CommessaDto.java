@@ -20,7 +20,7 @@ public record CommessaDto(UUID id, UUID customerId, String nome, String indirizz
 
     private static final CommessaStatoConverter STATO = new CommessaStatoConverter();
 
-    static CommessaDto from(Commessa commessa) {
+    public static CommessaDto from(Commessa commessa) {
         return new CommessaDto(commessa.getId(), commessa.getCustomerId(), commessa.getNome(),
                 commessa.getIndirizzo(), STATO.convertToDatabaseColumn(commessa.getStato()), commessa.getVersion(),
                 commessa.getUpdatedAt());
