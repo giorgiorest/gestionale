@@ -35,7 +35,7 @@ jobs:
       # invaliderebbe silenziosamente la garanzia "decide il contenuto, non il commit" di ADR 0004.
       - uses: actions/checkout@v7
       - id: cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             apps/desktop/src-tauri/target/release/bundle/msi/*.msi

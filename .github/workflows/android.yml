@@ -74,7 +74,7 @@ jobs:
             | sha256sum | cut -d ' ' -f1 > android-signing-fingerprint.txt
 
       - id: cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: apps/desktop/src-tauri/gen/android/app/build/outputs/apk/**/release/*.apk
           key: android-apk-${{ hashFiles('apps/web/**', 'apps/desktop/**', '.github/workflows/android.yml', 'android-signing-fingerprint.txt') }}
