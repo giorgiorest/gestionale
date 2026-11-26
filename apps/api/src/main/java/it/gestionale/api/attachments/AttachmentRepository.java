@@ -16,8 +16,12 @@ public interface AttachmentRepository extends JpaRepository<Attachment, UUID> {
     /** Anche se cancellato. Il filtro per tenant è difesa in profondità: la RLS già protegge. */
     Optional<Attachment> findByIdAndTenantId(UUID id, UUID tenantId);
 
-    /** Allegati attivi di un record ("le foto di questo rapportino"), più recenti prima. */
-    List<Attachment> findByTenantIdAndEntityTypeAndEntityIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+    /**
+     * Allegati confermati e attivi di un record ("le foto di questo rapportino"), più recenti
+     * prima. Un allegato ancora "in caricamento" ({@code sha256} NULL) non compare: il caricamento
+     * potrebbe non arrivare mai a conferma.
+     */
+    List<Attachment> findByTenantIdAndEntityTypeAndEntityIdAndDeletedAtIsNullAndSha256IsNotNullOrderByCreatedAtDesc(
             UUID tenantId, String entityType, UUID entityId);
 
     /** Modifiche (comprese le cancellazioni logiche) dopo il cursore, per {@code GET /api/sync/changes}. */

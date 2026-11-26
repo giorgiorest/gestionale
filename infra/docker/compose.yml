@@ -112,7 +112,9 @@ services:
       # Console web di amministrazione: http://localhost:9001
       - "9001:9001"
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      # Non "mc ready local": l'immagine del server non include il client mc (sta solo in
+      # quay.io/minio/mc). L'endpoint di salute HTTP non richiede nessun binario esterno.
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 5s
       timeout: 5s
       retries: 10

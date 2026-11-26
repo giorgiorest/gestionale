@@ -62,36 +62,60 @@ class AttachmentControllerTest extends AbstractIntegrationTest {
                 .content(json));
     }
 
-    private ResultActions confirm(UUID tenant, String role, UUID id, String json) throws Exception {
+    private ResultActions confirm(UUID tenant, String role, UUID id, String sha256) throws Exception {
         return mvc.perform(put("/api/attachments/" + id)
                 .with(TestJwt.user(tenant, role))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(json));
+                .content("{\"sha256\":\"" + sha256 + "\"}"));
     }
 
-    private String confirmJson(UUID entityId) {
+    private String uploadUrlJson(UUID id, UUID entityId) {
         return """
-                {"entityType":"daily_reports","entityId":"%s","filename":"cantiere.jpg",
-                 "mimeType":"image/jpeg","sizeBytes":1024,
-                 "sha256":"%s"}
-                """.formatted(entityId, "a".repeat(64));
-    }
-
-    @Test
-    void createsUploadUrlPointingToTheStorageKey() throws Exception {
-        UUID id = UUID.randomUUID();
-        UUID entityId = UUID.randomUUID();
-        String body = """
                 {"id":"%s","entityType":"daily_reports","entityId":"%s","filename":"cantiere.jpg",
                  "mimeType":"image/jpeg","sizeBytes":1024}
                 """.formatted(id, entityId);
+    }
 
-        createUploadUrl(TestJwt.user(tenantA, "operator"), body)
+    /** Crea la riga "in caricamento" e la conferma, come farebbe un client reale. */
+    private void createAndConfirm(UUID tenant, String role, UUID id, UUID entityId) throws Exception {
+        createUploadUrl(TestJwt.user(tenant, role), uploadUrlJson(id, entityId)).andExpect(status().isOk());
+        confirm(tenant, role, id, "a".repeat(64)).andExpect(status().isOk());
+    }
+
+    @Test
+    void createsUploadUrlAndAPendingRowNotYetVisibleInAnyList() throws Exception {
+        UUID id = UUID.randomUUID();
+        UUID entityId = UUID.randomUUID();
+
+        createUploadUrl(TestJwt.user(tenantA, "operator"), uploadUrlJson(id, entityId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.uploadUrl").exists())
                 .andExpect(jsonPath("$.expiresAt").exists());
-        // La riga di metadati non esiste ancora: il primo passo non scrive nulla.
-        assertThat(TenantContext.callAs(tenantA, () -> attachments.findByIdAndTenantId(id, tenantA))).isEmpty();
+
+        // La riga esiste già (lega i due passi), ma non è confermata: non compare in nessun elenco.
+        Attachment pending = TenantContext.callAs(tenantA, () -> attachments.findByIdAndTenantId(id, tenantA))
+                .orElseThrow();
+        assertThat(pending.isPending()).isTrue();
+        mvc.perform(get("/api/attachments")
+                        .param("entityType", "daily_reports")
+                        .param("entityId", entityId.toString())
+                        .with(TestJwt.user(tenantA, "viewer")))
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void resendingUploadUrlWithTheSameDataReusesTheSameRow() throws Exception {
+        UUID id = UUID.randomUUID();
+        UUID entityId = UUID.randomUUID();
+
+        createUploadUrl(TestJwt.user(tenantA, "operator"), uploadUrlJson(id, entityId)).andExpect(status().isOk());
+        createUploadUrl(TestJwt.user(tenantA, "operator"), uploadUrlJson(id, entityId)).andExpect(status().isOk());
+
+        createUploadUrl(TestJwt.user(tenantA, "operator"), """
+                {"id":"%s","entityType":"daily_reports","entityId":"%s","filename":"altro.jpg",
+                 "mimeType":"application/pdf","sizeBytes":9999}
+                """.formatted(id, entityId))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -111,19 +135,23 @@ class AttachmentControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void confirmCreatesMetadataIdempotently() throws Exception {
+    void confirmRequiresAPriorUploadUrlAndIsThenIdempotent() throws Exception {
         UUID id = UUID.randomUUID();
         UUID entityId = UUID.randomUUID();
 
-        confirm(tenantA, "operator", id, confirmJson(entityId))
+        // Nessuna richiesta di URL di caricamento prima: non c'è nulla da confermare.
+        confirm(tenantA, "operator", id, "a".repeat(64)).andExpect(status().isNotFound());
+
+        createUploadUrl(TestJwt.user(tenantA, "operator"), uploadUrlJson(id, entityId)).andExpect(status().isOk());
+        confirm(tenantA, "operator", id, "a".repeat(64))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(id.toString()))
                 .andExpect(jsonPath("$.entityType").value("daily_reports"))
-                .andExpect(jsonPath("$.version").value(0));
-        // Reinvio dalla outbox: stesso id, nessun duplicato né cambiamento.
-        confirm(tenantA, "operator", id, confirmJson(entityId))
+                .andExpect(jsonPath("$.sha256").value("a".repeat(64)));
+        // Reinvio dalla outbox: stesso id, nessun cambiamento.
+        confirm(tenantA, "operator", id, "a".repeat(64))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.version").value(0));
+                .andExpect(jsonPath("$.version").value(1));
 
         mvc.perform(get("/api/attachments")
                         .param("entityType", "daily_reports")
@@ -135,10 +163,16 @@ class AttachmentControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void downloadUrlIsNotFoundForMissingOrOtherTenantAttachment() throws Exception {
+    void downloadUrlIsNotFoundForPendingMissingOrOtherTenantAttachment() throws Exception {
         UUID id = UUID.randomUUID();
-        confirm(tenantA, "operator", id, confirmJson(UUID.randomUUID())).andExpect(status().isOk());
+        UUID entityId = UUID.randomUUID();
+        createUploadUrl(TestJwt.user(tenantA, "operator"), uploadUrlJson(id, entityId)).andExpect(status().isOk());
 
+        // Ancora in caricamento: non scaricabile.
+        mvc.perform(get("/api/attachments/" + id + "/download-url").with(TestJwt.user(tenantA, "viewer")))
+                .andExpect(status().isNotFound());
+
+        confirm(tenantA, "operator", id, "a".repeat(64)).andExpect(status().isOk());
         mvc.perform(get("/api/attachments/" + id + "/download-url").with(TestJwt.user(tenantA, "viewer")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.downloadUrl").exists());
@@ -152,7 +186,7 @@ class AttachmentControllerTest extends AbstractIntegrationTest {
     @Test
     void deleteIsLogicalAndIdempotent() throws Exception {
         UUID id = UUID.randomUUID();
-        confirm(tenantA, "operator", id, confirmJson(UUID.randomUUID())).andExpect(status().isOk());
+        createAndConfirm(tenantA, "operator", id, UUID.randomUUID());
 
         mvc.perform(delete("/api/attachments/" + id).with(TestJwt.user(tenantA, "operator")))
                 .andExpect(status().isNoContent());
@@ -167,14 +201,32 @@ class AttachmentControllerTest extends AbstractIntegrationTest {
 
     @Test
     void viewerCannotWrite() throws Exception {
-        confirm(tenantA, "viewer", UUID.randomUUID(), confirmJson(UUID.randomUUID()))
-                .andExpect(status().isForbidden());
-        createUploadUrl(TestJwt.user(tenantA, "viewer"), """
-                {"id":"%s","entityType":"daily_reports","entityId":"%s","filename":"x.jpg",
-                 "mimeType":"image/jpeg","sizeBytes":10}
-                """.formatted(UUID.randomUUID(), UUID.randomUUID()))
+        confirm(tenantA, "viewer", UUID.randomUUID(), "a".repeat(64)).andExpect(status().isForbidden());
+        createUploadUrl(TestJwt.user(tenantA, "viewer"), uploadUrlJson(UUID.randomUUID(), UUID.randomUUID()))
                 .andExpect(status().isForbidden());
         mvc.perform(delete("/api/attachments/" + UUID.randomUUID()).with(TestJwt.user(tenantA, "viewer")))
+                .andExpect(status().isForbidden());
+    }
+
+    /**
+     * {@code amministrativo} ha {@code attachments:read/write} ma non {@code daily-reports:read}
+     * (non deve mai vedere i rapportini): non deve poter vedere né scaricare né caricare allegati
+     * appesi a un rapportino.
+     */
+    @Test
+    void roleWithoutTheLinkedEntityPermissionCannotAccessItsAttachments() throws Exception {
+        UUID id = UUID.randomUUID();
+        UUID entityId = UUID.randomUUID();
+        createAndConfirm(tenantA, "operator", id, entityId);
+
+        mvc.perform(get("/api/attachments")
+                        .param("entityType", "daily_reports")
+                        .param("entityId", entityId.toString())
+                        .with(TestJwt.user(tenantA, "amministrativo")))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/attachments/" + id + "/download-url").with(TestJwt.user(tenantA, "amministrativo")))
+                .andExpect(status().isForbidden());
+        createUploadUrl(TestJwt.user(tenantA, "amministrativo"), uploadUrlJson(UUID.randomUUID(), entityId))
                 .andExpect(status().isForbidden());
     }
 
@@ -182,7 +234,7 @@ class AttachmentControllerTest extends AbstractIntegrationTest {
     void attachmentsOfAnotherTenantAreNotVisible() throws Exception {
         UUID id = UUID.randomUUID();
         UUID entityId = UUID.randomUUID();
-        confirm(tenantA, "operator", id, confirmJson(entityId)).andExpect(status().isOk());
+        createAndConfirm(tenantA, "operator", id, entityId);
 
         mvc.perform(get("/api/attachments")
                         .param("entityType", "daily_reports")

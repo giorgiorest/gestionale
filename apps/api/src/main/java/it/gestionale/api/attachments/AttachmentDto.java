@@ -37,14 +37,12 @@ public record AttachmentDto(UUID id, String entityType, UUID entityId, String or
     public record UploadUrlResponse(String uploadUrl, Instant expiresAt) {
     }
 
-    /** Conferma dei metadati dopo il caricamento (voce 2.1 del ricettario "Nuova entità di dominio"). */
-    public record Confirm(
-            @NotBlank @Size(max = 100) String entityType,
-            @NotNull UUID entityId,
-            @NotBlank @Size(max = 255) String filename,
-            @NotBlank @Size(max = 255) String mimeType,
-            @Positive long sizeBytes,
-            @NotBlank @Size(min = 64, max = 64) String sha256) {
+    /**
+     * Conferma dopo il caricamento. Gli altri metadati (entità, nome, tipo, dimensione) sono già
+     * quelli di {@link UploadUrlRequest}, fissati alla riga creata in quel passo: la conferma non
+     * li porta di nuovo, altrimenti i due passi potrebbero descrivere file diversi.
+     */
+    public record Confirm(@NotBlank @Size(min = 64, max = 64) String sha256) {
     }
 
     /** URL firmato {@code GET}: il client scarica i byte direttamente, senza passare dall'API. */

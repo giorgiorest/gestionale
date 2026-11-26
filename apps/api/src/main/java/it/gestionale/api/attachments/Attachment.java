@@ -45,7 +45,8 @@ public class Attachment {
     @Column(name = "size_bytes", nullable = false)
     private long sizeBytes;
 
-    @Column(nullable = false)
+    /** NULL finché l'allegato è "in caricamento": valorizzato da {@link #confirm}. */
+    @Column
     private String sha256;
 
     @Column(name = "storage_key", nullable = false)
@@ -88,6 +89,25 @@ public class Attachment {
         this.storageKey = storageKey;
         this.createdBy = userId;
         this.updatedBy = userId;
+    }
+
+    /** True finché l'URL di caricamento è stato emesso ma la conferma non è ancora arrivata. */
+    public boolean isPending() {
+        return sha256 == null;
+    }
+
+    /**
+     * Conferma l'allegato dopo il caricamento: valorizza {@code sha256}. Non fa nulla se è già
+     * confermato (idempotente, per il reinvio dalla outbox) — una volta confermato, un allegato
+     * non si modifica più (solo cancellazione logica).
+     */
+    public void confirm(String sha256, String userId, Instant at) {
+        if (!isPending()) {
+            return;
+        }
+        this.sha256 = sha256;
+        this.updatedBy = userId;
+        this.updatedAt = at;
     }
 
     /**

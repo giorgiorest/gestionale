@@ -43,8 +43,9 @@ public class AttachmentController {
     /** Primo passo del caricamento: valida tipo/dimensione ed emette l'URL firmato {@code PUT}. */
     @PostMapping("/upload-url")
     @PreAuthorize("hasAuthority('attachments:write')")
-    public AttachmentDto.UploadUrlResponse createUploadUrl(@Valid @RequestBody AttachmentDto.UploadUrlRequest request) {
-        return service.createUploadUrl(request);
+    public AttachmentDto.UploadUrlResponse createUploadUrl(@AuthenticationPrincipal Jwt jwt,
+                                                             @Valid @RequestBody AttachmentDto.UploadUrlRequest request) {
+        return service.createUploadUrl(request, jwt.getSubject());
     }
 
     /**
