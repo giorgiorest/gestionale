@@ -191,6 +191,33 @@ class CustomerControllerTest extends AbstractIntegrationTest {
         putCustomer(tenantA, "operator", UUID.randomUUID(), "{\"name\":\" \"}").andExpect(status().isBadRequest());
         putCustomer(tenantA, "operator", UUID.randomUUID(), "{\"name\":\"X\",\"email\":\"non-una-email\"}")
                 .andExpect(status().isBadRequest());
+        putCustomer(tenantA, "operator", UUID.randomUUID(), "{\"name\":\"X\",\"partitaIva\":\"123\"}")
+                .andExpect(status().isBadRequest());
+        putCustomer(tenantA, "operator", UUID.randomUUID(), "{\"name\":\"X\",\"codiceSdi\":\"ABC\"}")
+                .andExpect(status().isBadRequest());
+    }
+
+    /** Voce 2.1: anagrafica clienti completa (P.IVA, codice fiscale, indirizzo, PEC, codice SDI, condizioni). */
+    @Test
+    void storesFiscalAndCommercialData() throws Exception {
+        UUID id = UUID.randomUUID();
+        putCustomer(tenantA, "operator", id, """
+                {"name":"Rossi S.r.l.","email":"info@rossi.example","partitaIva":"12345678901",
+                 "codiceFiscale":"12345678901","indirizzo":"Via Roma 1, Milano","pec":"rossi@pec.example",
+                 "codiceSdi":"ABC1234","condizioniPagamento":"30 giorni data fattura"}
+                """)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.partitaIva").value("12345678901"))
+                .andExpect(jsonPath("$.codiceFiscale").value("12345678901"))
+                .andExpect(jsonPath("$.indirizzo").value("Via Roma 1, Milano"))
+                .andExpect(jsonPath("$.pec").value("rossi@pec.example"))
+                .andExpect(jsonPath("$.codiceSdi").value("ABC1234"))
+                .andExpect(jsonPath("$.condizioniPagamento").value("30 giorni data fattura"));
+
+        // Dati fiscali opzionali: un cliente privato può non averne nessuno.
+        putCustomer(tenantA, "operator", UUID.randomUUID(), "{\"name\":\"Privato\"}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.partitaIva").doesNotExist());
     }
 
     /** Contratto delle liste paginate (ADR 0014): page/size/sort/q e la forma esplicita di PageDto. */

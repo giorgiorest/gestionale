@@ -26,6 +26,12 @@ export interface LocalCustomer {
   tenantId: string;
   name: string;
   email: string | null;
+  partitaIva: string | null;
+  codiceFiscale: string | null;
+  indirizzo: string | null;
+  pec: string | null;
+  codiceSdi: string | null;
+  condizioniPagamento: string | null;
   updatedAt: string;
 }
 

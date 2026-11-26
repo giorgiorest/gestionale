@@ -59,6 +59,30 @@ const SEARCH_DEBOUNCE_MS = 300;
               <mat-label>Email</mat-label>
               <input matInput type="email" name="email" [(ngModel)]="email" />
             </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="grow">
+              <mat-label>Partita IVA</mat-label>
+              <input matInput name="partitaIva" [(ngModel)]="partitaIva" maxlength="11" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="grow">
+              <mat-label>Codice fiscale</mat-label>
+              <input matInput name="codiceFiscale" [(ngModel)]="codiceFiscale" maxlength="16" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="grow">
+              <mat-label>Indirizzo</mat-label>
+              <input matInput name="indirizzo" [(ngModel)]="indirizzo" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="grow">
+              <mat-label>PEC</mat-label>
+              <input matInput type="email" name="pec" [(ngModel)]="pec" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="grow">
+              <mat-label>Codice destinatario SDI</mat-label>
+              <input matInput name="codiceSdi" [(ngModel)]="codiceSdi" maxlength="7" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="grow">
+              <mat-label>Condizioni di pagamento</mat-label>
+              <input matInput name="condizioniPagamento" [(ngModel)]="condizioniPagamento" />
+            </mat-form-field>
             <button mat-flat-button type="submit" [disabled]="!name.trim() || saving()">
               <mat-icon>add</mat-icon>Aggiungi cliente
             </button>
@@ -87,6 +111,10 @@ const SEARCH_DEBOUNCE_MS = 300;
                   <span class="muted">Non indicata</span>
                 }
               </td>
+            </ng-container>
+            <ng-container matColumnDef="partitaIva">
+              <th mat-header-cell *matHeaderCellDef>Partita IVA</th>
+              <td mat-cell *matCellDef="let c">{{ c.partitaIva || c.codiceFiscale || '—' }}</td>
             </ng-container>
             <ng-container matColumnDef="actions">
               <th mat-header-cell *matHeaderCellDef aria-label="Azioni"></th>
@@ -164,10 +192,18 @@ export class CustomersPage {
   /** Testo digitato nel campo di ricerca: la ricerca server-side parte dopo un breve debounce. */
   readonly filterText = signal('');
   readonly columns = computed(() =>
-    this.profile.hasPermission('customers:write') ? ['name', 'email', 'actions'] : ['name', 'email'],
+    this.profile.hasPermission('customers:write')
+      ? ['name', 'email', 'partitaIva', 'actions']
+      : ['name', 'email', 'partitaIva'],
   );
   name = '';
   email = '';
+  partitaIva = '';
+  codiceFiscale = '';
+  indirizzo = '';
+  pec = '';
+  codiceSdi = '';
+  condizioniPagamento = '';
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -199,9 +235,22 @@ export class CustomersPage {
     }
     this.saving.set(true);
     try {
-      await this.service.create(this.name, this.email || null);
+      await this.service.create(this.name, this.email || null, {
+        partitaIva: this.partitaIva || null,
+        codiceFiscale: this.codiceFiscale || null,
+        indirizzo: this.indirizzo || null,
+        pec: this.pec || null,
+        codiceSdi: this.codiceSdi || null,
+        condizioniPagamento: this.condizioniPagamento || null,
+      });
       this.name = '';
       this.email = '';
+      this.partitaIva = '';
+      this.codiceFiscale = '';
+      this.indirizzo = '';
+      this.pec = '';
+      this.codiceSdi = '';
+      this.condizioniPagamento = '';
     } finally {
       this.saving.set(false);
     }

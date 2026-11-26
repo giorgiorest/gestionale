@@ -85,7 +85,7 @@ debito da pagare moltiplicato per il numero di entità.
 
 | PR | Contenuto | Migr. | Stato |
 |----|-----------|-------|-------|
-| 2.1 | Anagrafica clienti completa: ragione sociale, P.IVA, codice fiscale, indirizzo, PEC, codice destinatario SDI, condizioni di pagamento | V8 | ⬜ |
+| 2.1 | Anagrafica clienti completa: ragione sociale, P.IVA, codice fiscale, indirizzo, PEC, codice destinatario SDI, condizioni di pagamento | V19 | ✅ |
 | 2.2 | Fornitori, sullo stesso schema | da verificare | ⬜ |
 | 2.3 | Risorse e squadre (dipendenti che compilano i rapportini), collegate alla rubrica `app_users` | V7 | ✅ |
 | 2.4 | 🔐 Allegati lato backend: tabella con RLS, archivio compatibile S3, URL firmati, MinIO in sviluppo ([ADR 0016](decisioni/0016-archivio-allegati.md)) | da verificare | ⬜ |
