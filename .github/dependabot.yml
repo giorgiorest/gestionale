@@ -13,6 +13,13 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      # Un salto di versione maggiore (es. 3.5.x → 4.x) porta incompatibilità reali (vedi
+      # giorgiorest/gestionale#149: spring-boot-starter-parent 4.2.0 ha smesso di gestire la
+      # versione di org.testcontainers:junit-jupiter/postgresql, rompendo la build) e va valutato
+      # e testato a parte, non proposto come un aggiornamento di routine.
+      - dependency-name: "org.springframework.boot:spring-boot-starter-parent"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
