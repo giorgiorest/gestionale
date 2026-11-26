@@ -3,7 +3,7 @@
 # ---- Build ----
 # Il jar è indipendente dall'architettura: si compila una volta sola sulla piattaforma della build
 # (niente emulazione); solo l'immagine finale è per amd64 o arm64 (es. Oracle Cloud Ampere).
-FROM --platform=$BUILDPLATFORM docker.io/library/eclipse-temurin:21-jdk AS build
+FROM --platform=$BUILDPLATFORM docker.io/library/eclipse-temurin:25-jdk AS build
 WORKDIR /workspace
 # Prima solo wrapper e pom, per sfruttare la cache delle dipendenze.
 COPY mvnw pom.xml ./
@@ -15,7 +15,7 @@ COPY src src
 RUN ./mvnw -B package -DskipTests && cp target/gestionale-api-*.jar app.jar
 
 # ---- Runtime ----
-FROM docker.io/library/eclipse-temurin:21-jre
+FROM docker.io/library/eclipse-temurin:25-jre
 WORKDIR /app
 RUN groupadd --system app && useradd --system --gid app --no-create-home app
 COPY --from=build /workspace/app.jar app.jar
