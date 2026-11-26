@@ -31,6 +31,13 @@
 		reverse_proxy api:8080
 	}
 
+	# Osservabilità (metriche Prometheus, salute): solo rete amministrativa, come /console e
+	# /api/platform/*. Senza questo blocco /actuator/* finirebbe nel catch-all sotto (web:80, SPA).
+	handle /actuator/* {
+		import solo_reti_amministrative /actuator/*
+		reverse_proxy api:8080
+	}
+
 	# Tutto il resto: web app (nginx con i file statici e config.json), console compresa.
 	handle {
 		import solo_reti_amministrative /console /console/*

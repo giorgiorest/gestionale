@@ -58,7 +58,8 @@ gestionale/
 | `sync/`      | `GET /api/sync/changes`: sincronizzazione incrementale lato server, cursore per entità (`updated_at` + id) e tombstone (voce 1.2 della roadmap); applicato lato client da `pullChanges` (voce 1.3) |
 | `ai/`        | `AiProvider`, `AiTool`, `NoopAiProvider` (503), quota mensile, `POST /api/ai/chat` |
 | `demo/`      | `DemoTenantSeeder` con `reset()` |
-| `health/`    | `GET /api/health` |
+| `health/`    | `GET /api/health` (liveness pubblico) |
+| `observability/` | Log JSON con `tenant_id`/`request_id` (`RequestLoggingContextFilter`), `GET /actuator/prometheus`, avviso email sulla salute (`HealthAlertWatchdog`) — [ADR 0022](docs/decisioni/0022-osservabilita.md) |
 
 ### Frontend (`apps/web/src/app`)
 

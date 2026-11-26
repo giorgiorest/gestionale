@@ -15,7 +15,7 @@ possono entrarci**, nemmeno gli amministratori di un'azienda. Decisioni e motivi
 | API | `/api/platform/**` accetta **solo** token del realm `piattaforma` con il ruolo `platform-admin`; un token di un dipendente viene rifiutato (401), anche se è amministratore della sua azienda |
 | Database | Le aziende e le licenze di tutti si leggono con una policy dedicata (`app.worker = 'platform-admin'`); i dati delle aziende (clienti, notifiche…) restano **invisibili** alla console |
 | Utenti | L'API gestisce gli utenti in Keycloak con un client di servizio che può solo gestire gli utenti del realm delle aziende (non i client, non gli altri realm) |
-| Rete (facoltativo) | `ADMIN_ALLOWED_IPS` nel `.env`: console, login degli amministratori e console di Keycloak rispondono solo da quegli indirizzi |
+| Rete (facoltativo) | `ADMIN_ALLOWED_IPS` nel `.env`: console, login degli amministratori, console di Keycloak e osservabilità (`/actuator/*`, [ADR 0022](decisioni/0022-osservabilita.md)) rispondono solo da quegli indirizzi |
 | Tracciabilità | Ogni operazione nel registro: chi, quando, su quale azienda, cosa (mai password) |
 
 ## Primo accesso (una volta, sul server di produzione)

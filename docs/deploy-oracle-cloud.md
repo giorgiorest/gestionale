@@ -203,6 +203,10 @@ MAIL_FROM=Civil Beefy <noreply@tuodominio.it>
 
 poi `docker compose up -d` nella cartella `/opt/civilbeefy`.
 
+Facoltativo, indipendente da `EMAIL_ENABLED`: `HEALTH_ALERT_EMAIL=<tua email>` avvisa quando la
+salute dell'app cambia stato ([ADR 0022](decisioni/0022-osservabilita.md)). Riusa lo stesso server
+SMTP e lo stesso `MAIL_FROM`; vuota, l'avviso resta solo nei log.
+
 ## 10. Backup del database
 
 In SSH, un backup al giorno alle 3 con 14 giorni di storico (applicazione e Keycloak):
