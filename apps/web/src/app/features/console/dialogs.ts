@@ -11,7 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { uuidv7 } from '../../shared/uuid';
-import { Catalog, ConsoleApiService, ConsoleTenant, NewUserInput } from './console-api.service';
+import { Catalog, ConsoleApiService, ConsoleTenant, NuovoUtenteInput } from './console-api.service';
 import { FEATURE_LABELS, endOfDayIso, roleLabel, slugify } from './console-labels';
 
 /** Password provvisoria: mostrata una sola volta, da consegnare all'utente. */
@@ -179,10 +179,10 @@ export class PasswordDialog {
     }
   `,
 })
-export class NewTenantDialog {
+export class NuovoTenantDialog {
   readonly data = inject<{ catalog: Catalog }>(MAT_DIALOG_DATA);
   private readonly api = inject(ConsoleApiService);
-  private readonly ref = inject(MatDialogRef<NewTenantDialog, ConsoleTenant>);
+  private readonly ref = inject(MatDialogRef<NuovoTenantDialog, ConsoleTenant>);
 
   name = '';
   slug = '';
@@ -325,15 +325,15 @@ export class NewTenantDialog {
     }
   `,
 })
-export class NewUserDialog {
+export class NuovoUtenteDialog {
   readonly data = inject<{ tenantId: string; tenantName: string; roles: string[] }>(
     MAT_DIALOG_DATA,
   );
   private readonly api = inject(ConsoleApiService);
   private readonly ref = inject(
-    MatDialogRef<NewUserDialog, { username: string; password: string }>,
+    MatDialogRef<NuovoUtenteDialog, { username: string; password: string }>,
   );
-  readonly user: NewUserInput = {
+  readonly user: NuovoUtenteInput = {
     username: '',
     email: '',
     firstName: '',

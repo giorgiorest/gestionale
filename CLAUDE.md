@@ -12,7 +12,7 @@ sostituito, perché lo usano configurazioni, token e installazioni esistenti.
 - Identità: Keycloak 26 (OIDC), realm versionato in infra/keycloak/realm; utenti demo solo in infra/keycloak/dev. Frontend con oidc-client-ts (Authorization Code + PKCE).
 - Infrastruttura locale: infra/docker/compose.yml (compatibile con Docker e Podman).
 - Infrastruttura cloud: un server Linux (VPS) creato dal pannello del fornitore e configurato dal workflow Prepara server. Terraform per Oracle Cloud è stato rimosso (ADR 0007, superata).
-- AI: modulo `ia/` in apps/api, provider-agnostico. Assistente chat nel frontend in `features/assistant`.
+- AI: modulo `ia/` in apps/api, provider-agnostico. Assistente chat nel frontend in `features/assistente`.
 - Multi-tenant: ogni tenant è un'azienda cliente oppure un tenant demo. Un'unica istanza serve più tenant, con Row Level Security su PostgreSQL.
 
 ## Ambiente di lavoro
@@ -40,8 +40,8 @@ in `docs/roadmap.md`: è la fonte di verità, va aggiornata nella stessa PR che 
 | `apps/api/src/main/resources/db/migration/` | migrazioni Flyway `V1`…`V5` |
 | `apps/api/src/test/java/` | test di integrazione con Testcontainers; `TestIntegrazioneBase`, `DatiDiTest`, `JwtDiTest` sono la base da riusare |
 | `apps/web/src/app/core/` | `auth/`, `profile/` (permessi), `entitlements/` (piano), `sync/` (outbox), `notifications/`, `privacy/`, `branding/`, `config/`, `layout/` |
-| `apps/web/src/app/features/` | una cartella per pagina; `features/customers/` è il modello da copiare |
-| `apps/web/src/app/db/local-db.ts` | schema Dexie (IndexedDB) |
+| `apps/web/src/app/features/` | una cartella per pagina; `features/clienti/` è il modello da copiare |
+| `apps/web/src/app/db/db-locale.ts` | schema Dexie (IndexedDB) |
 | `infra/docker/` | compose per lo sviluppo, Dockerfile web, nginx |
 | `infra/deploy/oracle/` | compose di produzione, `.env.example`, `prepare-server.sh`, Caddyfile |
 | `docs/decisioni/` | ADR: leggi quello pertinente prima di cambiare una scelta architetturale |
@@ -77,15 +77,15 @@ in `docs/roadmap.md`: è la fonte di verità, va aggiornata nella stessa PR che 
 3. **Permesso nuovo**: `accesso/Permesso.java` + realm in `infra/keycloak/realm` + etichette nel
    frontend + `docs/gestione-utenti-e-aziende.md`.
 4. **Funzionalità di piano nuova**: `licenze/Funzionalita.java` + console di piattaforma.
-5. **Frontend**: copia `features/customers/` (service + page), rotta in `app.routes.ts` con
+5. **Frontend**: copia `features/clienti/` (service + page), rotta in `app.routes.ts` con
    `permissionGuard` ed eventuale `featureGuard`.
-6. **Offline**: tabella in `db/local-db.ts` con una **nuova** `version()` (mai modificare quelle
-   esistenti), e aggiungila a `LocalDataService.clear()` (regola di privacy, ADR 0008).
-7. **Scritture dal client**: solo `SyncService.enqueue()`, mai chiamate dirette alle API di
+6. **Offline**: tabella in `db/db-locale.ts` con una **nuova** `version()` (mai modificare quelle
+   esistenti), e aggiungila a `DatiLocaliService.clear()` (regola di privacy, ADR 0008).
+7. **Scritture dal client**: solo `SincronizzazioneService.enqueue()`, mai chiamate dirette alle API di
    scrittura (eccezione: la console di piattaforma, `ConsoleApiService`). La cancellazione toglie il
    record dalla copia locale e accoda `delete`; il caricamento successivo chiede a
-   `SyncService.pendingByEntity()` cosa è ancora in coda, per non rimettere in locale un record già
-   cancellato né buttarne uno non ancora creato (vedi `CustomersService.load()`).
+   `SincronizzazioneService.pendingByEntity()` cosa è ancora in coda, per non rimettere in locale un record già
+   cancellato né buttarne uno non ancora creato (vedi `ClientiService.load()`).
 8. **Test**: un test di integrazione che estende `TestIntegrazioneBase`, incluso il caso
    «un tenant non vede i dati di un altro» (vedi `IsolamentoTenantTest`) e il `DELETE` ripetuto
    (idempotenza, vedi `ClienteControllerTest`).
@@ -153,7 +153,7 @@ cd apps/web && npm run build -- --configuration production
 - Le licenze offline sono token firmati. La chiave privata non sta mai nel repository né nell'app distribuita.
 - Assistente AI: i tool esposti al modello sono wrapper sottili sui servizi del dominio, eseguiti con i permessi dell'utente. Le operazioni di scrittura richiedono conferma esplicita dell'utente prima dell'esecuzione. Ogni chiamata registra tenant, utente, modello, token e costo stimato.
 - Dati personali verso provider AI: inviare solo ciò che serve al task, e solo se il tenant ha un contratto di elaborazione dati e la configurazione lo consente.
-- Privacy: solo cookie e archiviazioni tecniche (niente statistiche, font o contenuti esterni senza un banner di consenso deciso prima). Ogni nuovo cookie o archivio nel browser va nella pagina `/privacy` e in `docs/privacy-gdpr.md`. I dati offline appartengono a un solo utente (`LocalDataService`) e si cancellano all'uscita (`LogoutService`): una nuova tabella Dexie va inclusa in `LocalDataService.clear()`.
+- Privacy: solo cookie e archiviazioni tecniche (niente statistiche, font o contenuti esterni senza un banner di consenso deciso prima). Ogni nuovo cookie o archivio nel browser va nella pagina `/privacy` e in `docs/privacy-gdpr.md`. I dati offline appartengono a un solo utente (`DatiLocaliService`) e si cancellano all'uscita (`LogoutService`): una nuova tabella Dexie va inclusa in `DatiLocaliService.clear()`.
 - Notifiche: il codice di dominio le crea solo con `NotificaService.send(...)` (mai insert diretti); i destinatari si risolvono dalla rubrica `app_users`. La presa visione è distinta dalla lettura e si registra con l'ora del server.
 - Processi di sistema che lavorano per tutti i tenant: mai disattivare la RLS. Si usa `ContestoWorker` (app.worker) con una policy dedicata solo sulla tabella tecnica che serve, documentata in un ADR.
 - Interfaccia: solo componenti Angular Material. Colori, forme e tipografia solo dalle variabili di sistema (`var(--mat-sys-…)`), mai colori fissi. L'accento giallo (`--mat-sys-tertiary`, con testo `--mat-sys-on-tertiary`) si usa solo come riempimento, mai come colore del testo: il marchio del cliente (`branding` in config.json) deve applicarsi ovunque. Font e icone restano inclusi nell'app (niente Google Fonts o CDN esterni).

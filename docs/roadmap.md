@@ -29,7 +29,7 @@ verità sullo stato, solo un suggerimento di sequenza.
 
    > PR 2.1 della roadmap. Segui il ricettario in CLAUDE.md.
    > File: `apps/api/src/main/java/it/gestionale/api/clienti/`, nuova migrazione,
-   > `apps/web/src/app/features/customers/`.
+   > `apps/web/src/app/features/clienti/`.
 
 3. Sulle voci grandi: **prima il piano**, poi il codice.
 4. Chiusura: `/code-review` (livello `medium`; `high` o più solo su RLS, permessi, allegati,
@@ -65,6 +65,7 @@ Si ripaga entro la seconda PR: serve a non ri-scoprire il progetto a ogni sessio
 | 0.4 | Osservabilità: log strutturati JSON con `tenant_id` e id della richiesta, metriche Actuator/Prometheus, avviso quando la salute cade | — | ✅ |
 | 0.5 | **Backup fuori sito** (l'archivio oggi resta sulla stessa macchina) e **prova di ripristino** documentata | — | ⬜ |
 | 0.6 | Hook `SessionStart`: branch, PR aperta, prossima voce di roadmap, primo numero Flyway libero | — | ✅ |
+| 0.7 | Monolite modulare e nomi in italiano: backend in 21 moduli a strati senza cicli (`ArchitetturaModulareTest`), cartelle e classi del frontend in italiano ([ADR 0023](decisioni/0023-monolite-modulare-nomi-italiani.md)) | — | ✅ |
 
 > La 0.5 è il rischio singolo più grande del progetto: un backup mai ripristinato non è un backup.
 
@@ -328,8 +329,8 @@ nella descrizione della PR.
 - `apps/api/src/main/resources/db/migration/` — vedi [ADR 0013](decisioni/0013-numerazione-migrazioni.md)
 - `apps/api/.../accesso/Permesso.java` e `licenze/Funzionalita.java`
 - `apps/web/src/app/app.routes.ts`
-- `apps/web/src/app/db/local-db.ts` (nuova `version()`, mai modificare quelle esistenti)
-- `apps/web/src/app/core/privacy/local-data.service.ts` (`clear()`)
+- `apps/web/src/app/db/db-locale.ts` (nuova `version()`, mai modificare quelle esistenti)
+- `apps/web/src/app/core/privacy/dati-locali.service.ts` (`clear()`)
 - `infra/deploy/oracle/.env.example` e `compose.yml`
 - questo file
 

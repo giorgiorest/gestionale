@@ -72,7 +72,7 @@ Dettagli: [ADR 0004](decisioni/0004-app-desktop.md) e `apps/desktop/README.md`.
   ha già il suo id definitivo e non servono rimappature.
 - **Outbox**: ogni scrittura locale aggiorna il dato in IndexedDB e accoda un'operazione
   (`entity`, `operation`, `payload`, `createdAt`, `attempts`) nella tabella `outbox`.
-  I componenti non chiamano direttamente le API di scrittura: passano da `SyncService.enqueue()`.
+  I componenti non chiamano direttamente le API di scrittura: passano da `SincronizzazioneService.enqueue()`.
 - **Invio (`flush`, implementato)**: la outbox viene inviata in ordine di creazione con
   `PUT /api/{entità}/{id}` (creazione o modifica) e `DELETE /api/{entità}/{id}`; le voci confermate
   vengono rimosse. Errori di rete, 5xx, 401, 408 e 429 fermano l'invio (si riprova al ritorno
@@ -93,7 +93,7 @@ Dettagli: [ADR 0004](decisioni/0004-app-desktop.md) e `apps/desktop/README.md`.
   (`content`, `page`, `size`, `totalElements`, `totalPages`), indice `(tenant_id, <ordinamento
   predefinito>)`. Online, la pagina chiama questo endpoint; se il server non risponde, ricade sulla
   copia locale mantenuta dal cursore di sincronizzazione (sotto), con paginazione e ricerca
-  calcolate lato client come esperienza degradata (esempio: `features/customers`). La paginazione
+  calcolate lato client come esperienza degradata (esempio: `features/clienti`). La paginazione
   **non** è il meccanismo di sincronizzazione: quello resta `pullChanges` (sotto), a cursore.
 - **Ricezione**: `GET /api/sync/changes?cursor=&limit=` (voce 1.2), sincronizzazione incrementale
   lato server. Il cursore è **per entità** `(updated_at, id)`, codificato in un'unica stringa
@@ -110,16 +110,16 @@ Dettagli: [ADR 0004](decisioni/0004-app-desktop.md) e `apps/desktop/README.md`.
   limite, e va richiamato con il nuovo cursore finché non torna falso. `notifications` resta
   fuori: non ha `updated_at`/`deleted_at` (registro di soli inserimenti, stato di lettura a
   parte) e ha già un proprio canale (la campanella). **`pullChanges` nel client (voce 1.3,
-  implementata)**: `SyncService.pullChanges()` tiene un solo cursore in `syncState` (il backend lo
+  implementata)**: `SincronizzazioneService.pullChanges()` tiene un solo cursore in `syncState` (il backend lo
   codifica già per entità, al client basta passarlo indietro intero) e lo salva dopo ogni pagina,
   così un errore a metà non perde il progresso fatto. Applica le righe alle tabelle Dexie
   corrispondenti (`bulkPut` per le righe attive, `bulkDelete` per i tombstone), aggiungendo
-  `tenantId` dal profilo corrente come già fa `CustomersService.create()`; un'entità senza tabella
+  `tenantId` dal profilo corrente come già fa `ClientiService.create()`; un'entità senza tabella
   locale (oggi `daily_report_materials`, in attesa della UI del rapportino da telefono, voce 3.3)
   viene ignorata con un log, senza bloccare le altre. Un id ancora in `pendingByEntity()` (una
   modifica locale non ancora inviata) non viene toccato. Parte al login (`ShellComponent`), ogni
   due minuti a schermo visibile e al ritorno della connessione, insieme a `flush()`. L'indicatore
-  «modifiche non inviate» nella barra superiore mostra `SyncService.pending()`.
+  «modifiche non inviate» nella barra superiore mostra `SincronizzazioneService.pending()`.
 - **Conflitti**: con 50 utenti che modificano soprattutto la propria parte, i conflitti sono
   rari. Strategia iniziale: *last-write-wins* per record, con `updated_at` lato server;
   la colonna `version` c'è già, il controllo con `If-Match` e la risoluzione nell'interfaccia sono
@@ -305,7 +305,7 @@ Dettagli: [ADR 0005](decisioni/0005-notifiche.md).
 
 ## Assistente AI
 
-- Chat nel frontend (`features/assistant`), disponibile solo con la funzionalità `aiAssistant`.
+- Chat nel frontend (`features/assistente`), disponibile solo con la funzionalità `aiAssistant`.
 - Backend provider-agnostico: `ProviderIa` (implementazione di default `ProviderIaNullo`, 503)
   e `StrumentoIa` per le funzioni invocabili dal modello.
 - I tool sono wrapper sottili sui servizi di dominio, eseguiti **con i permessi dell'utente

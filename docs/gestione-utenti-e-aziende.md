@@ -86,7 +86,7 @@ aggiunge i `Permesso` giusti ai ruoli giusti.
 
 1. `infra/keycloak/realm/gestionale-realm.json`: aggiungi il ruolo in `roles.realm`.
 2. `apps/api/.../accesso/Ruolo.java`: nuovo valore con i suoi permessi (`Permesso`).
-3. `apps/web/src/app/core/profile/profile.service.ts`: etichetta in `ROLE_LABELS`.
+3. `apps/web/src/app/core/profilo/profilo.service.ts`: etichetta in `ROLE_LABELS`.
 4. Documentazione: questa tabella e `infra/keycloak/README.md`.
 5. Nelle installazioni già avviate il realm non si reimporta: crea il ruolo anche dalla console
    (*Realm roles → Create role*, stesso nome).

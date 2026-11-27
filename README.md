@@ -70,13 +70,13 @@ Monolite modulare: un pacchetto per modulo, in italiano, con dipendenze solo ver
 
 | Cartella                   | Contenuto |
 |----------------------------|-----------|
-| `core/config`              | configurazione a runtime da `config.json` (URL API e Keycloak); nell'app desktop dal server scelto dall'utente |
-| `core/auth`                | login OIDC (Authorization Code + PKCE), `authGuard`, interceptor del token |
-| `core/profile`             | profilo, ruoli e permessi (`GET /api/me`), `*appHasPermission`, `permissionGuard` |
-| `core/entitlements`        | funzionalità del piano, `*appHasFeature`, `featureGuard` |
-| `core/sync`                | outbox: `enqueue`, `flush` (invio al server), `pullChanges` (ricezione, con cursore in `syncState`) |
-| `core/notifications`       | notifiche dell'utente, campanella con contatore |
-| `db/`                      | `LocalDb` (Dexie): `outbox`, `customers`, `resources`, `commesse`, `resourceAssignments`, `workActivities`, `dailyReports`, `workEntries`, `syncState` |
+| `core/configurazione`              | configurazione a runtime da `config.json` (URL API e Keycloak); nell'app desktop dal server scelto dall'utente |
+| `core/autenticazione`                | login OIDC (Authorization Code + PKCE), `authGuard`, interceptor del token |
+| `core/profilo`             | profilo, ruoli e permessi (`GET /api/me`), `*appHasPermission`, `permissionGuard` |
+| `core/abilitazioni`        | funzionalità del piano, `*appHasFeature`, `featureGuard` |
+| `core/sincronizzazione`                | outbox: `enqueue`, `flush` (invio al server), `pullChanges` (ricezione, con cursore in `syncState`) |
+| `core/notifiche`       | notifiche dell'utente, campanella con contatore |
+| `db/`                      | `DbLocale` (Dexie): `outbox`, `customers`, `resources`, `commesse`, `resourceAssignments`, `workActivities`, `dailyReports`, `workEntries`, `syncState` |
 | `features/`                | `auth` (accesso), `server` (app desktop), `home`, `profile`, `customers`, `resources`, `commesse`, `resource-assignments`, `work-activities`, `daily-reports`, `work-entries`, `hours-report` (cruscotto ore, nessuna copia locale: è un report, non un'entità sincronizzata), `notifications`, `announcements` (comunicazioni), `assistant` |
 | `shared/`                  | utilità (UUID v7) |
 

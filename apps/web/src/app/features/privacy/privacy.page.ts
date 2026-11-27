@@ -4,7 +4,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { BrandingService } from '../../core/branding/branding.service';
-import { AppConfigService } from '../../core/config/app-config';
+import { ConfigurazioneAppService } from '../../core/configurazione/configurazione-app';
 
 /** Cookie e archiviazioni usati dall'applicazione: tutti tecnici, nessuno di profilazione. */
 interface StorageItem {
@@ -112,7 +112,7 @@ interface StorageItem {
 })
 export class PrivacyPage {
   readonly branding = inject(BrandingService);
-  private readonly appConfig = inject(AppConfigService);
+  private readonly appConfig = inject(ConfigurazioneAppService);
 
   readonly legal = computed(() =>
     this.appConfig.hasConfig ? this.appConfig.config.legal : undefined,

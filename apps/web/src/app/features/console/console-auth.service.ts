@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { User, UserManager, WebStorageStateStore } from 'oidc-client-ts';
-import { AppConfigService } from '../../core/config/app-config';
+import { ConfigurazioneAppService } from '../../core/configurazione/configurazione-app';
 
 /** Percorso (relativo al base href) su cui il realm degli amministratori rimanda dopo il login. */
 export const CONSOLE_CALLBACK_PATH = 'console/auth/callback';
@@ -12,7 +12,7 @@ export const CONSOLE_CALLBACK_PATH = 'console/auth/callback';
  */
 @Injectable({ providedIn: 'root' })
 export class ConsoleAuthService {
-  private readonly appConfig = inject(AppConfigService);
+  private readonly appConfig = inject(ConfigurazioneAppService);
   private manager: UserManager | null = null;
   private initializing: Promise<void> | null = null;
   /** Pagina da aprire dopo il ritorno dal login: si usa una sola volta. */

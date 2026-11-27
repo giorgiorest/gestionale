@@ -11,15 +11,15 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { map } from 'rxjs';
-import { AuthService } from '../auth/auth.service';
-import { LogoutService } from '../auth/logout.service';
+import { AutenticazioneService } from '../autenticazione/autenticazione.service';
+import { LogoutService } from '../autenticazione/logout.service';
 import { isPackagedDesktopApp } from '../platform';
 import { BrandingService } from '../branding/branding.service';
-import { EntitlementsService } from '../entitlements/entitlements.service';
-import { NotificationBellComponent } from '../notifications/notification-bell.component';
-import { NotificationsService } from '../notifications/notifications.service';
-import { ProfileService, ROLE_LABELS } from '../profile/profile.service';
-import { SyncService } from '../sync/sync.service';
+import { AbilitazioniService } from '../abilitazioni/abilitazioni.service';
+import { CampanellaNotificheComponent } from '../notifiche/campanella-notifiche.component';
+import { NotificheService } from '../notifiche/notifiche.service';
+import { ProfiloService, ROLE_LABELS } from '../profilo/profilo.service';
+import { SincronizzazioneService } from '../sincronizzazione/sincronizzazione.service';
 
 /** Voce del menu laterale, mostrata solo se l'utente ha il permesso e il piano la include. */
 interface NavItem {
@@ -60,7 +60,7 @@ const NAV: NavItem[] = [
     MatSidenavModule,
     MatToolbarModule,
     MatTooltipModule,
-    NotificationBellComponent,
+    CampanellaNotificheComponent,
   ],
   template: `
     <mat-toolbar class="topbar">
@@ -244,15 +244,15 @@ const NAV: NavItem[] = [
   `,
 })
 export class ShellComponent {
-  readonly auth = inject(AuthService);
+  readonly auth = inject(AutenticazioneService);
   readonly logout = inject(LogoutService);
   /** Nell'app installata (desktop o Android) non si propone di scaricarla. */
   readonly desktop = isPackagedDesktopApp();
   readonly branding = inject(BrandingService);
-  readonly profile = inject(ProfileService);
-  readonly notifications = inject(NotificationsService);
-  readonly sync = inject(SyncService);
-  private readonly entitlements = inject(EntitlementsService);
+  readonly profile = inject(ProfiloService);
+  readonly notifications = inject(NotificheService);
+  readonly sync = inject(SincronizzazioneService);
+  private readonly entitlements = inject(AbilitazioniService);
 
   readonly handset = toSignal(
     inject(BreakpointObserver)

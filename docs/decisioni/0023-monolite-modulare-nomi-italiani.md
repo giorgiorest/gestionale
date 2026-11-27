@@ -38,7 +38,12 @@ con Claude) deve tradurre ogni volta tra i due mondi.
    `Filter`, `Exception`, `Test`, `Watchdog`), i nomi di framework (`Keycloak`) e il nome tecnico
    `gestionale` (`GestionaleApiApplication`). `tenant` resta tale: è il termine tecnico già usato
    nei claim, nel database e nella documentazione.
-6. **Fuori dal perimetro (contratti invariati):** URL REST, tabelle e colonne, campi JSON, nomi dei
+6. **Frontend: stessa regola per cartelle, file e classi** (nomi in italiano, in kebab-case per i file;
+   restano i suffissi di ruolo `.page`, `.service`, `.component`, `.guard`, `.directive`, `.spec`).
+   Non cambiano rotte (`/customers`, `auth/callback`…), selettori (`app-customers`, `*appHasFeature`),
+   chiavi di storage, nomi delle tabelle di Dexie (cambiarli cancellerebbe i dati già sui dispositivi),
+   né funzioni e costanti (`isPackagedDesktopApp`, `authGuard`, `API_URL`…).
+7. **Fuori dal perimetro (contratti invariati):** URL REST, tabelle e colonne, campi JSON, nomi dei
    permessi e dei ruoli, proprietà di configurazione, nomi dei campi e dei metodi Java. Cambiarli
    romperebbe i client installati (desktop, Android, PWA in cache) o le installazioni esistenti.
 
@@ -55,7 +60,11 @@ con Claude) deve tradurre ogni volta tra i due mondi.
 - Una nuova entità di dominio si copia da `clienti/` (vedi ricettario in `CLAUDE.md`) e va nello
   strato «Dominio»; `ArchitetturaModulareTest` va aggiornato solo se si crea un modulo nuovo.
 - Gli ADR precedenti citano ancora i vecchi nomi: la tabella qui sotto serve a tradurli.
-- Il frontend non è toccato da questa decisione.
+- Il frontend (Angular) segue la stessa regola dei nomi, ma **non ha un test di architettura**: è
+  diviso in `core/`, `features/` e `shared/`, e oggi alcune feature dipendono da altre (`commesse`
+  apre i dialoghi di `rapportini`, `riepilogo-ore`, `assegnazioni` e `lavorazioni`; `righe-ore` usa i
+  servizi di `assegnazioni`, `risorse` e `lavorazioni`). Una regola sulle dipendenze tra feature
+  andrà decisa quando le feature saranno più numerose.
 
 ## Tabella di corrispondenza (classi principali)
 
@@ -355,3 +364,115 @@ supporto sono `AbstractIntegrationTest` → `TestIntegrazioneBase`, `TestData` �
 | `TenancyProperties` | `TenantProperties` |
 | `TenantRepository` | `TenantRepository` (spostata da `tenancy`) |
 | `TenantKind` | `TipoTenant` |
+
+## Tabella di corrispondenza del frontend (`apps/web/src/app`)
+
+Cartelle: i file al loro interno prendono il nome nuovo della funzione (es. `customers.service.ts` →
+`clienti.service.ts`); `db/local-db.ts` → `db/db-locale.ts`, `shared/confirm-dialog.ts` →
+`shared/dialogo-conferma.ts`, `core/api/page.ts` → `core/api/pagina.ts`.
+
+| Prima | Dopo |
+|-------|------|
+| `core/auth` | `core/autenticazione` |
+| `core/config` | `core/configurazione` |
+| `core/entitlements` | `core/abilitazioni` |
+| `core/notifications` | `core/notifiche` |
+| `core/profile` | `core/profilo` |
+| `core/sync` | `core/sincronizzazione` |
+| `features/announcements` | `features/comunicazioni` |
+| `features/assistant` | `features/assistente` |
+| `features/auth` | `features/autenticazione` |
+| `features/customers` | `features/clienti` |
+| `features/daily-reports` | `features/rapportini` |
+| `features/hours-report` | `features/riepilogo-ore` |
+| `features/notifications` | `features/notifiche` |
+| `features/profile` | `features/profilo` |
+| `features/resource-assignments` | `features/assegnazioni` |
+| `features/resources` | `features/risorse` |
+| `features/suppliers` | `features/fornitori` |
+| `features/work-activities` | `features/lavorazioni` |
+| `features/work-entries` | `features/righe-ore` |
+
+Classi, interfacce e tipi esportati:
+
+| Prima | Dopo |
+|-------|------|
+| `AnnouncementInput` | `ComunicazioneInput` |
+| `AnnouncementReportPage` | `RiepilogoComunicazionePage` |
+| `AnnouncementSummary` | `RiepilogoComunicazione` |
+| `AnnouncementsPage` | `ComunicazioniPage` |
+| `AnnouncementsService` | `ComunicazioniService` |
+| `AppConfig` | `ConfigurazioneApp` |
+| `AppConfigService` | `ConfigurazioneAppService` |
+| `AssistantComponent` | `AssistenteComponent` |
+| `AudienceType` | `TipoPubblico` |
+| `AuditEntry` | `VoceAudit` |
+| `AuthService` | `AutenticazioneService` |
+| `ChatMessage` | `MessaggioChat` |
+| `ConfirmData` | `DatiConferma` |
+| `ConfirmDialog` | `DialogoConferma` |
+| `CurrentUser` | `UtenteCorrente` |
+| `CustomerFiscalData` | `DatiFiscaliCliente` |
+| `CustomerRow` | `RigaCliente` |
+| `CustomersPage` | `ClientiPage` |
+| `CustomersService` | `ClientiService` |
+| `DailyReportsDialog` | `RapportiniDialog` |
+| `DailyReportsDialogData` | `RapportiniDialogData` |
+| `DailyReportsService` | `RapportiniService` |
+| `DirectoryUser` | `UtenteRubrica` |
+| `Entitlements` | `Abilitazioni` |
+| `EntitlementsService` | `AbilitazioniService` |
+| `HasFeatureDirective` | `HaFunzionalitaDirective` |
+| `HasPermissionDirective` | `HaPermessoDirective` |
+| `HoursReport` | `RiepilogoOre` |
+| `HoursReportDialog` | `RiepilogoOreDialog` |
+| `HoursReportDialogData` | `RiepilogoOreDialogData` |
+| `HoursReportService` | `RiepilogoOreService` |
+| `LicenseInput` | `LicenzaInput` |
+| `LocalCommessa` | `CommessaLocale` |
+| `LocalCustomer` | `ClienteLocale` |
+| `LocalDailyReport` | `RapportinoLocale` |
+| `LocalDataService` | `DatiLocaliService` |
+| `LocalDb` | `DbLocale` |
+| `LocalMeta` | `MetaLocale` |
+| `LocalNotification` | `NotificaLocale` |
+| `LocalResource` | `RisorsaLocale` |
+| `LocalResourceAssignment` | `AssegnazioneRisorsaLocale` |
+| `LocalSupplier` | `FornitoreLocale` |
+| `LocalWorkActivity` | `LavorazioneLocale` |
+| `LocalWorkEntry` | `RigaOreLocale` |
+| `NewTenantDialog` | `NuovoTenantDialog` |
+| `NewUserDialog` | `NuovoUtenteDialog` |
+| `NewUserInput` | `NuovoUtenteInput` |
+| `NotificationBellComponent` | `CampanellaNotificheComponent` |
+| `NotificationCounts` | `ConteggiNotifiche` |
+| `NotificationDetailPage` | `DettaglioNotificaPage` |
+| `NotificationsPage` | `NotifichePage` |
+| `NotificationsService` | `NotificheService` |
+| `PageDto` | `PaginaDto` |
+| `ProfilePage` | `ProfiloPage` |
+| `ProfileService` | `ProfiloService` |
+| `RecipientStatus` | `StatoDestinatario` |
+| `ResourceAssignmentsDialog` | `AssegnazioniDialog` |
+| `ResourceAssignmentsDialogData` | `AssegnazioniDialogData` |
+| `ResourceAssignmentsService` | `AssegnazioniService` |
+| `ResourceHours` | `OreRisorsa` |
+| `ResourcesPage` | `RisorsePage` |
+| `ResourcesService` | `RisorseService` |
+| `SupplierFiscalData` | `DatiFiscaliFornitore` |
+| `SupplierRow` | `RigaFornitore` |
+| `SuppliersPage` | `FornitoriPage` |
+| `SuppliersService` | `FornitoriService` |
+| `SyncService` | `SincronizzazioneService` |
+| `SyncState` | `StatoSincronizzazione` |
+| `TenantDetailPage` | `DettaglioTenantPage` |
+| `TenantsPage` | `ElencoTenantPage` |
+| `UnsentChangesDialog` | `ModificheNonInviateDialog` |
+| `WeeklyHours` | `OreSettimanali` |
+| `WorkActivitiesDialog` | `LavorazioniDialog` |
+| `WorkActivitiesDialogData` | `LavorazioniDialogData` |
+| `WorkActivitiesService` | `LavorazioniService` |
+| `WorkActivityHours` | `OreLavorazione` |
+| `WorkEntriesDialog` | `RigheOreDialog` |
+| `WorkEntriesDialogData` | `RigheOreDialogData` |
+| `WorkEntriesService` | `RigheOreService` |
