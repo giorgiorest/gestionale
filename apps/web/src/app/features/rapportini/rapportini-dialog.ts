@@ -6,6 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTableModule } from '@angular/material/table';
+import { AllegatiComponent } from '../allegati/allegati.component';
 import { HaPermessoDirective } from '../../core/profilo/ha-permesso.directive';
 import { openConfirm } from '../../shared/dialogo-conferma';
 import { RapportinoLocale } from '../../db/db-locale';
@@ -26,6 +27,7 @@ export interface RapportiniDialogData {
 @Component({
   selector: 'app-daily-reports-dialog',
   imports: [
+    AllegatiComponent,
     FormsModule,
     HaPermessoDirective,
     MatButtonModule,
@@ -87,6 +89,15 @@ export interface RapportiniDialogData {
             <button
               mat-icon-button
               type="button"
+              *appHasPermission="'attachments:read'"
+              aria-label="Foto e allegati del rapportino"
+              (click)="photosFor.set(r)"
+            >
+              <mat-icon>photo_camera</mat-icon>
+            </button>
+            <button
+              mat-icon-button
+              type="button"
               *appHasPermission="'daily-reports:write'"
               aria-label="Apri per modificare"
               [disabled]="r.status !== 'draft'"
@@ -112,6 +123,13 @@ export interface RapportiniDialogData {
           <td class="mat-cell empty" [attr.colspan]="columns.length">Nessun rapportino.</td>
         </tr>
       </table>
+
+      @if (photosFor(); as report) {
+        <section class="photos" data-testid="report-photos">
+          <p class="muted">Rapportino del {{ report.date }}</p>
+          <app-attachments entityType="daily_reports" [entityId]="report.id" />
+        </section>
+      }
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button [mat-dialog-close]="true">Chiudi</button>
@@ -132,6 +150,13 @@ export interface RapportiniDialogData {
       padding: 16px;
       color: var(--mat-sys-on-surface-variant);
     }
+    .photos {
+      margin-top: 16px;
+    }
+    .muted {
+      color: var(--mat-sys-on-surface-variant);
+      margin: 0 0 4px;
+    }
     .actions {
       text-align: right;
       width: 1%;
@@ -146,6 +171,8 @@ export class RapportiniDialog {
   readonly saving = signal(false);
   readonly removing = signal<string | null>(null);
   readonly editing = signal<RapportinoLocale | null>(null);
+  /** Rapportino di cui si mostrano foto e allegati (roadmap 2.5). */
+  readonly photosFor = signal<RapportinoLocale | null>(null);
   readonly columns = ['date', 'weather', 'status', 'actions'];
   date = '';
   weather = '';
@@ -224,6 +251,9 @@ export class RapportiniDialog {
       await this.service.remove(report.id, this.data.commessaId);
       if (this.editing()?.id === report.id) {
         this.cancelEdit();
+      }
+      if (this.photosFor()?.id === report.id) {
+        this.photosFor.set(null);
       }
     } finally {
       this.removing.set(null);

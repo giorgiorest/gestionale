@@ -11,6 +11,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { map } from 'rxjs';
+import { AllegatiService } from '../allegati/allegati.service';
 import { AutenticazioneService } from '../autenticazione/autenticazione.service';
 import { LogoutService } from '../autenticazione/logout.service';
 import { isPackagedDesktopApp } from '../platform';
@@ -253,6 +254,7 @@ export class ShellComponent {
   readonly notifications = inject(NotificheService);
   readonly sync = inject(SincronizzazioneService);
   private readonly entitlements = inject(AbilitazioniService);
+  private readonly attachments = inject(AllegatiService);
 
   readonly handset = toSignal(
     inject(BreakpointObserver)
@@ -277,5 +279,7 @@ export class ShellComponent {
     void this.entitlements.load();
     void this.sync.refreshPending();
     this.sync.startPullPolling();
+    // Foto scattate senza campo nella sessione precedente: partono appena c'è connessione.
+    void this.attachments.uploadPending();
   }
 }

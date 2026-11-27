@@ -29,6 +29,9 @@ function fakeDb() {
     workActivities: fakeTable(),
     dailyReports: fakeTable(),
     workEntries: fakeTable(),
+    attachments: fakeTable(),
+    pendingUploads: fakeTable(),
+    fileCache: fakeTable(),
     notifications: fakeTable(),
     syncState: fakeTable(),
     meta: fakeTable(),
@@ -88,10 +91,14 @@ describe('LocalDataService', () => {
     await db.meta.put({ key: 'owner', value: 't1:mario' });
     await db.customers.put({ id: 'c1' });
     await db.syncState.put({ key: 'customers' });
+    await db.attachments.put({ id: 'a1' });
+    await db.pendingUploads.put({ id: 'a2' });
+    await db.fileCache.put({ id: 'a1' });
 
     await service.clear();
 
     expect(db.customers.rows.size + db.syncState.rows.size + db.meta.rows.size).toBe(0);
+    expect(db.attachments.rows.size + db.pendingUploads.rows.size + db.fileCache.rows.size).toBe(0);
   });
 });
 

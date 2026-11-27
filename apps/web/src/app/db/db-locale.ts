@@ -127,6 +127,45 @@ export interface RigaOreLocale {
   updatedAt: string;
 }
 
+/** Copia locale dei metadati di un allegato (stesso schema dell'API; i byte stanno in `FileInCache`). */
+export interface AllegatoLocale {
+  id: string;
+  tenantId: string;
+  entityType: string;
+  entityId: string;
+  originalFilename: string;
+  mimeType: string;
+  sizeBytes: number;
+  /** null finché il caricamento non è confermato dal server. */
+  sha256: string | null;
+  updatedAt: string;
+}
+
+/** File scelto o scattato che aspetta di essere caricato sull'archivio (roadmap 2.5, ADR 0016). */
+export interface CaricamentoInAttesa {
+  id: string;
+  entityType: string;
+  entityId: string;
+  filename: string;
+  mimeType: string;
+  sizeBytes: number;
+  sha256: string;
+  blob: Blob;
+  createdAt: string;
+  attempts: number;
+  /** Ultimo errore definitivo del server (es. tipo non ammesso): il file resta qui, da rimuovere. */
+  lastError?: string;
+}
+
+/** Byte di un allegato già caricato, tenuti sul dispositivo: cache selettiva a spazio limitato. */
+export interface FileInCache {
+  id: string;
+  blob: Blob;
+  sizeBytes: number;
+  /** Ultimo utilizzo (ms epoch): chi è stato usato meno di recente esce per primo. */
+  lastAccess: number;
+}
+
 /** Copia locale di una notifica dell'utente (stesso schema di GET /api/notifications). */
 export interface NotificaLocale {
   id: string;
@@ -173,6 +212,9 @@ export class DbLocale extends Dexie {
   workActivities!: Table<LavorazioneLocale, string>;
   dailyReports!: Table<RapportinoLocale, string>;
   workEntries!: Table<RigaOreLocale, string>;
+  attachments!: Table<AllegatoLocale, string>;
+  pendingUploads!: Table<CaricamentoInAttesa, string>;
+  fileCache!: Table<FileInCache, string>;
 
   // Nota: in Dexie si dichiarano solo chiave primaria e indici; i campi non indicizzati
   // (es. OutboxEntry.lastError) si aggiungono senza nuova versione.
@@ -218,6 +260,12 @@ export class DbLocale extends Dexie {
     // v10: fornitori (roadmap 2.2), tabella propria, non condivisa con customers.
     this.version(10).stores({
       suppliers: 'id, tenantId, updatedAt',
+    });
+    // v11: allegati (roadmap 2.5): metadati, caricamenti in attesa e cache dei file.
+    this.version(11).stores({
+      attachments: 'id, tenantId, [entityType+entityId], updatedAt',
+      pendingUploads: 'id, [entityType+entityId], createdAt',
+      fileCache: 'id, lastAccess',
     });
   }
 }

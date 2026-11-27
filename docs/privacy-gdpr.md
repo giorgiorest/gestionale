@@ -40,7 +40,7 @@ Civil Beefy usa **solo cookie tecnici**: secondo le Linee guida del Garante (pro
 | `KEYCLOAK_LOCALE` | cookie tecnico | Keycloak | lingua della pagina di accesso | sessione |
 | `oidc.*` | sessionStorage | web app | token di accesso | chiusura della scheda o uscita |
 | `oidc.*` (stato del login) | localStorage | web app | dati temporanei della procedura di accesso | rimossi a fine accesso |
-| database `gestionale` | IndexedDB | web app | copia offline di clienti e notifiche, modifiche in attesa | **cancellato all'uscita** o se accede un altro utente |
+| database `gestionale` | IndexedDB | web app | copia offline di clienti e notifiche, modifiche in attesa; foto e allegati scattati senza connessione (in attesa di invio) e file aperti di recente (cache, max 100 MB) | **cancellato all'uscita** o se accede un altro utente |
 | cache del service worker | Cache Storage | web app | file dell'applicazione, senza dati personali | fino all'aggiornamento |
 | `gestionale.serverUrl`, `gestionale.config` | localStorage | app desktop | server dell'azienda e sua configurazione | fino a «Cambia server» |
 
