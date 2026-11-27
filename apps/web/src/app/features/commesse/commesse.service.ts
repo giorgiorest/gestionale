@@ -2,9 +2,9 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { API_URL } from '../../core/api/api-url';
-import { ProfileService } from '../../core/profile/profile.service';
-import { SyncService } from '../../core/sync/sync.service';
-import { LOCAL_DB, LocalCommessa } from '../../db/local-db';
+import { ProfiloService } from '../../core/profilo/profilo.service';
+import { SincronizzazioneService } from '../../core/sincronizzazione/sincronizzazione.service';
+import { LOCAL_DB, CommessaLocale } from '../../db/db-locale';
 import { uuidv7 } from '../../shared/uuid';
 
 /** Nome dell'entità nelle API e nella outbox. */
@@ -30,17 +30,17 @@ interface CommessaDto {
 
 /**
  * Commesse (cantieri) del tenant, con copia locale per l'uso offline.
- * Le scritture passano dalla outbox ({@link SyncService}), mai direttamente dall'API.
+ * Le scritture passano dalla outbox ({@link SincronizzazioneService}), mai direttamente dall'API.
  */
 @Injectable({ providedIn: 'root' })
 export class CommesseService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = inject(API_URL);
   private readonly db = inject(LOCAL_DB);
-  private readonly sync = inject(SyncService);
-  private readonly profile = inject(ProfileService);
+  private readonly sync = inject(SincronizzazioneService);
+  private readonly profile = inject(ProfiloService);
 
-  readonly commesse = signal<LocalCommessa[]>([]);
+  readonly commesse = signal<CommessaLocale[]>([]);
   /** true se l'ultimo caricamento è avvenuto dalla copia locale (server non raggiungibile). */
   readonly offline = signal(false);
 
@@ -80,9 +80,9 @@ export class CommesseService {
   }
 
   /** Crea una commessa localmente e la accoda per l'invio al server. */
-  async create(customerId: string, nome: string, indirizzo: string | null, stato: string): Promise<LocalCommessa> {
+  async create(customerId: string, nome: string, indirizzo: string | null, stato: string): Promise<CommessaLocale> {
     const tenantId = (await this.profile.load())?.tenant?.id ?? '';
-    const commessa: LocalCommessa = {
+    const commessa: CommessaLocale = {
       id: uuidv7(),
       tenantId,
       customerId,

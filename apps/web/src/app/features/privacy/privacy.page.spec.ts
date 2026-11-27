@@ -1,11 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { AppConfigService } from '../../core/config/app-config';
+import { ConfigurazioneAppService } from '../../core/configurazione/configurazione-app';
 import { PrivacyPage } from './privacy.page';
 
 function render(legal?: { privacyUrl?: string; termsUrl?: string }): HTMLElement {
   TestBed.configureTestingModule({ imports: [PrivacyPage], providers: [provideRouter([])] });
-  TestBed.inject(AppConfigService).set({
+  TestBed.inject(ConfigurazioneAppService).set({
     apiUrl: '/api',
     auth: { authority: 'https://kc', clientId: 'web' },
     legal,

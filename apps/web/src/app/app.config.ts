@@ -13,12 +13,12 @@ import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { MatIconRegistry } from '@angular/material/icon';
 import { provideServiceWorker } from '@angular/service-worker';
 import { routes } from './app.routes';
-import { authInterceptor } from './core/auth/auth.interceptor';
-import { AuthService } from './core/auth/auth.service';
-import { AppConfigService } from './core/config/app-config';
+import { authInterceptor } from './core/autenticazione/autenticazione.interceptor';
+import { AutenticazioneService } from './core/autenticazione/autenticazione.service';
+import { ConfigurazioneAppService } from './core/configurazione/configurazione-app';
 import { BrandingService } from './core/branding/branding.service';
 import { isPackagedDesktopApp } from './core/platform';
-import { LocalDataService } from './core/privacy/local-data.service';
+import { DatiLocaliService } from './core/privacy/dati-locali.service';
 
 // Date e numeri in italiano.
 registerLocaleData(localeIt);
@@ -30,10 +30,10 @@ export const appConfig: ApplicationConfig = {
     // Prima del routing: configurazione dell'installazione, poi sessione OIDC.
     provideAppInitializer(async () => {
       // inject() va chiamato prima del primo await: dopo si è fuori dal contesto di injection.
-      const config = inject(AppConfigService);
-      const auth = inject(AuthService);
+      const config = inject(ConfigurazioneAppService);
+      const auth = inject(AutenticazioneService);
       const branding = inject(BrandingService);
-      const localData = inject(LocalDataService);
+      const localData = inject(DatiLocaliService);
       // Icone Material Symbols (incluse nell'app, non scaricate da Google).
       inject(MatIconRegistry).setDefaultFontSetClass('material-symbols-outlined');
       // Nell'app desktop non ancora collegata a un server la configurazione manca:

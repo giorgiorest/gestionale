@@ -1,4 +1,4 @@
-import { ROLE_LABELS } from '../../core/profile/profile.service';
+import { ROLE_LABELS } from '../../core/profilo/profilo.service';
 
 export const STATUS_LABELS: Record<string, string> = {
   active: 'Attiva',

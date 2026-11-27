@@ -11,10 +11,10 @@ export const CONSOLE_ROUTES: Routes = [
     canActivateChild: [consoleAuthGuard],
     component: ConsoleShellComponent,
     children: [
-      { path: '', loadComponent: () => import('./tenants.page').then((m) => m.TenantsPage) },
+      { path: '', loadComponent: () => import('./elenco-tenant.page').then((m) => m.ElencoTenantPage) },
       {
         path: 'aziende/:id',
-        loadComponent: () => import('./tenant-detail.page').then((m) => m.TenantDetailPage),
+        loadComponent: () => import('./dettaglio-tenant.page').then((m) => m.DettaglioTenantPage),
       },
       // Ritorno dal login: lo completa la guardia, che poi apre la pagina richiesta.
       { path: 'auth/callback', redirectTo: '' },

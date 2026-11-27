@@ -5,7 +5,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { BrandingService } from '../../core/branding/branding.service';
-import { AppConfigService } from '../../core/config/app-config';
+import { ConfigurazioneAppService } from '../../core/configurazione/configurazione-app';
 
 /**
  * App desktop: indirizzo del server dell'azienda (primo avvio o cambio server).
@@ -71,7 +71,7 @@ import { AppConfigService } from '../../core/config/app-config';
   `,
 })
 export class ServerPage {
-  private readonly config = inject(AppConfigService);
+  private readonly config = inject(ConfigurazioneAppService);
   readonly branding = inject(BrandingService);
   readonly busy = signal(false);
   readonly error = signal<string | null>(this.config.lastError);

@@ -9,16 +9,16 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { CustomersService } from '../customers/customers.service';
-import { HasPermissionDirective } from '../../core/profile/has-permission.directive';
-import { ProfileService } from '../../core/profile/profile.service';
-import { SyncService } from '../../core/sync/sync.service';
-import { LocalCommessa } from '../../db/local-db';
-import { openConfirm } from '../../shared/confirm-dialog';
-import { DailyReportsDialog } from '../daily-reports/daily-reports-dialog';
-import { HoursReportDialog } from '../hours-report/hours-report-dialog';
-import { ResourceAssignmentsDialog } from '../resource-assignments/resource-assignments-dialog';
-import { WorkActivitiesDialog } from '../work-activities/work-activities-dialog';
+import { ClientiService } from '../clienti/clienti.service';
+import { HaPermessoDirective } from '../../core/profilo/ha-permesso.directive';
+import { ProfiloService } from '../../core/profilo/profilo.service';
+import { SincronizzazioneService } from '../../core/sincronizzazione/sincronizzazione.service';
+import { CommessaLocale } from '../../db/db-locale';
+import { openConfirm } from '../../shared/dialogo-conferma';
+import { RapportiniDialog } from '../rapportini/rapportini-dialog';
+import { RiepilogoOreDialog } from '../riepilogo-ore/riepilogo-ore-dialog';
+import { AssegnazioniDialog } from '../assegnazioni/assegnazioni-dialog';
+import { LavorazioniDialog } from '../lavorazioni/lavorazioni-dialog';
 import { COMMESSA_STATI, CommesseService } from './commesse.service';
 
 /** Permessi che rendono visibile almeno un'azione sulla riga di una commessa. */
@@ -35,7 +35,7 @@ const ROW_ACTION_PERMISSIONS = [
   selector: 'app-commesse',
   imports: [
     FormsModule,
-    HasPermissionDirective,
+    HaPermessoDirective,
     MatButtonModule,
     MatCardModule,
     MatFormFieldModule,
@@ -208,9 +208,9 @@ const ROW_ACTION_PERMISSIONS = [
 })
 export class CommessePage {
   readonly service = inject(CommesseService);
-  readonly customers = inject(CustomersService);
-  readonly sync = inject(SyncService);
-  private readonly profile = inject(ProfileService);
+  readonly customers = inject(ClientiService);
+  readonly sync = inject(SincronizzazioneService);
+  private readonly profile = inject(ProfiloService);
   private readonly dialog = inject(MatDialog);
   readonly saving = signal(false);
   readonly removing = signal<string | null>(null);
@@ -240,29 +240,29 @@ export class CommessePage {
     return this.customersById().get(customerId)?.name ?? 'Cliente non trovato';
   }
 
-  openResources(commessa: LocalCommessa): void {
-    this.dialog.open(ResourceAssignmentsDialog, {
+  openResources(commessa: CommessaLocale): void {
+    this.dialog.open(AssegnazioniDialog, {
       data: { commessaId: commessa.id, commessaNome: commessa.nome },
       width: '720px',
     });
   }
 
-  openWorkActivities(commessa: LocalCommessa): void {
-    this.dialog.open(WorkActivitiesDialog, {
+  openWorkActivities(commessa: CommessaLocale): void {
+    this.dialog.open(LavorazioniDialog, {
       data: { commessaId: commessa.id, commessaNome: commessa.nome },
       width: '720px',
     });
   }
 
-  openDailyReports(commessa: LocalCommessa): void {
-    this.dialog.open(DailyReportsDialog, {
+  openDailyReports(commessa: CommessaLocale): void {
+    this.dialog.open(RapportiniDialog, {
       data: { commessaId: commessa.id, commessaNome: commessa.nome },
       width: '820px',
     });
   }
 
-  openHoursReport(commessa: LocalCommessa): void {
-    this.dialog.open(HoursReportDialog, {
+  openHoursReport(commessa: CommessaLocale): void {
+    this.dialog.open(RiepilogoOreDialog, {
       data: { commessaId: commessa.id, commessaNome: commessa.nome },
       width: '820px',
     });
@@ -288,7 +288,7 @@ export class CommessePage {
   }
 
   /** Cancella la commessa, previa conferma: funziona anche offline (la modifica resta in coda). */
-  async remove(commessa: LocalCommessa): Promise<void> {
+  async remove(commessa: CommessaLocale): Promise<void> {
     const ok = await openConfirm(this.dialog, {
       title: 'Cancellare la commessa?',
       message: `${commessa.nome} non comparirà più in elenco. La cancellazione viene inviata al server appena è raggiungibile.`,

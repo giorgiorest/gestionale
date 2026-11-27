@@ -2,14 +2,14 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { API_URL } from '../../core/api/api-url';
-import { ProfileService } from '../../core/profile/profile.service';
-import { SyncService } from '../../core/sync/sync.service';
-import { LOCAL_DB, LocalCommessa, LocalDb, OutboxOperation } from '../../db/local-db';
+import { ProfiloService } from '../../core/profilo/profilo.service';
+import { SincronizzazioneService } from '../../core/sincronizzazione/sincronizzazione.service';
+import { LOCAL_DB, CommessaLocale, DbLocale, OutboxOperation } from '../../db/db-locale';
 import { CommesseService } from './commesse.service';
 
 const TENANT = 'tenant-1';
 
-function fakeDb(commesse: LocalCommessa[]): LocalDb {
+function fakeDb(commesse: CommessaLocale[]): DbLocale {
   const removeById = (id: string) =>
     commesse.splice(
       commesse.findIndex((x) => x.id === id),
@@ -18,11 +18,11 @@ function fakeDb(commesse: LocalCommessa[]): LocalDb {
   return {
     commesse: {
       toArray: async () => [...commesse],
-      put: async (c: LocalCommessa) => {
+      put: async (c: CommessaLocale) => {
         commesse.push(c);
         return c.id;
       },
-      bulkPut: async (list: LocalCommessa[]) => {
+      bulkPut: async (list: CommessaLocale[]) => {
         for (const c of list) {
           const i = commesse.findIndex((x) => x.id === c.id);
           if (i >= 0) commesse[i] = c;
@@ -32,12 +32,12 @@ function fakeDb(commesse: LocalCommessa[]): LocalDb {
       bulkDelete: async (ids: string[]) => ids.forEach(removeById),
       delete: async (id: string) => removeById(id),
     },
-  } as unknown as LocalDb;
+  } as unknown as DbLocale;
 }
 
 describe('CommesseService', () => {
-  let commesse: LocalCommessa[];
-  /** Coda finta: id → operazione, come la restituisce SyncService.pendingByEntity(). */
+  let commesse: CommessaLocale[];
+  /** Coda finta: id → operazione, come la restituisce SincronizzazioneService.pendingByEntity(). */
   let pending: Map<string, OutboxOperation>;
   let enqueued: unknown[];
   let service: CommesseService;
@@ -53,9 +53,9 @@ describe('CommesseService', () => {
         provideHttpClientTesting(),
         { provide: API_URL, useValue: '/api' },
         { provide: LOCAL_DB, useValue: fakeDb(commesse) },
-        { provide: ProfileService, useValue: { load: async () => ({ tenant: { id: TENANT } }) } },
+        { provide: ProfiloService, useValue: { load: async () => ({ tenant: { id: TENANT } }) } },
         {
-          provide: SyncService,
+          provide: SincronizzazioneService,
           useValue: {
             flush: async () => 0,
             pendingByEntity: async () => pending,

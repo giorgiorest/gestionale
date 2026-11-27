@@ -3,8 +3,8 @@ import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { firstValueFrom } from 'rxjs';
 import { API_URL } from '../../core/api/api-url';
-import { authInterceptor } from '../../core/auth/auth.interceptor';
-import { AuthService } from '../../core/auth/auth.service';
+import { authInterceptor } from '../../core/autenticazione/autenticazione.interceptor';
+import { AutenticazioneService } from '../../core/autenticazione/autenticazione.service';
 import { ConsoleApiService } from './console-api.service';
 import { ConsoleAuthService } from './console-auth.service';
 import { endOfDayIso, slugify } from './console-labels';
@@ -18,7 +18,7 @@ describe('Console di piattaforma', () => {
         provideHttpClient(withInterceptors([authInterceptor])),
         provideHttpClientTesting(),
         { provide: API_URL, useValue: '/api' },
-        { provide: AuthService, useValue: { accessToken: () => 'token-dipendente' } },
+        { provide: AutenticazioneService, useValue: { accessToken: () => 'token-dipendente' } },
         { provide: ConsoleAuthService, useValue: { accessToken: () => 'token-amministratore' } },
       ],
     });

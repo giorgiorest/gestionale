@@ -23,7 +23,7 @@ export interface ConsoleTenant {
   license: ConsoleLicense | null;
 }
 
-export interface LicenseInput {
+export interface LicenzaInput {
   plan: string;
   maxUsers: number;
   features: string[];
@@ -42,7 +42,7 @@ export interface ConsoleUser {
   createdAt: string | null;
 }
 
-export interface NewUserInput {
+export interface NuovoUtenteInput {
   username: string;
   email: string;
   firstName: string;
@@ -50,7 +50,7 @@ export interface NewUserInput {
   role: string;
 }
 
-export interface AuditEntry {
+export interface VoceAudit {
   id: string;
   actorName: string | null;
   action: string;
@@ -90,7 +90,7 @@ export class ConsoleApiService {
     id: string;
     name: string;
     slug: string;
-    license: LicenseInput;
+    license: LicenzaInput;
   }): Promise<ConsoleTenant> {
     return this.call(this.http.post<ConsoleTenant>(`${this.base}/tenants`, input, this.options()));
   }
@@ -104,7 +104,7 @@ export class ConsoleApiService {
     );
   }
 
-  updateLicense(id: string, input: LicenseInput): Promise<ConsoleTenant> {
+  updateLicense(id: string, input: LicenzaInput): Promise<ConsoleTenant> {
     return this.call(
       this.http.put<ConsoleTenant>(`${this.base}/tenants/${id}/license`, input, this.options()),
     );
@@ -118,7 +118,7 @@ export class ConsoleApiService {
 
   createUser(
     tenantId: string,
-    input: NewUserInput,
+    input: NuovoUtenteInput,
   ): Promise<{ user: ConsoleUser; temporaryPassword: string }> {
     return this.call(
       this.http.post<{ user: ConsoleUser; temporaryPassword: string }>(
@@ -153,9 +153,9 @@ export class ConsoleApiService {
     );
   }
 
-  audit(tenantId: string): Promise<AuditEntry[]> {
+  audit(tenantId: string): Promise<VoceAudit[]> {
     return this.call(
-      this.http.get<AuditEntry[]>(`${this.base}/tenants/${tenantId}/audit`, this.options()),
+      this.http.get<VoceAudit[]>(`${this.base}/tenants/${tenantId}/audit`, this.options()),
     );
   }
 

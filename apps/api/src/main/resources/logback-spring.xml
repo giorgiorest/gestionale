@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
     Log JSON strutturati (voce 0.4 della roadmap), con tenant_id e request_id: li mette in MDC
-    RequestLoggingContextFilter (it.gestionale.api.observability), per tutta la richiesta.
+    ContestoLogRichiestaFilter (it.gestionale.api.osservabilita), per tutta la richiesta.
     In sviluppo restano leggibili a schermo (stesso pattern di default di Spring Boot, con in coda
     [request_id] [tenant_id]); altrove (prod, test, ...) sono JSON su stdout.
 -->

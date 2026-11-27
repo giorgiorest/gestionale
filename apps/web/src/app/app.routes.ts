@@ -1,12 +1,12 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './core/auth/auth.guard';
-import { featureGuard } from './core/entitlements/feature.guard';
-import { permissionGuard } from './core/profile/permission.guard';
+import { authGuard } from './core/autenticazione/autenticazione.guard';
+import { featureGuard } from './core/abilitazioni/funzionalita.guard';
+import { permissionGuard } from './core/profilo/permesso.guard';
 
 export const routes: Routes = [
   {
     path: 'accesso',
-    loadComponent: () => import('./features/auth/login.page').then((m) => m.LoginPage),
+    loadComponent: () => import('./features/autenticazione/login.page').then((m) => m.LoginPage),
   },
   {
     // App desktop: indirizzo del server dell'azienda.
@@ -29,7 +29,7 @@ export const routes: Routes = [
     path: 'console',
     loadChildren: () => import('./features/console/console.routes').then((m) => m.CONSOLE_ROUTES),
   },
-  // Ritorno dal provider di identità: gestito da AuthService prima del routing.
+  // Ritorno dal provider di identità: gestito da AutenticazioneService prima del routing.
   { path: 'auth/callback', redirectTo: '' },
   {
     path: '',
@@ -43,22 +43,22 @@ export const routes: Routes = [
       },
       {
         path: 'profilo',
-        loadComponent: () => import('./features/profile/profile.page').then((m) => m.ProfilePage),
+        loadComponent: () => import('./features/profilo/profilo.page').then((m) => m.ProfiloPage),
       },
       {
         path: 'clienti',
         canActivate: [permissionGuard('customers:read')],
-        loadComponent: () => import('./features/customers/customers.page').then((m) => m.CustomersPage),
+        loadComponent: () => import('./features/clienti/clienti.page').then((m) => m.ClientiPage),
       },
       {
         path: 'fornitori',
         canActivate: [permissionGuard('suppliers:read')],
-        loadComponent: () => import('./features/suppliers/suppliers.page').then((m) => m.SuppliersPage),
+        loadComponent: () => import('./features/fornitori/fornitori.page').then((m) => m.FornitoriPage),
       },
       {
         path: 'risorse',
         canActivate: [permissionGuard('resources:read')],
-        loadComponent: () => import('./features/resources/resources.page').then((m) => m.ResourcesPage),
+        loadComponent: () => import('./features/risorse/risorse.page').then((m) => m.RisorsePage),
       },
       {
         path: 'commesse',
@@ -67,28 +67,28 @@ export const routes: Routes = [
       },
       {
         path: 'notifiche',
-        loadComponent: () => import('./features/notifications/notifications.page').then((m) => m.NotificationsPage),
+        loadComponent: () => import('./features/notifiche/notifiche.page').then((m) => m.NotifichePage),
       },
       {
         path: 'notifiche/:id',
         loadComponent: () =>
-          import('./features/notifications/notification-detail.page').then((m) => m.NotificationDetailPage),
+          import('./features/notifiche/dettaglio-notifica.page').then((m) => m.DettaglioNotificaPage),
       },
       {
         path: 'comunicazioni',
         canActivate: [permissionGuard('notifications:send')],
-        loadComponent: () => import('./features/announcements/announcements.page').then((m) => m.AnnouncementsPage),
+        loadComponent: () => import('./features/comunicazioni/comunicazioni.page').then((m) => m.ComunicazioniPage),
       },
       {
         path: 'comunicazioni/:id',
         canActivate: [permissionGuard('notifications:send')],
         loadComponent: () =>
-          import('./features/announcements/announcement-report.page').then((m) => m.AnnouncementReportPage),
+          import('./features/comunicazioni/riepilogo-comunicazione.page').then((m) => m.RiepilogoComunicazionePage),
       },
       {
         path: 'assistente',
         canActivate: [permissionGuard('assistant:use'), featureGuard('aiAssistant')],
-        loadComponent: () => import('./features/assistant/assistant.component').then((m) => m.AssistantComponent),
+        loadComponent: () => import('./features/assistente/assistente.component').then((m) => m.AssistenteComponent),
       },
     ],
   },

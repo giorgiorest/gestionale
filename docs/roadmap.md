@@ -28,8 +28,8 @@ verità sullo stato, solo un suggerimento di sequenza.
 2. Prompt di partenza con il numero della voce e i percorsi, non «trova dove sta»:
 
    > PR 2.1 della roadmap. Segui il ricettario in CLAUDE.md.
-   > File: `apps/api/src/main/java/it/gestionale/api/customers/`, nuova migrazione,
-   > `apps/web/src/app/features/customers/`.
+   > File: `apps/api/src/main/java/it/gestionale/api/clienti/`, nuova migrazione,
+   > `apps/web/src/app/features/clienti/`.
 
 3. Sulle voci grandi: **prima il piano**, poi il codice.
 4. Chiusura: `/code-review` (livello `medium`; `high` o più solo su RLS, permessi, allegati,
@@ -65,6 +65,7 @@ Si ripaga entro la seconda PR: serve a non ri-scoprire il progetto a ogni sessio
 | 0.4 | Osservabilità: log strutturati JSON con `tenant_id` e id della richiesta, metriche Actuator/Prometheus, avviso quando la salute cade | — | ✅ |
 | 0.5 | **Backup fuori sito** (l'archivio oggi resta sulla stessa macchina) e **prova di ripristino** documentata | — | ⬜ |
 | 0.6 | Hook `SessionStart`: branch, PR aperta, prossima voce di roadmap, primo numero Flyway libero | — | ✅ |
+| 0.7 | Monolite modulare e nomi in italiano: backend in 21 moduli a strati senza cicli (`ArchitetturaModulareTest`), cartelle e classi del frontend in italiano ([ADR 0023](decisioni/0023-monolite-modulare-nomi-italiani.md)) | — | ✅ |
 
 > La 0.5 è il rischio singolo più grande del progetto: un backup mai ripristinato non è un backup.
 
@@ -98,7 +99,7 @@ debito da pagare moltiplicato per il numero di entità.
 | PR | Contenuto | Migr. | Stato |
 |----|-----------|-------|-------|
 | 3.1 | Commesse/cantieri: modello, stati, anagrafica, collegamento al cliente | V8 | ✅ |
-| 3.2 | Rapportino giornaliero lato backend: ore per persona, materiali, note, allegati — testata ([#49](https://github.com/giorgiorest/gestionale/issues/49), `DailyReport`), ore ([#50](https://github.com/giorgiorest/gestionale/issues/50), `WorkEntry`) e materiali (`DailyReportMaterial`, testo libero: nessun catalogo materiali ancora, GitHub #55) fatti; **allegati rimandati a dopo la voce 2.4** (archivio generico S3/MinIO, ADR 0016), per non costruire due volte l'infrastruttura di upload | V16 | 🟨 |
+| 3.2 | Rapportino giornaliero lato backend: ore per persona, materiali, note, allegati — testata ([#49](https://github.com/giorgiorest/gestionale/issues/49), `Rapportino`), ore ([#50](https://github.com/giorgiorest/gestionale/issues/50), `RigaOre`) e materiali (`MaterialeRapportino`, testo libero: nessun catalogo materiali ancora, GitHub #55) fatti; **allegati rimandati a dopo la voce 2.4** (archivio generico S3/MinIO, ADR 0016), per non costruire due volte l'infrastruttura di upload | V16 | 🟨 |
 | 3.3 | Rapportino sul telefono: interfaccia per schermo piccolo, compilazione offline, foto | — | ⬜ |
 | 3.4 | Firma grafometrica sul rapportino (canvas, immagine allegata, impronta e orario) | — | ⬜ |
 | 3.5 | Riepiloghi: ore per commessa, per persona, per periodo; export | — | ⬜ |
@@ -134,13 +135,13 @@ debito da pagare moltiplicato per il numero di entità.
 | 5.9 | Firma degli installer Windows e aggiornamento automatico dell'app desktop | — | ⬜ |
 | 5.10 | Ambiente di prova separato dalla produzione, per provare le migrazioni su dati realistici | — | ⬜ |
 | 5.11 | Test end-to-end con Playwright, incluso il ciclo offline → online | — | ⬜ |
-| 5.12 | 🔐 Ruoli multipli per utente: un account può avere insieme un ruolo d'account (`admin`/`operator`/`viewer`) e un ruolo di cantiere (`capocantiere`/`caposquadra`/`operaio`/`amministrativo`) — Keycloak, `PlatformDtos.role` da stringa a lista, selettore multiplo in console (decisione presa il 25/11/2026, vedi "Decisioni prese" più sotto) | — | ⬜ |
+| 5.12 | 🔐 Ruoli multipli per utente: un account può avere insieme un ruolo d'account (`admin`/`operator`/`viewer`) e un ruolo di cantiere (`capocantiere`/`caposquadra`/`operaio`/`amministrativo`) — Keycloak, `PiattaformaDtos.role` da stringa a lista, selettore multiplo in console (decisione presa il 25/11/2026, vedi "Decisioni prese" più sotto) | — | ⬜ |
 
 ## Fase 6 — Lato SaaS
 
 | PR | Contenuto | Migr. | Stato |
 |----|-----------|-------|-------|
-| 6.1 | Piani e listino: `Features` oggi contiene una sola funzionalità, quindi non c'è nulla da vendere a scaglioni | — | ⬜ |
+| 6.1 | Piani e listino: `Funzionalita` oggi contiene una sola funzionalità, quindi non c'è nulla da vendere a scaglioni | — | ⬜ |
 | 6.2 | 🔐 Registrazione self-service dell'azienda e periodo di prova | V21 | ⬜ |
 | 6.3 | 🔐 Pagamenti e ciclo dell'abbonamento (prova → attivo → sospeso → riattivato) | V22 | ⬜ |
 | 6.4 | Report e cruscotto: fatturato per mese e cliente, **marginalità per commessa**, ore per persona | — | ⬜ |
@@ -154,7 +155,7 @@ i tool di dominio e un provider reale.
 
 | PR | Contenuto | Migr. | Stato |
 |----|-----------|-------|-------|
-| 7.1 | Provider AI reale al posto di `NoopAiProvider` | — | ⬜ |
+| 7.1 | Provider AI reale al posto di `ProviderIaNullo` | — | ⬜ |
 | 7.2 | Tool di dominio per l'assistente (wrapper sottili sui servizi, permessi dell'utente) | — | ⬜ |
 | 7.3 | Lettura automatica dei documenti: foto di una fattura fornitore → righe estratte → prima nota precompilata | — | ⬜ |
 | 7.4 | Rapportino dettato a voce: offline registra, online trascrive e compila | — | ⬜ |
@@ -275,7 +276,7 @@ condiviso sui costi, non duplicato. F.5: AI sui documenti, **rimandata a dopo le
 
 [Epica GitHub #67](https://github.com/giorgiorest/gestionale/issues/67). Complementare (tempo),
 non sovrapposta, all'incremento 12 del piano tecnico ("WBS e budget", costo,
-[#58](https://github.com/giorgiorest/gestionale/issues/58)): condividono `WorkActivity.parentId`
+[#58](https://github.com/giorgiorest/gestionale/issues/58)): condividono `Lavorazione.parentId`
 (incremento 2, [#48](https://github.com/giorgiorest/gestionale/issues/48)). G.6: AI sui documenti,
 **rimandata a dopo le fondamenta** (vedi "Decisioni prese").
 
@@ -326,10 +327,10 @@ Sono i punti di conflitto quando ci sono più branch aperti insieme. Chi ne tocc
 nella descrizione della PR.
 
 - `apps/api/src/main/resources/db/migration/` — vedi [ADR 0013](decisioni/0013-numerazione-migrazioni.md)
-- `apps/api/.../auth/Permission.java` e `licensing/Features.java`
+- `apps/api/.../accesso/Permesso.java` e `licenze/Funzionalita.java`
 - `apps/web/src/app/app.routes.ts`
-- `apps/web/src/app/db/local-db.ts` (nuova `version()`, mai modificare quelle esistenti)
-- `apps/web/src/app/core/privacy/local-data.service.ts` (`clear()`)
+- `apps/web/src/app/db/db-locale.ts` (nuova `version()`, mai modificare quelle esistenti)
+- `apps/web/src/app/core/privacy/dati-locali.service.ts` (`clear()`)
 - `infra/deploy/oracle/.env.example` e `compose.yml`
 - questo file
 

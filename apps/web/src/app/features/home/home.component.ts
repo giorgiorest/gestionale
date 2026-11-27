@@ -3,9 +3,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
-import { EntitlementsService } from '../../core/entitlements/entitlements.service';
-import { NotificationsService } from '../../core/notifications/notifications.service';
-import { ProfileService } from '../../core/profile/profile.service';
+import { AbilitazioniService } from '../../core/abilitazioni/abilitazioni.service';
+import { NotificheService } from '../../core/notifiche/notifiche.service';
+import { ProfiloService } from '../../core/profilo/profilo.service';
 
 /** Pagina iniziale: saluto, comunicazioni da confermare, accessi rapidi. */
 @Component({
@@ -113,9 +113,9 @@ import { ProfileService } from '../../core/profile/profile.service';
   `,
 })
 export class HomeComponent {
-  readonly profile = inject(ProfileService);
-  readonly notifications = inject(NotificationsService);
-  readonly entitlements = inject(EntitlementsService);
+  readonly profile = inject(ProfiloService);
+  readonly notifications = inject(NotificheService);
+  readonly entitlements = inject(AbilitazioniService);
 
   readonly firstName = computed(() => (this.profile.me()?.name ?? '').split(' ')[0]);
   readonly greeting = computed(() => {

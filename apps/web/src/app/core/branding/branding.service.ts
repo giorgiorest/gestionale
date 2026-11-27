@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { Injectable, inject, signal } from '@angular/core';
-import { Branding } from '../config/app-config';
+import { Branding } from '../configurazione/configurazione-app';
 
 /** Marchio di prodotto, usato quando l'installazione non ne indica uno proprio. */
 export const DEFAULT_BRANDING: Required<Pick<Branding, 'name' | 'logoUrl'>> = {
