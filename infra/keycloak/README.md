@@ -82,7 +82,7 @@ impostazione vanno attivati da *Realm settings → Events* (il realm si importa 
 - **Nuovo utente**: Console → realm `gestionale` → Users → Add user; poi nella scheda
   *Attributes* impostare `tenant_id`, in *Role mapping* assegnare `admin`, `operator` o `viewer`,
   in *Credentials* una password temporanea.
-- **Nuovo ruolo applicativo**: aggiungerlo nel realm **e** in `Role` (backend), con i permessi;
+- **Nuovo ruolo applicativo**: aggiungerlo nel realm **e** in `Ruolo` (backend), con i permessi;
   aggiornare anche `ROLE_LABELS` nel frontend e questo documento.
 - **Modifiche al realm**: si fanno nel file JSON (configurazione come codice) e si verificano
   ricreando il container. Le modifiche fatte da console vanno riportate nel file.

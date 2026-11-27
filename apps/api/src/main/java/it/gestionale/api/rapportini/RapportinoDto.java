@@ -1,0 +1,33 @@
+package it.gestionale.api.rapportini;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.UUID;
+
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
+/**
+ * Rappresentazione di un rapportino nell'API. {@code status} è una stringa, non l'enum
+ * {@link StatoRapportino}, come per {@code StatoCommessa}. Non è nell'{@link Input}: il
+ * workflow {@code DRAFT → SUBMITTED → CLOSED} (#51) passa solo da {@code POST .../submit} e
+ * {@code .../close}, non da questo upsert.
+ *
+ * @param version versione del record per il blocco ottimistico
+ */
+public record RapportinoDto(UUID id, UUID commessaId, LocalDate date, String weather, String notes, String status,
+                             Instant submittedAt, Instant closedAt, long version, Instant updatedAt) {
+
+    private static final StatoRapportinoConverter STATUS = new StatoRapportinoConverter();
+
+    public static RapportinoDto from(Rapportino report) {
+        return new RapportinoDto(report.getId(), report.getCommessaId(), report.getDate(), report.getWeather(),
+                report.getNotes(), STATUS.convertToDatabaseColumn(report.getStatus()), report.getSubmittedAt(),
+                report.getClosedAt(), report.getVersion(), report.getUpdatedAt());
+    }
+
+    /** Dati in ingresso per creare o aggiornare la testata di un rapportino (sempre un DRAFT). */
+    public record Input(@NotNull UUID commessaId, @NotNull LocalDate date, @Size(max = 100) String weather,
+                        @Size(max = 2000) String notes) {
+    }
+}

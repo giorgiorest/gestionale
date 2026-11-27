@@ -40,28 +40,31 @@ gestionale/
 
 ### Backend (`apps/api/src/main/java/it/gestionale/api`)
 
-| Modulo       | Contenuto |
-|--------------|-----------|
-| `auth/`      | ruoli d'azienda (`admin`, `operator`, `viewer`) e di cantiere (`capocantiere`, `caposquadra`, `operaio`, `amministrativo`) → permessi, `GET /api/me` (profilo utente) |
-| `tenancy/`   | `TenantContext`, `TenantFilter` (tenant dal JWT), `TenantAwareDataSource` (imposta `app.tenant_id` sulla connessione) |
-| `licensing/` | `Entitlements`, `EntitlementService`, `LicenseVerifier` (licenze offline Ed25519), `GET /api/entitlements` |
-| `customers/` | anagrafica clienti: `GET /api/customers` paginato, ordinato e ricercabile (`?page=&size=&sort=&q=`, risposta `PageDto<CustomerDto>`, [ADR 0014](docs/decisioni/0014-liste-paginate.md)), `PUT /api/customers/{id}` e `DELETE /api/customers/{id}` (idempotenti; la cancellazione è logica, [ADR 0018](docs/decisioni/0018-cancellazione-logica.md)), più i dati fiscali e commerciali (P.IVA, codice fiscale, indirizzo, PEC, codice SDI, condizioni di pagamento — roadmap 2.1) |
-| `suppliers/` | anagrafica fornitori (roadmap 2.2): tabella e schema propri, non condivisi con `customers/` — stesso contratto API (`GET`/`PUT`/`DELETE`), stessi campi del mestiere |
-| `attachments/` | allegati ([ADR 0016](docs/decisioni/0016-archivio-allegati.md), roadmap 2.4): metadati soltanto, mai i byte — `POST /api/attachments/upload-url` ed `.../{id}/download-url` emettono URL firmati verso l'archivio compatibile S3 (MinIO in sviluppo); `PUT /api/attachments/{id}` conferma i metadati dopo il caricamento, idempotente |
-| `resources/` | risorse e squadre (dipendenti che compilano i rapportini): stesso schema di `customers/`, collegate opzionalmente alla rubrica `app_users` (`userId`) e tra loro (`teamLeadId`, "fa parte della squadra di") |
+Monolite modulare: un pacchetto per modulo, in italiano, con dipendenze solo verso il basso (orchestrazione → dominio → trasversali → sicurezza → fondamenta), verificate da `ArchitetturaModulareTest` ([ADR 0023](docs/decisioni/0023-monolite-modulare-nomi-italiani.md)).
+
+| Modulo | Contenuto |
+|--------|-----------|
+| `accesso/`      | ruoli d'azienda (`admin`, `operator`, `viewer`) e di cantiere (`capocantiere`, `caposquadra`, `operaio`, `amministrativo`) → permessi, `GET /api/me` (profilo utente) |
+| `tenant/`   | `ContestoTenant`, `TenantFilter` (tenant dal JWT), `DataSourceTenant` (imposta `app.tenant_id` sulla connessione) |
+| `licenze/` | `Abilitazioni`, `AbilitazioniService`, `VerificatoreLicenze` (licenze offline Ed25519), `GET /api/entitlements` |
+| `clienti/` | anagrafica clienti: `GET /api/customers` paginato, ordinato e ricercabile (`?page=&size=&sort=&q=`, risposta `PaginaDto<ClienteDto>`, [ADR 0014](docs/decisioni/0014-liste-paginate.md)), `PUT /api/customers/{id}` e `DELETE /api/customers/{id}` (idempotenti; la cancellazione è logica, [ADR 0018](docs/decisioni/0018-cancellazione-logica.md)), più i dati fiscali e commerciali (P.IVA, codice fiscale, indirizzo, PEC, codice SDI, condizioni di pagamento — roadmap 2.1) |
+| `fornitori/` | anagrafica fornitori (roadmap 2.2): tabella e schema propri, non condivisi con `clienti/` — stesso contratto API (`GET`/`PUT`/`DELETE`), stessi campi del mestiere |
+| `allegati/` | allegati ([ADR 0016](docs/decisioni/0016-archivio-allegati.md), roadmap 2.4): metadati soltanto, mai i byte — `POST /api/attachments/upload-url` ed `.../{id}/download-url` emettono URL firmati verso l'archivio compatibile S3 (MinIO in sviluppo); `PUT /api/attachments/{id}` conferma i metadati dopo il caricamento, idempotente |
+| `risorse/` | risorse e squadre (dipendenti che compilano i rapportini): stesso schema di `clienti/`, collegate opzionalmente alla rubrica `app_users` (`userId`) e tra loro (`teamLeadId`, "fa parte della squadra di") |
 | `commesse/`  | commesse (cantieri): entità centrale del prodotto ([ADR 0012](docs/decisioni/0012-verticale-edilizia.md)), con cliente (`customerId`, chiave esterna vera) e stato (`pianificata`, `in_corso`, `sospesa`, `conclusa`) |
-| `resourceassignments/` | assegnazione di una risorsa a una commessa, con periodo di validità e ruolo *contestuale a quella commessa* (distinto dal ruolo applicativo della persona) |
-| `workactivities/` | lavorazioni di una commessa (es. "Armatura pilastri"), riutilizzate dal rapportino per classificare le ore; `code` univoco per commessa, `parentId` opzionale per la gerarchia (WBS) |
-| `dailyreports/` | testata del rapportino giornaliero (meteo, note, stato); un solo rapportino per commessa/data nell'MVP; workflow `draft → submitted → closed` con endpoint dedicati (`POST .../submit`, `.../close`, non un `PATCH` sullo stato — ADR 0019); non modificabile da nessun endpoint ordinario fuori da `draft`; notifica il manager a invio/chiusura e, con un controllo periodico (`MissingDailyReportWatchdog`, #54), se una commessa in corso resta senza rapportino in una data |
-| `workentries/` | righe di ore del rapportino: risorsa, lavorazione (della stessa commessa) e ore/straordinario; il totale è derivato in UI, non salvato; non modificabili fuori da `draft`; alla chiusura, `WorkEntryCostSnapshot` congela il costo manodopera (tariffa da `ResourceAssignment.hourlyCostOverride`, NULL se assente — ADR 0019) |
-| `dailyreportmaterials/` | righe di materiale del rapportino (voce 3.2 della roadmap): descrizione e unità di misura a testo libero, perché un catalogo materiali non esiste ancora (GitHub #55, `docs/roadmap.md` C.1); non modificabili fuori da `draft`, stessa cancellazione logica di `workentries/`; gli allegati (foto materiali, DDT) restano rimandati a dopo la voce 2.4 (ADR 0016), per non costruire due volte l'archivio |
-| `hoursreport/` | cruscotto ore di una commessa (`GET /api/commesse/{id}/reports/hours?from=&to=`, #52): tre viste (settimanale, mensile per risorsa, per lavorazione) da un'unica aggregazione per giorno/risorsa/lavorazione fatta in query; permesso riusato (`work-entries:read`), nessuna migrazione ([ADR 0020](docs/decisioni/0020-endpoint-di-report.md)) |
-| `notifications/` | notifiche e comunicazioni ai dipendenti, presa visione, rubrica, invio email (`EmailDispatcher`) |
-| `sync/`      | `GET /api/sync/changes`: sincronizzazione incrementale lato server, cursore per entità (`updated_at` + id) e tombstone (voce 1.2 della roadmap); applicato lato client da `pullChanges` (voce 1.3) |
-| `ai/`        | `AiProvider`, `AiTool`, `NoopAiProvider` (503), quota mensile, `POST /api/ai/chat` |
-| `demo/`      | `DemoTenantSeeder` con `reset()` |
-| `health/`    | `GET /api/health` (liveness pubblico) |
-| `observability/` | Log JSON con `tenant_id`/`request_id` (`RequestLoggingContextFilter`), `GET /actuator/prometheus`, avviso email sulla salute (`HealthAlertWatchdog`) — [ADR 0022](docs/decisioni/0022-osservabilita.md) |
+| `assegnazioni/` | assegnazione di una risorsa a una commessa, con periodo di validità e ruolo *contestuale a quella commessa* (distinto dal ruolo applicativo della persona) |
+| `lavorazioni/` | lavorazioni di una commessa (es. "Armatura pilastri"), riutilizzate dal rapportino per classificare le ore; `code` univoco per commessa, `parentId` opzionale per la gerarchia (WBS) |
+| `rapportini/` | **Rapportino** (testata): testata del rapportino giornaliero (meteo, note, stato); un solo rapportino per commessa/data nell'MVP; workflow `draft → submitted → closed` con endpoint dedicati (`POST .../submit`, `.../close`, non un `PATCH` sullo stato — ADR 0019); non modificabile da nessun endpoint ordinario fuori da `draft`; notifica il manager a invio/chiusura e, con un controllo periodico (`RapportinoMancanteWatchdog`, #54), se una commessa in corso resta senza rapportino in una data<br>**Righe ore**: righe di ore del rapportino: risorsa, lavorazione (della stessa commessa) e ore/straordinario; il totale è derivato in UI, non salvato; non modificabili fuori da `draft`; alla chiusura, `SnapshotCostoRigaOre` congela il costo manodopera (tariffa da `AssegnazioneRisorsa.hourlyCostOverride`, NULL se assente — ADR 0019)<br>**Materiali**: righe di materiale del rapportino (voce 3.2 della roadmap): descrizione e unità di misura a testo libero, perché un catalogo materiali non esiste ancora (GitHub #55, `docs/roadmap.md` C.1); non modificabili fuori da `draft`, stessa cancellazione logica di `rapportini/`; gli allegati (foto materiali, DDT) restano rimandati a dopo la voce 2.4 (ADR 0016), per non costruire due volte l'archivio |
+| `riepilogoore/` | cruscotto ore di una commessa (`GET /api/commesse/{id}/reports/hours?from=&to=`, #52): tre viste (settimanale, mensile per risorsa, per lavorazione) da un'unica aggregazione per giorno/risorsa/lavorazione fatta in query; permesso riusato (`work-entries:read`), nessuna migrazione ([ADR 0020](docs/decisioni/0020-endpoint-di-report.md)) |
+| `costimanodopera/` | cruscotto dei costi di manodopera per commessa, dai costi congelati alla chiusura del rapportino ([ADR 0021](docs/decisioni/0021-storico-costi-manodopera.md)) |
+| `notifiche/` | notifiche e comunicazioni ai dipendenti, presa visione, rubrica, invio email (`InviatoreEmail`) |
+| `sincronizzazione/`      | `GET /api/sync/changes`: sincronizzazione incrementale lato server, cursore per entità (`updated_at` + id) e tombstone (voce 1.2 della roadmap); applicato lato client da `pullChanges` (voce 1.3) |
+| `piattaforma/` | console di piattaforma (`/api/platform/**`, [ADR 0010](docs/decisioni/0010-console-piattaforma.md)); `piattaforma.identita` isola l'unico accesso specifico a Keycloak |
+| `condiviso/`, `errori/`, `configurazione/` | `PaginaDto` (risposta delle liste), `GestoreErroriApi` (eccezioni → `application/problem+json`), configurazione trasversale (sicurezza, CORS, orologio) |
+| `ia/`        | `ProviderIa`, `StrumentoIa`, `ProviderIaNullo` (503), quota mensile, `POST /api/ai/chat` |
+| `demo/`      | `PopolatoreTenantDemo` con `reset()` |
+| `salute/`    | `GET /api/health` (liveness pubblico) |
+| `osservabilita/` | Log JSON con `tenant_id`/`request_id` (`ContestoLogRichiestaFilter`), `GET /actuator/prometheus`, avviso email sulla salute (`AllarmiSaluteWatchdog`) — [ADR 0022](docs/decisioni/0022-osservabilita.md) |
 
 ### Frontend (`apps/web/src/app`)
 
@@ -216,7 +219,7 @@ cd apps/api
 
 Con Podman, Testcontainers va puntato al socket di Podman (`DOCKER_HOST`) con
 `TESTCONTAINERS_RYUK_DISABLED=true`. Senza container girano solo i test unitari:
-`./mvnw test -Dtest='LicenseVerifierTest,HealthControllerTest,RoleAuthoritiesConverterTest'`.
+`./mvnw test -Dtest='VerificatoreLicenzeTest,SaluteControllerTest,RuoloAutoritaConverterTest'`.
 
 ### Web
 
@@ -272,7 +275,7 @@ e menu laterale. Scelta e alternative: [ADR 0006](docs/decisioni/0006-interfacci
   `tenant_id` (azienda). Guida per chi amministra (utenti, ruoli, nuove aziende e licenze):
   [docs/gestione-utenti-e-aziende.md](docs/gestione-utenti-e-aziende.md); dettagli tecnici:
   [infra/keycloak/README.md](infra/keycloak/README.md).
-- Ogni ruolo concede dei permessi, definiti nel backend (`apps/api/.../auth/Role.java`):
+- Ogni ruolo concede dei permessi, definiti nel backend (`apps/api/.../accesso/Ruolo.java`):
 
 | Permesso | admin | operator | viewer | capocantiere | caposquadra | operaio | amministrativo |
 |----------|:-----:|:--------:|:------:|:------------:|:-----------:|:-------:|:---------------:|
@@ -302,12 +305,12 @@ e popolare l'elenco da cui si gestiscono le assegnazioni, le lavorazioni e i rap
 `resource-assignments`, `work-activities`, `daily-reports` e `work-entries` sarebbero
 irraggiungibili dalla UI. `operaio` non ha ancora `work-entries` (nessuna delle due): il piano lo
 marca "proprie righe", cioè scrittura limitata alle righe della propria risorsa, una scelta di
-prodotto non ancora presa (vedi commento su `Role.OPERAIO`).
+prodotto non ancora presa (vedi commento su `Ruolo.OPERAIO`).
 Il piano vorrebbe `caposquadra` anche in scrittura su `daily-reports`, ma limitata alla propria
 squadra: quel controllo non esiste ancora (va incrociato con `resource-assignments`), quindi per
-ora `caposquadra` ha solo lettura, non la scrittura piena di `capocantiere` (vedi `Role.CAPOSQUADRA`).
+ora `caposquadra` ha solo lettura, non la scrittura piena di `capocantiere` (vedi `Ruolo.CAPOSQUADRA`).
 `caposquadra` ha `daily-reports:write` pieno: il piano lo vorrebbe limitato alla propria squadra,
-ma quella restrizione non è ancora applicata (vedi commento su `Role.CAPOSQUADRA`).
+ma quella restrizione non è ancora applicata (vedi commento su `Ruolo.CAPOSQUADRA`).
 
 I ruoli di cantiere sono scaffolding (`docs/roadmap.md`, Fasi A–I): i permessi sopra sono quelli già
 costruiti; le altre funzioni di cantiere li aggiungeranno via via.
@@ -343,7 +346,7 @@ Dettagli: [ADR 0005](docs/decisioni/0005-notifiche.md).
 - **Amministratori**: *Comunicazioni ai dipendenti* → titolo, testo, destinatari (tutta l'azienda,
   un ruolo, una persona), presa visione, invio anche per email; per ogni comunicazione il report
   di chi l'ha letta, chi ha confermato e lo stato dell'email.
-- **Sistema**: i moduli del gestionale creano notifiche con `NotificationService`.
+- **Sistema**: i moduli del gestionale creano notifiche con `NotificaService`.
 - Le persone compaiono tra i destinatari dopo il loro primo accesso; chi entra dopo l'invio riceve
   comunque le comunicazioni con presa visione indirizzate alla sua azienda o al suo ruolo.
 - Email: in sviluppo Mailpit; in produzione `EMAIL_ENABLED=true`, `SPRING_MAIL_HOST`,

@@ -89,7 +89,7 @@ Dettagli: [ADR 0004](decisioni/0004-app-desktop.md) e `apps/desktop/README.md`.
   processi di sistema) e `version` per il blocco ottimistico (`@Version`); un conflitto diventa
   `409`.
 - **Liste** ([ADR 0014](decisioni/0014-liste-paginate.md)): convenzione unica per ogni entità con
-  un elenco — `GET /api/<entità>?page=&size=&sort=&q=`, risposta `PageDto<T>` esplicita
+  un elenco — `GET /api/<entità>?page=&size=&sort=&q=`, risposta `PaginaDto<T>` esplicita
   (`content`, `page`, `size`, `totalElements`, `totalPages`), indice `(tenant_id, <ordinamento
   predefinito>)`. Online, la pagina chiama questo endpoint; se il server non risponde, ricade sulla
   copia locale mantenuta dal cursore di sincronizzazione (sotto), con paginazione e ricerca
@@ -130,12 +130,31 @@ Dettagli: [ADR 0004](decisioni/0004-app-desktop.md) e `apps/desktop/README.md`.
 
 - **Spring Boot 3.5**, Java 21, API REST stateless, autenticazione **OAuth2/OIDC** (JWT emessi da Keycloak).
 - **PostgreSQL 17** con migrazioni **Flyway** (mai modificare una migrazione già applicata).
-- Errori in formato RFC 9457 (`application/problem+json`).
+- Errori in formato RFC 9457 (`application/problem+json`), tradotti da `GestoreErroriApi` (`errori/`).
+- **Monolite modulare** ([ADR 0023](decisioni/0023-monolite-modulare-nomi-italiani.md)): un solo
+  servizio, un pacchetto per modulo, nomi in italiano. Le dipendenze vanno solo verso il basso e senza cicli:
+
+  ```
+  orchestrazione   sincronizzazione · piattaforma · demo · errori · configurazione · salute
+        ↓
+  dominio          clienti · fornitori · risorse · commesse · assegnazioni · lavorazioni
+                   rapportini · riepilogoore · costimanodopera
+        ↓
+  trasversali      notifiche · allegati · ia · osservabilita
+        ↓
+  sicurezza        accesso · licenze
+        ↓
+  fondamenta       tenant · condiviso
+  ```
+
+  `ArchitetturaModulareTest` (ArchUnit) fa fallire la build se si introduce un ciclo o una
+  dipendenza verso l'alto. Per reagire a un modulo di livello pari o superiore si pubblica un evento
+  (es. `UtenteRegistrato`, ascoltato da `notifiche`).
 
 ## Allegati
 
 Decisione e motivazioni: [ADR 0016](decisioni/0016-archivio-allegati.md). L'API non fa mai da
-proxy per i byte: `attachments/` controlla permesso, entitlement e tenant, poi emette un **URL
+proxy per i byte: `allegati/` controlla permesso, entitlement e tenant, poi emette un **URL
 firmato** di breve durata (ordine di minuti) con `S3Presigner` (AWS SDK v2) — `PUT` per caricare,
 `GET` per scaricare, verso un archivio compatibile S3 configurato per installazione (MinIO in
 sviluppo, un fornitore europeo preferibile in SaaS per i dati personali). La tabella `attachments`
@@ -209,16 +228,16 @@ Dettagli: [ADR 0022](decisioni/0022-osservabilita.md).
 - **Log**: JSON su stdout (Logback + `logstash-logback-encoder`), un campo per profilo diverso da
   `dev` (dove restano leggibili a schermo). Ogni riga porta `request_id` (generato o propagato
   dall'header `X-Request-Id`, restituito anche in risposta) e `tenant_id` quando presente — messi
-  in MDC da `RequestLoggingContextFilter` (`it.gestionale.api.observability`), registrato subito
+  in MDC da `ContestoLogRichiestaFilter` (`it.gestionale.api.osservabilita`), registrato subito
   dopo `TenantFilter`.
 - **Metriche**: Micrometer + Prometheus, `GET /actuator/prometheus`. Non richiede un JWT (un
   raccoglitore di metriche non ne ha uno), ma non è instradato da Caddy fuori dalla rete
   amministrativa: stesso `ADMIN_ALLOWED_IPS` di `/console` e `/api/platform/**` (vedi Caddyfile).
-- **Avviso sulla salute**: `HealthAlertWatchdog` legge `HealthEndpoint` in-process (lo stesso
+- **Avviso sulla salute**: `AllarmiSaluteWatchdog` legge `HealthEndpoint` in-process (lo stesso
   aggregato di `/actuator/health`) una volta al minuto e avvisa gli amministratori
   dell'installazione solo sulla transizione (non a ogni controllo): sempre con un log `ERROR`, e
   via email a `HEALTH_ALERT_EMAIL` se impostata. Non è un'installazione per tenant: non passa da
-  `NotificationService` né da `TenantContext`/`WorkerContext`.
+  `NotificaService` né da `ContestoTenant`/`ContestoWorker`.
 
 ## Privacy
 
@@ -246,9 +265,9 @@ Dettagli: [ADR 0005](decisioni/0005-notifiche.md).
 - Il processo di invio email lavora per tutti i tenant con `app.worker = 'email-dispatcher'`:
   una policy RLS dedicata gli mostra solo la coda email.
 - Notifiche operative del rapportino (#54): al manager (ruolo `admin`), sempre via
-  `NotificationService.send`. Inviato/chiuso scattano dal workflow (`DailyReportService`); il
+  `NotificaService.send`. Inviato/chiuso scattano dal workflow (`RapportinoService`); il
   rapportino mancante (commessa in corso senza rapportino in una data) è un controllo periodico,
-  non un evento — `MissingDailyReportWatchdog`, una volta al giorno a fine giornata lavorativa,
+  non un evento — `RapportinoMancanteWatchdog`, una volta al giorno a fine giornata lavorativa,
   configurabile (`gestionale.notifications.missing-daily-report.cron`). Gira per tutti i tenant con
   `app.worker = 'daily-report-watchdog'` (policy dedicata solo su `tenants`, per elencare le
   aziende attive): le tabelle di dominio restano filtrate per tenant, un'azienda alla volta.
@@ -260,8 +279,8 @@ Dettagli: [ADR 0005](decisioni/0005-notifiche.md).
 - **Row Level Security** su PostgreSQL, abilitata e forzata con `CALL enable_tenant_rls('tabella')`:
   la policy confronta `tenant_id` con `current_tenant_id()`, che legge `app.tenant_id`.
 - Catena della richiesta:
-  1. `TenantFilter` legge il claim `tenant_id` dal JWT (attributo utente in Keycloak) e lo mette in `TenantContext`;
-  2. `TenantAwareDataSource` imposta `app.tenant_id` su ogni connessione presa dal pool
+  1. `TenantFilter` legge il claim `tenant_id` dal JWT (attributo utente in Keycloak) e lo mette in `ContestoTenant`;
+  2. `DataSourceTenant` imposta `app.tenant_id` su ogni connessione presa dal pool
      (stringa vuota se manca il tenant: nessuna riga visibile, *fail-closed*);
   3. le policy RLS filtrano letture e bloccano scritture su altri tenant.
 - L'applicazione si collega con un **ruolo non superuser** e non proprietario delle tabelle
@@ -270,7 +289,7 @@ Dettagli: [ADR 0005](decisioni/0005-notifiche.md).
 
 ## Tenant demo
 
-- `DemoTenantSeeder` crea il tenant demo con licenza e dati di esempio quando
+- `PopolatoreTenantDemo` crea il tenant demo con licenza e dati di esempio quando
   `gestionale.demo.enabled=true` (default nel profilo `dev`, mai implicito in `prod`).
 - `reset()` cancella i dati del tenant demo e ricarica quelli iniziali (da esporre a un
   job pianificato o a un endpoint amministrativo).
@@ -279,16 +298,16 @@ Dettagli: [ADR 0005](decisioni/0005-notifiche.md).
 
 - Gli **entitlement** (piano, utenti massimi, funzionalità, quota AI, scadenza) sono
   commerciali e distinti dalle feature flag tecniche.
-- Online: letti dalla tabella `licenses` del tenant tramite `EntitlementService`.
+- Online: letti dalla tabella `licenses` del tenant tramite `AbilitazioniService`.
 - Offline: **licenza firmata** (Ed25519) `base64url(payload).base64url(firma)`, verificata
-  con la sola chiave pubblica (`LicenseVerifier`). La chiave privata resta fuori dal
+  con la sola chiave pubblica (`VerificatoreLicenze`). La chiave privata resta fuori dal
   repository e dalle app distribuite; la generazione delle licenze è un processo separato.
 
 ## Assistente AI
 
 - Chat nel frontend (`features/assistant`), disponibile solo con la funzionalità `aiAssistant`.
-- Backend provider-agnostico: `AiProvider` (implementazione di default `NoopAiProvider`, 503)
-  e `AiTool` per le funzioni invocabili dal modello.
+- Backend provider-agnostico: `ProviderIa` (implementazione di default `ProviderIaNullo`, 503)
+  e `StrumentoIa` per le funzioni invocabili dal modello.
 - I tool sono wrapper sottili sui servizi di dominio, eseguiti **con i permessi dell'utente
   e nel tenant corrente** (quindi sotto RLS). Le scritture richiedono **conferma esplicita**.
 - Quota mensile da `aiQuotaMonthly`; ogni chiamata registra tenant, utente, modello, token e

@@ -6,8 +6,8 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
-import it.gestionale.api.customers.CustomerRepository;
-import it.gestionale.api.tenancy.TenantContext;
+import it.gestionale.api.clienti.ClienteRepository;
+import it.gestionale.api.tenant.ContestoTenant;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,10 +15,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class CommessaService {
 
     private final CommessaRepository commesse;
-    private final CustomerRepository customers;
+    private final ClienteRepository customers;
     private final Clock clock;
 
-    public CommessaService(CommessaRepository commesse, CustomerRepository customers, Clock clock) {
+    public CommessaService(CommessaRepository commesse, ClienteRepository customers, Clock clock) {
         this.commesse = commesse;
         this.customers = customers;
         this.clock = clock;
@@ -27,7 +27,7 @@ public class CommessaService {
     /** Commesse attive del tenant, ordinate per nome: i record cancellati non compaiono. */
     @Transactional(readOnly = true)
     public List<CommessaDto> list() {
-        return commesse.findByTenantIdAndDeletedAtIsNullOrderByNomeAsc(TenantContext.require())
+        return commesse.findByTenantIdAndDeletedAtIsNullOrderByNomeAsc(ContestoTenant.require())
                 .stream().map(CommessaDto::from).toList();
     }
 
@@ -38,7 +38,7 @@ public class CommessaService {
      */
     @Transactional
     public CommessaDto upsert(UUID id, CommessaDto.Input input, String actorUserId) {
-        UUID tenantId = TenantContext.require();
+        UUID tenantId = ContestoTenant.require();
         UUID customerId = input.customerId();
         Optional<Commessa> existing = commesse.findByIdAndTenantId(id, tenantId);
         // Un cliente già collegato resta valido anche se cancellato logicamente nel frattempo: non
@@ -49,7 +49,7 @@ public class CommessaService {
         }
         String nome = input.nome().trim();
         String indirizzo = input.indirizzo() == null || input.indirizzo().isBlank() ? null : input.indirizzo().trim();
-        CommessaStato stato = CommessaStato.valueOf(input.stato().toUpperCase(Locale.ROOT));
+        StatoCommessa stato = StatoCommessa.valueOf(input.stato().toUpperCase(Locale.ROOT));
         Commessa commessa = existing
                 .map(c -> {
                     c.update(customerId, nome, indirizzo, stato, actorUserId, clock.instant());
@@ -67,7 +67,7 @@ public class CommessaService {
      */
     @Transactional
     public void delete(UUID id, String actorUserId) {
-        commesse.findByIdAndTenantId(id, TenantContext.require())
+        commesse.findByIdAndTenantId(id, ContestoTenant.require())
                 .ifPresent(commessa -> commessa.markDeleted(actorUserId, clock.instant()));
         commesse.flush();
     }
@@ -76,7 +76,7 @@ public class CommessaService {
     private void requireValidCustomer(UUID customerId, UUID tenantId) {
         boolean active = customers.findByIdAndTenantId(customerId, tenantId).map(c -> !c.isDeleted()).orElse(false);
         if (!active) {
-            throw new UnknownCustomerException("Cliente non valido: " + customerId);
+            throw new ClienteSconosciutoException("Cliente non valido: " + customerId);
         }
     }
 }

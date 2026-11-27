@@ -19,7 +19,7 @@ import org.springframework.data.repository.query.Param;
  *
  * <p>Nessun metodo di cancellazione fisica: {@code customer_id} è una chiave esterna vera ma non
  * una relazione JPA mappata, quindi Hibernate non saprebbe cancellare le commesse prima del
- * cliente che referenziano. Il ripristino del tenant demo ({@code DemoTenantSeeder}) le cancella
+ * cliente che referenziano. Il ripristino del tenant demo ({@code PopolatoreTenantDemo}) le cancella
  * con un {@code DELETE} diretto, nell'ordine giusto, invece di passare da qui.
  */
 public interface CommessaRepository extends JpaRepository<Commessa, UUID> {

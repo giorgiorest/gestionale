@@ -68,7 +68,7 @@ Il database locale contiene dati personali. Per non lasciarli a chi usa lo stess
 | Misura | Dove |
 |--------|------|
 | Separazione dei dati tra aziende con **Row Level Security** su PostgreSQL; l'app usa un utente non superuser | `apps/api`, migrazioni Flyway, ADR 0001 |
-| Ogni endpoint verifica **ruolo** e **piano**; i dati sono filtrati per azienda e utente | `@PreAuthorize`, `EntitlementService` |
+| Ogni endpoint verifica **ruolo** e **piano**; i dati sono filtrati per azienda e utente | `@PreAuthorize`, `AbilitazioniService` |
 | **HTTPS** obbligatorio con HSTS; solo le porte 80/443 esposte | Caddy, `infra/deploy/oracle` |
 | Login con **Authorization Code + PKCE**, token in sessionStorage | `oidc-client-ts`, Keycloak |
 | **Password** di almeno 10 caratteri, diverse da nome utente ed email; **blocco** dopo 10 tentativi falliti | realm `gestionale` |
@@ -78,7 +78,7 @@ Il database locale contiene dati personali. Per non lasciarli a chi usa lo stess
 | Sospensione immediata di un'azienda; disattivazione di un utente con chiusura delle sessioni | console di piattaforma |
 | Dischi della macchina **cifrati** dal fornitore cloud (Oracle: sempre) | infrastruttura |
 | Nessun segreto nel codice; segreti di produzione solo sulla macchina e nei GitHub Secrets | `CLAUDE.md` |
-| Dati personali verso l'AI solo se necessari e con DPA del tenant | modulo `ai/` |
+| Dati personali verso l'AI solo se necessari e con DPA del tenant | modulo `ia/` |
 
 Il realm si importa solo al **primo avvio** di Keycloak. In un'installazione già esistente le nuove
 impostazioni (es. eventi) vanno attivate anche dalla console: *Realm settings → Events*.

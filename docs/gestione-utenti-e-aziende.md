@@ -74,18 +74,18 @@ assegna da solo). A mano, nella console di Keycloak:
 | `operaio` | Operaio | ruolo di cantiere: lavora sul cantiere, inserisce ore e rapportini |
 | `amministrativo` | Amministrativo | ruolo di cantiere, accesso limitato: materiali, personale, attrezzature, fornitori, archivio — mai rapportini, contabilità o pianificazione |
 
-I permessi esatti di ogni ruolo sono in `Role` (backend, `apps/api/.../auth/Role.java`): Keycloak
+I permessi esatti di ogni ruolo sono in `Ruolo` (backend, `apps/api/.../accesso/Ruolo.java`): Keycloak
 assegna solo il ruolo, il significato lo decide l'applicazione (così il provider di identità resta
 sostituibile). I quattro ruoli di cantiere sono scaffolding senza permessi propri finché non esiste
 la funzione da proteggere: ogni voce delle Fasi A–I di `docs/roadmap.md` che introduce un endpoint nuovo
-aggiunge i `Permission` giusti ai ruoli giusti.
+aggiunge i `Permesso` giusti ai ruoli giusti.
 
 ### Aggiungere un nuovo ruolo
 
 È una **modifica al software**, non solo a Keycloak, perché il backend deve sapere cosa permette:
 
 1. `infra/keycloak/realm/gestionale-realm.json`: aggiungi il ruolo in `roles.realm`.
-2. `apps/api/.../auth/Role.java`: nuovo valore con i suoi permessi (`Permission`).
+2. `apps/api/.../accesso/Ruolo.java`: nuovo valore con i suoi permessi (`Permesso`).
 3. `apps/web/src/app/core/profile/profile.service.ts`: etichetta in `ROLE_LABELS`.
 4. Documentazione: questa tabella e `infra/keycloak/README.md`.
 5. Nelle installazioni già avviate il realm non si reimporta: crea il ruolo anche dalla console

@@ -10,15 +10,15 @@ import jakarta.validation.constraints.Size;
 
 /**
  * Rappresentazione di una commessa nell'API. {@code stato} è una stringa, non l'enum
- * {@link CommessaStato}: la mappatura sta nel servizio, come per {@code TenantStatus} in
- * {@code PlatformService} (il confine dell'API non espone l'enum Java direttamente).
+ * {@link StatoCommessa}: la mappatura sta nel servizio, come per {@code StatoTenant} in
+ * {@code PiattaformaService} (il confine dell'API non espone l'enum Java direttamente).
  *
  * @param version versione del record per il blocco ottimistico
  */
 public record CommessaDto(UUID id, UUID customerId, String nome, String indirizzo, String stato, long version,
                           Instant updatedAt) {
 
-    private static final CommessaStatoConverter STATO = new CommessaStatoConverter();
+    private static final StatoCommessaConverter STATO = new StatoCommessaConverter();
 
     public static CommessaDto from(Commessa commessa) {
         return new CommessaDto(commessa.getId(), commessa.getCustomerId(), commessa.getNome(),

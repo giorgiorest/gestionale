@@ -13,10 +13,10 @@ import jakarta.persistence.Version;
 /**
  * Commessa (il cantiere): l'entità centrale del prodotto (ADR 0012). L'id è generato dal client
  * (UUID v7). {@code customerId} è una chiave esterna vera verso {@code customers}: a differenza di
- * {@code Resource.userId}, i clienti sono un'anagrafica completa fin da subito, non si popola in
+ * {@code Risorsa.userId}, i clienti sono un'anagrafica completa fin da subito, non si popola in
  * ritardo.
  *
- * <p>Stessa cancellazione logica e blocco ottimistico di {@code Customer} (ADR 0018).
+ * <p>Stessa cancellazione logica e blocco ottimistico di {@code Cliente} (ADR 0018).
  */
 @Entity
 @Table(name = "commesse")
@@ -37,9 +37,9 @@ public class Commessa {
     @Column
     private String indirizzo;
 
-    @Convert(converter = CommessaStatoConverter.class)
+    @Convert(converter = StatoCommessaConverter.class)
     @Column(nullable = false)
-    private CommessaStato stato = CommessaStato.PIANIFICATA;
+    private StatoCommessa stato = StatoCommessa.PIANIFICATA;
 
     @Version
     @Column(nullable = false)
@@ -63,7 +63,7 @@ public class Commessa {
     protected Commessa() {
     }
 
-    public Commessa(UUID id, UUID tenantId, UUID customerId, String nome, String indirizzo, CommessaStato stato,
+    public Commessa(UUID id, UUID tenantId, UUID customerId, String nome, String indirizzo, StatoCommessa stato,
                     String actorUserId) {
         this.id = id;
         this.tenantId = tenantId;
@@ -76,7 +76,7 @@ public class Commessa {
     }
 
     /** Un record cancellato torna attivo: un PUT dopo la cancellazione è l'ultima volontà del client. */
-    public void update(UUID customerId, String nome, String indirizzo, CommessaStato stato, String actorUserId,
+    public void update(UUID customerId, String nome, String indirizzo, StatoCommessa stato, String actorUserId,
                        Instant at) {
         this.customerId = customerId;
         this.nome = nome;
@@ -121,7 +121,7 @@ public class Commessa {
         return indirizzo;
     }
 
-    public CommessaStato getStato() {
+    public StatoCommessa getStato() {
         return stato;
     }
 
