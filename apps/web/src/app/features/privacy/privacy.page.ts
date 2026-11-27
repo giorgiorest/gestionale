@@ -157,6 +157,7 @@ export class PrivacyPage {
       name: 'Dati per l’uso offline (IndexedDB)',
       purpose:
         'Copia dei dati che consulti (es. clienti e notifiche) e modifiche fatte senza connessione, in attesa di invio. ' +
+        'Comprende le foto e gli allegati scattati senza connessione e quelli aperti di recente (fino a 100 MB). ' +
         'Appartengono solo al tuo utente: vengono cancellati quando esci o se sullo stesso browser accede un altro utente.',
       duration: 'fino all’uscita',
     },

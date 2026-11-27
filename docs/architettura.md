@@ -168,6 +168,16 @@ dalla outbox. La cancellazione di un oggetto nell'archivio quando l'allegato vie
 logicamente resta un processo a parte, non ancora costruito (ADR 0016, "punti noti ancora
 aperti").
 
+**Lato client** (`core/allegati/AllegatiService`, componente `app-attachments`): un file scelto o
+scattato con la fotocamera resta in IndexedDB (`pendingUploads`, con i byte) e compare subito in
+elenco. Appena c'è connessione (evento `online`, avvio dell'app, apertura dell'elenco) si chiede
+l'URL firmato, si carica il file direttamente sull'archivio e **solo dopo** si accoda la conferma
+nella outbox: la outbox non carica mai byte. I metadati si sincronizzano come ogni entità
+(`attachments` in `GET /api/sync/changes`, tabella `attachments`); i byte si scaricano su richiesta
+e restano in `fileCache`, limitata a 100 MB (esce il file aperto meno di recente; i file in attesa
+di invio non escono mai). Le tre tabelle si svuotano all'uscita (`DatiLocaliService.clear()`). Il
+bucket deve ammettere l'origine dell'app con una regola CORS (`docs/deploy-oracle-cloud.md`, §10).
+
 ## Identità e profilazione
 
 Dettagli e motivazioni (anche per la rivendita): [ADR 0003](decisioni/0003-identita-keycloak.md).

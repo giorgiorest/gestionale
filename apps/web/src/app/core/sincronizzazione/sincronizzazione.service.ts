@@ -54,6 +54,8 @@ function localTable(db: DbLocale, entity: string): Table<LocalRow, string> | nul
       return db.dailyReports as unknown as Table<LocalRow, string>;
     case 'work_entries':
       return db.workEntries as unknown as Table<LocalRow, string>;
+    case 'attachments':
+      return db.attachments as unknown as Table<LocalRow, string>;
     default:
       // Es. "daily_report_materials": niente tabella locale finché non esiste la UI che la usa
       // (roadmap 3.3). Si ignora l'entità senza bloccare le altre.

@@ -227,6 +227,22 @@ poi `docker compose up -d` nella cartella `/opt/civilbeefy`. Il bucket va creato
 fornitore scelto, con accesso privato: l'API non vi accede mai direttamente, solo con URL firmati
 di breve durata (nessun byte passa dall'API).
 
+**CORS del bucket (obbligatorio)**: poiché il caricamento e lo scarico avvengono **direttamente dal
+browser (o dall'app) verso il bucket**, il bucket deve ammettere le origini dell'app. Senza, il
+caricamento fallisce in silenzio e le foto restano «in attesa di invio». Regola CORS (formato S3):
+
+```json
+[{
+  "AllowedOrigins": ["https://<dominio-dell-app>", "http://tauri.localhost", "tauri://localhost"],
+  "AllowedMethods": ["GET", "PUT"],
+  "AllowedHeaders": ["Content-Type"],
+  "MaxAgeSeconds": 3600
+}]
+```
+
+`http://tauri.localhost` e `tauri://localhost` servono per l'app Windows e Android. Se l'origine
+dell'app cambia, va aggiornata anche qui.
+
 ## 11. Backup del database
 
 In SSH, un backup al giorno alle 3 con 14 giorni di storico (applicazione e Keycloak):
